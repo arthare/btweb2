@@ -1,4 +1,4 @@
-# bt-web2
+# bt-web2-site
 
 This README outlines the details of collaborating on this Ember application.
 A short introduction of this app could easily go here.
@@ -15,7 +15,7 @@ You will need the following things properly installed on your computer.
 ## Installation
 
 * `git clone <repository-url>` this repository
-* `cd bt-web2`
+* `cd bt-web2-site`
 * `npm install`
 
 ## Running / Development

@@ -4,7 +4,8 @@ module.exports = function(environment) {
   let ENV = {
     modulePrefix: 'bt-web2',
     environment,
-    rootURL: '/',
+    rootURL: '',
+    apiRoot: 'http://localhost:3010/',
     locationType: 'auto',
     EmberENV: {
       FEATURES: {

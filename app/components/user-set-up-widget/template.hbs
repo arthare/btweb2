@@ -1,0 +1,14 @@
+<div class="user-set-up__content">
+    <div class="user-set-up__element">
+        {{input value=userName placeholder="Your Name"}}
+    </div>
+    <div class="user-set-up__element">
+        <button class="user-set-up__button" {{action 'connectDevice'}}>Connect Device</button>
+    </div>
+    <div class="user-set-up__element">
+        {{input value=userHandicap placeholder="Your Handicap or FTP"}}
+    </div>
+    <div class="user-set-up__element">
+        <button class="user-set-up__button" {{action 'done'}} disabled={{disableDone}}>Done</button>
+    </div>
+</div>

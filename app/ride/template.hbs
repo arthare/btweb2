@@ -1,0 +1,11 @@
+You're riding!  You have gone {{lastLocalMeters}}
+
+There are {{localRiders.length}} riders.
+
+{{#each localRiders as |riderDisplay|}}
+  <div>
+    Name: {{riderDisplay.name}}<br />
+    Position: {{riderDisplay.distance}}<br />
+    Speed: {{riderDisplay.speed}}<br />
+  </div>
+{{/each}}
