@@ -14,10 +14,10 @@ export class RideMapHandicap extends RideMapPartial {
   
   _indexBelowMeters(targetMeters:number):number {
     if(targetMeters <= this._mapDesc.distances[0]) {
-      return this._mapDesc.elevations[0];
+      return 0;
     }
     if(targetMeters >= this._mapDesc.distances[this._mapDesc.distances.length-1]) {
-      return this._mapDesc.elevations[this._mapDesc.elevations.length-1];
+      return this._mapDesc.distances.length - 1;
     }
 
     let ixLow = 0;
@@ -37,6 +37,11 @@ export class RideMapHandicap extends RideMapPartial {
   }
 
   getElevationAtDistance(meters: number): number {
+    if(meters >= this.getLength()) {
+      return this._mapDesc.elevations[this._mapDesc.elevations.length - 1];
+    } else if(meters <= 0) {
+      return this._mapDesc.elevations[0];
+    }
     let ixLeft = this._indexBelowMeters(meters);
     let ixRight = ixLeft+1;
 

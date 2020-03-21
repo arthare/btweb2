@@ -1,6 +1,8 @@
 import { CadenceRecipient, PowerRecipient, HrmRecipient } from "../pojs/WebBluetoothDevice";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
+import { RaceState } from "./RaceState";
+import { S2CPositionUpdateUser } from "./communication";
 
 export enum UserTypeFlags {
   Local = 1,
@@ -13,6 +15,8 @@ export interface UserDisplay {
   lastPower: string;
   distance: string;
   speed: string;
+  slope: string;
+  elevation: string;
 }
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
@@ -63,6 +67,17 @@ export class User extends UserDataRecorder {
     this._lastT = new Date().getTime() / 1000.0;
   }
 
+  getDistance():number {
+    return this._position;
+  }
+  getSpeed():number {
+    return this._speed;
+  }
+
+  getName():string {
+    return this._name;
+  }
+
   getUserType():number {
     return this._typeFlags;
   }
@@ -96,9 +111,9 @@ export class User extends UserDataRecorder {
 
     const sinSquared = Math.sin(theta)*Math.sin(theta);
     const cosSquared = Math.pow(Math.cos(theta)-1,2);
-    let slopeForce = Math.sqrt(sinSquared+cosSquared);
+    let slopeForce = -Math.sqrt(sinSquared+cosSquared)*this._massKg*9.81;
     if(slope < 0) {
-      assert2(slopeForce >= 0);
+      assert2(slopeForce <= 0);
       slopeForce = -slopeForce;
     }
     
@@ -109,18 +124,36 @@ export class User extends UserDataRecorder {
     
     const totalForce = powerForce + aeroForce + slopeForce + rollingForce;
     const accel = totalForce / this._massKg;
-    this._speed += accel * dtSeconds;
-    console.log("accel = ", accel, " speed = ", this._speed, " forces = ", this._massKg, totalForce, powerForce, aeroForce, rollingForce, dtSeconds);
+
+    this._speed = Math.max(0.5, this._speed  + accel * dtSeconds);
     assert2(this._speed >= 0);
     this._position += this._speed * dtSeconds;
   }
 
-  getDisplay():UserDisplay {
+  getDisplay(raceState:RaceState|null):UserDisplay {
+    const map = raceState && raceState.getMap() || null;
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
       distance: this._position.toFixed(0) + 'm',
       speed: (this._speed*3.6).toFixed(1) + 'km/h',
+      slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
+      elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
+    }
+  }
+
+  absorbNameUpdate(name:string) {
+    this._name = name;
+  }
+  absorbPositionUpdate(update:S2CPositionUpdateUser) {
+    this._speed = update.speed;
+    this._position = update.distance;
+    if(this._typeFlags & UserTypeFlags.Local) {
+      // we're local, so we won't re-absorb the power from the server
+    } else {
+      // we're a remote or AI user, so we should try to be as similar to the server as possible
+      console.log("We received an update about remote user ", this.getId(), this._name);
+      this.notifyPower(new Date().getTime(), update.power);
     }
   }
 }

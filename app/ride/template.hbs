@@ -7,5 +7,15 @@ There are {{localRiders.length}} riders.
     Name: {{riderDisplay.name}}<br />
     Position: {{riderDisplay.distance}}<br />
     Speed: {{riderDisplay.speed}}<br />
+    Slope: {{riderDisplay.slope}}<br />
+  </div>
+{{/each}}
+<h3>Remote Riders</h3>
+{{#each remoteRiders as |riderDisplay|}}
+  <div>
+    Name: {{riderDisplay.name}}<br />
+    Position: {{riderDisplay.distance}}<br />
+    Speed: {{riderDisplay.speed}}<br />
+    Slope: {{riderDisplay.slope}}<br />
   </div>
 {{/each}}

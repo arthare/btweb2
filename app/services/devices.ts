@@ -3,6 +3,7 @@ import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
 import { UserProvider } from 'bt-web2/server-client-common/RaceState';
+import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 
 
 
@@ -26,6 +27,12 @@ export default class Devices extends Service.extend({
     this.users = [];
   }
 
+  addRemoteUser(pos:S2CPositionUpdateUser) {
+    const newUser = new User("Unknown User " + pos.id, 80, 300, UserTypeFlags.Remote);
+    newUser.setId(pos.id);
+    newUser.absorbPositionUpdate(pos);
+    this.users.push(newUser);
+  }
   addUser(user:UserSetupParameters) {
     const newUser = new User(user.name, 80, user.handicap, UserTypeFlags.Local);
     this.users.push(newUser);
@@ -46,6 +53,9 @@ export default class Devices extends Service.extend({
 
   getUsers():User[] {
     return this.users;
+  }
+  getUser(id:number):User|null {
+    return this.users.find((user) => user.getId() === id) || null;
   }
 }
 

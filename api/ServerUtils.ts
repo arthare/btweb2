@@ -9,7 +9,7 @@ export class PureCosineMap extends RideMapPartial {
     this._length = length;
   }
   getElevationAtDistance(meters: number): number {
-    return Math.cos(meters / 1000)*5;
+    return Math.sin(meters / 1000)*25;
   }
   getLength(): number {
     return this._length;

@@ -16,19 +16,20 @@ export default class Ride extends Controller.extend({
   // normal class body definition here
   lastLocalMeters: number = 0;
   myTimeout:any = 0;
-  map:RideMap|null = null;
-  raceState:RaceState|null = null;
   frame:number = 0;
+  _raceState:RaceState|null = null;
 
-  _setup(gameId):Promise<any> {
+  _setup(gameId:string):Promise<any> {
 
     const user = this.devices.getLocalUser();
     if(!user) {
       throw new Error("User isn't valid");
     }
     const targetHost = 'localhost';
-    return this.connection.connect(targetHost, gameId, "TheJoneses", user).then(() => {
+    return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState:RaceState) => {
+      this._raceState = raceState;
       this.myTimeout = setTimeout(() => this._tick(), 15);
+      return this._raceState;
     }, (failure:any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);
       if(yn) {
@@ -46,7 +47,12 @@ export default class Ride extends Controller.extend({
         return this.transitionToRoute('set-up-user');
       }
     }
-    this.raceState?.tick(tmNow);
+
+    const raceState = this._raceState;
+    if(!raceState) {
+      throw new Error("Failed to find race state");
+    }
+    raceState.tick(tmNow);
     
 
 
@@ -56,10 +62,24 @@ export default class Ride extends Controller.extend({
 
   @computed("frame")
   get localRiders():UserDisplay[] {
+    if(!this._raceState) {
+      return [];
+    }
     return this.devices.getUsers().filter((user) => {
       return user.getUserType() & UserTypeFlags.Local;
     }).map((localUser) => {
-      return localUser.getDisplay();
+      return localUser.getDisplay(this._raceState);
+    })
+  }
+  @computed("frame")
+  get remoteRiders():UserDisplay[] {
+    if(!this._raceState) {
+      return [];
+    }
+    return this.devices.getUsers().filter((user) => {
+      return user.getUserType() & UserTypeFlags.Remote;
+    }).map((localUser) => {
+      return localUser.getDisplay(this._raceState);
     })
   }
 }
