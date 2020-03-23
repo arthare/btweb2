@@ -1,12 +1,10 @@
-Set Up Your Ride
+{{tourjs-header}}
+<div class="set-up-ride__content">
+  <div class="set-up-ride__title">
+    Current Joinable Rides
+  </div>
 
-How many meters?
-{{input type="number" value=meters}}
-
-<button {{action 'go'}}>Create</button>
-
-
-<div>
-  Or join a Ride
-  <button {{action 'joinRace' 'asdf'}}>Join 'asdf'</button>
+  {{#each model.races as |race|}}
+    {{pending-race race=race joinRace=(action 'joinRace')}}
+  {{/each}}
 </div>

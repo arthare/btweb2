@@ -1,7 +1,8 @@
 import { RaceState, UserProvider } from "./RaceState";
-import { User } from "./User";
+import { User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly } from "./RideMap";
+import { ServerGame } from "./ServerGame";
 
 
 
@@ -12,9 +13,22 @@ export enum BasicMessageType {
   ServerError,
   S2CPositionUpdate,
   S2CNameUpdate,
+  S2CFinishUpdate,
 }
-export interface BasicMessage {
+
+export enum CurrentRaceState {
+  PreRace,
+  Racing,
+  PostRace,
+}
+
+export interface C2SBasicMessage {
   type:BasicMessageType;
+  payload:any; // check type, then cast to the appropriate message
+}
+export interface S2CBasicMessage {
+  type:BasicMessageType;
+  raceState:S2CRaceStateUpdate;
   payload:any; // check type, then cast to the appropriate message
 }
 
@@ -32,6 +46,53 @@ export interface S2CPositionUpdateUser {
 export interface S2CPositionUpdate {
   clients: S2CPositionUpdateUser[];
 }
+export class S2CRaceStateUpdate {
+  constructor(tmNow:number, serverGame:ServerGame) {
+    let msUntil = -1;
+    let tmNextState = -1;
+    switch(serverGame.getLastRaceState()) {
+      case CurrentRaceState.PreRace:
+        tmNextState = serverGame.getRaceScheduledStartTime();
+        msUntil = Math.max(0, tmNextState - tmNow);
+        break;
+    }
+
+    this.state = serverGame.getLastRaceState();
+    this.msUntilNextState = msUntil;
+    this.tmOfNextState = tmNextState;
+  }
+  state:CurrentRaceState;
+  msUntilNextState:number;
+  tmOfNextState:number;
+}
+export class S2CFinishUpdate {
+  constructor(provider:UserProvider, tmRaceStart:number) {
+    const tmNow = new Date().getTime();
+
+    const users = provider.getUsers(tmNow);
+    users.sort((u1, u2) => {
+      if(!u1.isFinished()) {
+        return 1;
+      } else {
+        if(!u2.isFinished()) {
+          return 1;
+        }
+
+        return u1.getRaceTimeSeconds(tmRaceStart) < u2.getRaceTimeSeconds(tmRaceStart) ? -1 : 1;
+      }
+    })
+
+    this.rankings = [];
+    this.times = [];
+    users.forEach((user, index) => {
+      this.rankings.push(index+1);
+      this.times.push(user.getRaceTimeSeconds(tmRaceStart));
+    })
+  }
+  rankings: number[];
+  times: number[];
+}
+
 
 export class ServerMapDescription {
   constructor(map:RideMapElevationOnly) {
@@ -65,8 +126,8 @@ export interface ClientConnectionResponse {
 
 export class S2CNameUpdate {
 
-  constructor(provider:UserProvider) {
-    const users = provider.getUsers();
+  constructor(tmNow:number, provider:UserProvider) {
+    const users = provider.getUsers(tmNow);
 
     this.names = [];
     this.ids = [];
@@ -94,4 +155,24 @@ export class ClientToServerUpdate {
   gameId:string;
   userId:number;
   lastPower:number;
+}
+
+export class ServerHttpGameListElement {
+  constructor(tmNow:number, game:ServerGame) {
+    this.name = game.raceState.getGameId();
+    this.status = game.getLastRaceState();
+    this.tmScheduledStart = game.getRaceScheduledStartTime();
+    this.tmActualStart = game.getRaceStartTime();
+    this.whoIn = game.userProvider.getUsers(tmNow).filter((user) => {
+      return !(user.getUserType() & UserTypeFlags.Ai);
+    }).map((user) => user.getName());
+  }
+  name: string;
+  status: CurrentRaceState;
+  tmScheduledStart: number;
+  tmActualStart: number;
+  whoIn: string[];
+}
+export interface ServerHttpGameList {
+  races: ServerHttpGameListElement[];
 }

@@ -1,11 +1,12 @@
 import Service from '@ember/service';
-import { ClientToServerUpdate, BasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate}  from 'bt-web2/server-client-common/communication';
+import { ClientToServerUpdate, C2SBasicMessage, S2CBasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate, S2CRaceStateUpdate, CurrentRaceState, S2CFinishUpdate}  from 'bt-web2/server-client-common/communication';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { User } from 'bt-web2/server-client-common/User';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 import Ember from 'ember';
 import Devices from './devices';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { computed } from '@ember/object';
 
 export default class Connection extends Service.extend({
   // anything which *must* be merged to prototype here
@@ -16,15 +17,17 @@ export default class Connection extends Service.extend({
   _ws:WebSocket|null = null;
   _raceState:RaceState|null = null;
   _gameId:string = '';
+  _lastServerRaceState:S2CRaceStateUpdate|null = null;
+  raceResults:S2CFinishUpdate|null = null;
 
   _performStartupNegotiate(ws:WebSocket, user:User, accountId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
     return new Promise((resolve, reject) => {
       ws.onmessage = (msg:MessageEvent) => {
-        debugger;
         try {
-          const basicMessage:BasicMessage = JSON.parse(msg.data);
+          const basicMessage:S2CBasicMessage = JSON.parse(msg.data);
           window.assert2(basicMessage.type === BasicMessageType.ClientConnectionResponse);
+          this.set('_lastServerRaceState', basicMessage.raceState);
           const payload:ClientConnectionResponse = <ClientConnectionResponse>basicMessage.payload;
           resolve(payload);
         } catch(e) {
@@ -33,6 +36,8 @@ export default class Connection extends Service.extend({
         }
       };
 
+      
+
       // ok, we've got our listener set up
       const connect:ClientConnectionRequest = {
         riderName: user.getName(),
@@ -40,7 +45,7 @@ export default class Connection extends Service.extend({
         riderHandicap: user.getHandicap(),
         gameId: 'asdf',
       }
-      const bm:BasicMessage = {
+      const bm:C2SBasicMessage = {
         payload: connect,
         type: BasicMessageType.ClientConnectionRequest,
       }
@@ -86,13 +91,16 @@ export default class Connection extends Service.extend({
   }
 
   _onMsgReceived(event:MessageEvent) {
-    let bm:BasicMessage;
+    const tmNow = new Date().getTime();
+
+    let bm:S2CBasicMessage;
     try {
       bm = JSON.parse(event.data);
     } catch(e) {
       throw new Error("Invalid message received: " + event.data);
     }
 
+    this.set('_lastServerRaceState', bm.raceState);
     if(this._raceState) {
       switch(bm.type) {
         case BasicMessageType.S2CNameUpdate:
@@ -110,7 +118,7 @@ export default class Connection extends Service.extend({
           })
           
 
-          this._raceState.absorbPositionUpdate(bm.payload);
+          this._raceState.absorbPositionUpdate(tmNow, bm.payload);
           break;
         }
         case BasicMessageType.ServerError:
@@ -118,6 +126,9 @@ export default class Connection extends Service.extend({
           break;
         case BasicMessageType.ClientConnectionResponse:
           assert2(false);
+          break;
+        case BasicMessageType.S2CFinishUpdate:
+          this.set('raceResults', bm.payload);
           break;
       }
     } else {
@@ -130,12 +141,34 @@ export default class Connection extends Service.extend({
     
   }
 
+  getUserName(userId:number):string {
+    const user = this.devices.getUser(userId);
+    return user && user.getName() || "Unknown";
+  }
+
+  @computed("_lastServerRaceState")
+  get preRace():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.PreRace) || false;
+  }
+  @computed("_lastServerRaceState")
+  get racing():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.Racing) || false;
+  }
+  @computed("_lastServerRaceState")
+  get postRace():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.PostRace) || false;
+  }
+  @computed("_lastServerRaceState")
+  get msOfStart():number {
+    return (this._lastServerRaceState && this._lastServerRaceState.tmOfNextState) || 0;
+  }
+
   tick() {
     if(this._ws && this._raceState) {
       // ok, we gotta send our game state back to the main server
       
       const update = new ClientToServerUpdate(this._raceState);
-      const wrapper:BasicMessage = {
+      const wrapper:C2SBasicMessage = {
         type: BasicMessageType.ClientToServerUpdate,
         payload: update,
       };

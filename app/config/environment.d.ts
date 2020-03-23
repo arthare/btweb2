@@ -13,6 +13,7 @@ declare const config: {
   podModulePrefix: string;
   locationType: string;
   rootURL: string;
+  apiRoot: string;
 };
 
 declare global {

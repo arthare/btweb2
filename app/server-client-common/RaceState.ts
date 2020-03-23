@@ -7,7 +7,7 @@ import { S2CPositionUpdate, S2CNameUpdate } from "./communication";
 // why UserProvider?  this lets us have a network-connected module that figures out all the users that are currently
 // in existence.
 export interface UserProvider {
-  getUsers():User[];
+  getUsers(tmNow:number):User[];
   getUser(id:number):User|null;
 }
 
@@ -22,7 +22,7 @@ export class RaceState {
   }
   tick(tmNow:number) {
 
-    const users = this._userProvider.getUsers();
+    const users = this._userProvider.getUsers(tmNow);
     users.forEach((user) => {
       user.physicsTick(tmNow, this._map, users);
     });
@@ -34,7 +34,8 @@ export class RaceState {
     return this._map;
   }
   getLocalUser():User|null {
-    const users = this._userProvider.getUsers();
+    const tmNow = new Date().getTime();
+    const users = this._userProvider.getUsers(tmNow);
     const allLocal = users.filter((user) => {
       return user.getUserType() & UserTypeFlags.Local;
     });
@@ -42,11 +43,28 @@ export class RaceState {
     return allLocal[0];
   }
 
-  absorbPositionUpdate(msg:S2CPositionUpdate) {
+  isAllHumansFinished():boolean {
+    const tmNow = new Date().getTime();
+
+    const humans = this._userProvider.getUsers(tmNow).filter((user) => !(user.getUserType() & UserTypeFlags.Ai));
+    return humans.every((user) =>{
+      return user.getDistance() >= this._map.getLength();
+    });
+  }
+  isAnyHumansFinished():boolean {
+    const tmNow = new Date().getTime();
+
+    const humans = this._userProvider.getUsers(tmNow).filter((user) => !(user.getUserType() & UserTypeFlags.Ai));
+    return !!humans.find((user) =>{
+      return user.getDistance() >= this._map.getLength();
+    });
+  }
+
+  absorbPositionUpdate(tmNow:number, msg:S2CPositionUpdate) {
     msg.clients.forEach((client) => {
       const user = this._userProvider.getUser(client.id);
       if(user) {
-        user.absorbPositionUpdate(client);
+        user.absorbPositionUpdate(tmNow, client);
       }
     })
   }

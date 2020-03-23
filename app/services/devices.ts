@@ -4,6 +4,7 @@ import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/compo
 import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
 import { UserProvider } from 'bt-web2/server-client-common/RaceState';
 import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
+import Ember from 'ember';
 
 
 
@@ -15,6 +16,7 @@ export default class Devices extends Service.extend({
   devices:ConnectedDeviceInterface[] = [];
   users:User[] = [];
 
+  
   addDevice(device:ConnectedDeviceInterface) {
     this.devices.push(device);
   }
@@ -28,9 +30,10 @@ export default class Devices extends Service.extend({
   }
 
   addRemoteUser(pos:S2CPositionUpdateUser) {
+    const tmNow = new Date().getTime();
     const newUser = new User("Unknown User " + pos.id, 80, 300, UserTypeFlags.Remote);
     newUser.setId(pos.id);
-    newUser.absorbPositionUpdate(pos);
+    newUser.absorbPositionUpdate(tmNow, pos);
     this.users.push(newUser);
   }
   addUser(user:UserSetupParameters) {
@@ -51,8 +54,12 @@ export default class Devices extends Service.extend({
     return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
   }
 
-  getUsers():User[] {
-    return this.users;
+  getUsers(tmNow:number):User[] {
+    return this.users.filter((user) => {
+      return user.getUserType() & UserTypeFlags.Local ||
+             user.getMsSinceLastPacket(tmNow) < 5000 ||
+             user.isFinished();
+    });
   }
   getUser(id:number):User|null {
     return this.users.find((user) => user.getId() === id) || null;

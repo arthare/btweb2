@@ -11,7 +11,7 @@
     "./index.ts",
   ],
   "include": [
-    "./**/*",
+    "./**/*", "../app/server-client-common/ServerGame.ts",
   ],
   "lib": ["es2015"]
 }

@@ -1,0 +1,13 @@
+  You're pre-race.  
+  {{#if startsInSeconds}}
+    The race starts in {{startsInSeconds}} seconds.
+  {{/if}}
+  <h4>Who are you?</h4>
+  {{#each localRiders as |riderDisplay|}}
+      Name: {{riderDisplay.name}}<br />
+  {{/each}}
+
+  <h4>Who are they?</h4>
+  {{#each remoteRiders as |riderDisplay|}}
+      Name: {{riderDisplay.name}}<br />
+  {{/each}}

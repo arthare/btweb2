@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { RideMap } from 'bt-web2/server-client-common/RideMap';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 import { computed } from '@ember/object';
+import { alias } from '@ember/object/computed';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
@@ -40,7 +41,7 @@ export default class Ride extends Controller.extend({
 
   _tick() {
     const tmNow = new Date().getTime();
-    const users = this.devices.getUsers();
+    const users = this.devices.getUsers(tmNow);
     if(users.length <= 0) {
       const yn = confirm("There aren't any users.  Start setup again?");
       if(yn) {
@@ -65,7 +66,9 @@ export default class Ride extends Controller.extend({
     if(!this._raceState) {
       return [];
     }
-    return this.devices.getUsers().filter((user) => {
+    const tmNow = new Date().getTime();
+
+    return this.devices.getUsers(tmNow).filter((user) => {
       return user.getUserType() & UserTypeFlags.Local;
     }).map((localUser) => {
       return localUser.getDisplay(this._raceState);
@@ -76,12 +79,15 @@ export default class Ride extends Controller.extend({
     if(!this._raceState) {
       return [];
     }
-    return this.devices.getUsers().filter((user) => {
+    const tmNow = new Date().getTime();
+
+    return this.devices.getUsers(tmNow).filter((user) => {
       return user.getUserType() & UserTypeFlags.Remote;
     }).map((localUser) => {
       return localUser.getDisplay(this._raceState);
     })
   }
+  
 }
 
 // DO NOT DELETE: this is how TypeScript knows how to look up your controllers.

@@ -1,0 +1,19 @@
+@import './common.scss';
+@import './tourjs-header.scss';
+@import './user-set-up-widget.scss';
+@import './set-up-ride.scss';
+
+* {
+  font-family: sans-serif;
+}
+body {
+  background-color: lightpink;
+}
+
+.application {
+  &__container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

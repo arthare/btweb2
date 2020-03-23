@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, BasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate } from '../app/server-client-common/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage } from '../app/server-client-common/communication';
 import { assert2 } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
 import { User, UserTypeFlags } from '../app/server-client-common/User';
@@ -7,78 +7,22 @@ import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
 import { RideMap, RideMapPartial } from '../app/server-client-common/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './ServerConstants';
+import { ServerGame } from '../app/server-client-common/ServerGame';
+import { setUpServerHttp } from './ServerHttp';
 
 const wss = new WebSocket.Server({
   port: 8080,
 });
 
 
-class ServerUser extends User {
-  _tmLastNameSent:number;
-
-  constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
-    super(name, massKg, handicap, typeFlags);
-  }
-
-  noteLastNameUpdate(tmWhen:number) {
-    this._tmLastNameSent = tmWhen;
-  }
-  getLastNameUpdate():number {
-    return this._tmLastNameSent;
-  }
-}
-
-let userIdCounter = 0;
-const userIdToUserMap:Map<number, ServerUser> = new Map<number,ServerUser>();
-class ServerUserProvider implements UserProvider {
-  constructor() {
-    this.users = [];
-  }
-  getUsers(): User[] {
-    return this.users;
-  }
-  getUser(id:number):User|null {
-    return this.users.find((user) => user.getId() === id);
-  }
-  addUser(ccr:ClientConnectionRequest):number {
-    let newId = userIdCounter++;
-    const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote);
-    user.setId(newId);
-    this.users.push(user);
-    userIdToUserMap.set(newId, user);
-    return newId;    
-  }
-
-  users:ServerUser[];
-}
 
 
 
-class ServerGame {
-  constructor(map:RideMap, gameId:string) {
-    this.userProvider = new ServerUserProvider();
-    this.raceState = new RaceState(map, this.userProvider, gameId);
-    this._timeout = null;
-  }
-  start() {
-    this._scheduleTick();
-  }
-  private _tick() {
-    const tmNow = new Date().getTime();
-    this.raceState.tick(tmNow);
 
-    this._scheduleTick();
-  }
-  private _scheduleTick() {
-    this._timeout = setTimeout(() => this._tick(), 1000 / SERVER_PHYSICS_FRAME_RATE);
-  }
-  private _timeout:any;
-  raceState:RaceState;
-  userProvider:ServerUserProvider;
-}
-function sendError(socket:WebSocket, errorMessage:string) {
-  const ret:BasicMessage = {
+function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorMessage:string) {
+  const ret:S2CBasicMessage = {
     type: BasicMessageType.ServerError,
+    raceState: new S2CRaceStateUpdate(tmNow, serverGame),
     payload: <ServerError>{
       text: errorMessage,
       stack: new Error().stack.toString(),
@@ -87,9 +31,11 @@ function sendError(socket:WebSocket, errorMessage:string) {
   socket.send(JSON.stringify(ret));
 }
 
-function sendResponse(ws:WebSocket, type:BasicMessageType, msg:ClientConnectionResponse|S2CPositionUpdate|S2CNameUpdate) {
-  const bm:BasicMessage = {
+function sendResponse(tmNow:number, ws:WebSocket, type:BasicMessageType, serverGame:ServerGame, msg:ClientConnectionResponse|S2CPositionUpdate|S2CNameUpdate|S2CFinishUpdate) {
+
+  const bm:S2CBasicMessage = {
     type,
+    raceState: new S2CRaceStateUpdate(tmNow, serverGame),
     payload: msg,
   }
   return ws.send(JSON.stringify(bm));
@@ -106,16 +52,14 @@ class Rng {
 
 
 
-const games:Map<string, ServerGame> = new Map<string, ServerGame>();
+const races:Map<string, ServerGame> = new Map<string, ServerGame>();
 const map = makeSimpleMap();
 const sg = new ServerGame(map, 'asdf');
-games.set('asdf', sg);
-sg.start();
-
+races.set('asdf', sg);
 
 const lastSentTo:Map<number,Rng> = new Map<number,Rng>();
-function buildClientPositionUpdate(centralUser:User, userList:UserProvider, n:number):S2CPositionUpdate {
-  const users = userList.getUsers();
+function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:UserProvider, n:number):S2CPositionUpdate {
+  const users = userList.getUsers(tmNow);
 
   if(!lastSentTo.has(centralUser.getId())) {
     lastSentTo.set(centralUser.getId(), new Rng());
@@ -143,24 +87,26 @@ wss.on('connection', (wsConnection) => {
   console.log("server got connection from ", wsConnection.url);
   wsConnection.onmessage = (event:WebSocket.MessageEvent) => {
 
-    let bm:BasicMessage;
+    const tmNow = new Date().getTime();
+
+    let bm:C2SBasicMessage;
     try {
       const str = event.data.toString('utf8');
       bm = JSON.parse(str);
     } catch(e) {
-      return sendError(wsConnection, "Failed to parse incoming message");
+      return;
     }
     
     switch(bm.type) {
       case BasicMessageType.ClientConnectionRequest:
       {
         const payload:ClientConnectionRequest = <ClientConnectionRequest>bm.payload;
-        const game = games.get(payload.gameId);
+        const game = races.get(payload.gameId);
         if(!game) {
-          return sendError(wsConnection, "Game ID " + payload.gameId +" not found");
+          return sendError(tmNow, game, wsConnection, "Game ID " + payload.gameId +" not found");
         }
         // ok, so they want to join this game
-        let newId = game.userProvider.addUser(payload);
+        let newId = game.addUser(tmNow, payload);
         assert2(newId >= 0);
         // and we need to produce a response
 
@@ -168,34 +114,63 @@ wss.on('connection', (wsConnection) => {
           yourAssignedId:newId,
           map: new ServerMapDescription(game.raceState.getMap()),
         }
-        return sendResponse(wsConnection, BasicMessageType.ClientConnectionResponse, ret);
+        return sendResponse(tmNow, wsConnection, BasicMessageType.ClientConnectionResponse, game, ret);
       }
       case BasicMessageType.ClientToServerUpdate:
       {
+        const tmNow = new Date().getTime();
         const payload:ClientToServerUpdate = <ClientToServerUpdate>bm.payload;
-        console.log("we've been told ", payload);
-        const user = userIdToUserMap.get(payload.userId);
+        const game = races.get(payload.gameId);
+        const user = game.getUser(payload.userId);
         if(user) {
-          user.notifyPower(new Date().getTime(), payload.lastPower);
+          user.notifyPower(tmNow, payload.lastPower);
+          user.notePacket(tmNow);
         } else {
           throw new Error("How are we hearing about a user that has never registered?");
         }
 
         // let's make a server to client message that tells them about some local dudes
-        const game = games.get(payload.gameId);
 
-        const tmNow = new Date().getTime();
-        const tmSinceName = user && (tmNow - user.getLastNameUpdate()) || 0x7fffffff;
-        if(tmSinceName >= 30000) {
+        const raceState = game.getLastRaceState();
+        let tmSinceName = user && (tmNow - user.getLastNameUpdate()) || 0x7fffffff;
+        let tmSinceFinish = user.getTimeSinceFinishUpdate(tmNow);
+        switch(raceState) {
+          case CurrentRaceState.PreRace:
+            tmSinceFinish = 0; // don't send finish info pre-race, that doesn't make any sense
+            tmSinceName *= 3; // send name stuff way more frequently pre-race
+            break;
+          case CurrentRaceState.Racing:
+            if(!game.raceState.isAnyHumansFinished()) {
+              tmSinceFinish = 0; // don't send finish info if nobody has finished
+            }
+            break;
+          case CurrentRaceState.PostRace:
+            if(game.raceState.isAllHumansFinished()) {
+              tmSinceFinish *= 2; // if all the humans are done, send finish info twice as often
+            }
+            break;
+        }
+        if(tmSinceFinish >= 10000) {
+
+          const response:S2CFinishUpdate = new S2CFinishUpdate(game.userProvider, game.getRaceStartTime());
+          user.noteFinishUpdate(tmNow);
+
+          return sendResponse(tmNow, wsConnection, BasicMessageType.S2CFinishUpdate, game, response);
+
+        } else if(tmSinceName >= 30000) {
+
           console.log("been ", tmSinceName, " since last name update for ", user.getName());
-          const response:S2CNameUpdate = new S2CNameUpdate(game.userProvider);
+          const response:S2CNameUpdate = new S2CNameUpdate(tmNow, game.userProvider);
           user.noteLastNameUpdate(tmNow);
-          return sendResponse(wsConnection, BasicMessageType.S2CNameUpdate, response);
+
+          return sendResponse(tmNow, wsConnection, BasicMessageType.S2CNameUpdate, game, response);
+
         } else {
+
           console.log("doing a position update for user ", user.getName());
-          const response:S2CPositionUpdate = buildClientPositionUpdate(user, game.userProvider, 16);
+          const response:S2CPositionUpdate = buildClientPositionUpdate(tmNow, user, game.userProvider, 16);
   
-          return sendResponse(wsConnection, BasicMessageType.S2CPositionUpdate, response);
+          return sendResponse(tmNow, wsConnection, BasicMessageType.S2CPositionUpdate, game, response);
         }
       }
       case BasicMessageType.ClientConnectionResponse:
@@ -205,3 +180,6 @@ wss.on('connection', (wsConnection) => {
     }
   };
 });
+
+
+setUpServerHttp(races);

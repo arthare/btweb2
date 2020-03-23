@@ -1,0 +1,27 @@
+.user-set-up {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+  }
+  &__element {
+    padding-top: 16px;
+  }
+  &__title {
+    font-size: 32px;
+    margin-bottom: 32px;
+  }
+  &__label {
+    color: rgba(0,0,0,0.5);
+  }
+  &__input {
+    width: 320px;
+    height: 48px;
+    border-radius: 16px;
+    font-size: 32px;
+    text-align: center;
+  }
+  &__button {
+    @include big-button();
+  }
+}

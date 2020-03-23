@@ -22,6 +22,8 @@ export interface UserDisplay {
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
   private _lastPower:number = 0;
   private _id:number = -1; // assigned by the server.  Positive when set
+  private _tmFinish:number = -1;
+  private _tmLastPacket:number = -1;
 
   public notifyPower(tmNow:number, watts:number):void {
     this._lastPower = watts;
@@ -35,6 +37,22 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
 
   public getLastPower():number {
     return this._lastPower;
+  }
+
+  setFinishTime(tmNow:number) {
+    this._tmFinish = tmNow;
+  }
+  getRaceTimeSeconds(tmRaceStart:number):number {
+    return (this._tmFinish - tmRaceStart) / 1000.0;
+  }
+  isFinished():boolean {
+    return this._tmFinish >= 0;
+  }
+  getMsSinceLastPacket(tmNow:number):number {
+    return Math.max(0, tmNow - this._tmLastPacket);
+  }
+  public notePacket(tmNow:number) {
+    this._tmLastPacket = tmNow;
   }
 
   setId(newId:number) {
@@ -55,7 +73,7 @@ export class User extends UserDataRecorder {
 
   private _lastT:number = 0;
   private _speed:number = 0;
-  private _position:number = 0;
+  protected _position:number = 0;
   
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
@@ -127,8 +145,17 @@ export class User extends UserDataRecorder {
 
     this._speed = Math.max(0.5, this._speed  + accel * dtSeconds);
     assert2(this._speed >= 0);
-    this._position += this._speed * dtSeconds;
+
+    const lastPosition = this._position;
+    const mapLength = map.getLength();
+    this._position += Math.min(map.getLength(), this._speed * dtSeconds);
+
+    if(lastPosition < mapLength && this._position >= mapLength) {
+      this.setFinishTime(tmNow);
+    }
   }
+
+
 
   getDisplay(raceState:RaceState|null):UserDisplay {
     const map = raceState && raceState.getMap() || null;
@@ -145,7 +172,7 @@ export class User extends UserDataRecorder {
   absorbNameUpdate(name:string) {
     this._name = name;
   }
-  absorbPositionUpdate(update:S2CPositionUpdateUser) {
+  absorbPositionUpdate(tmNow:number, update:S2CPositionUpdateUser) {
     this._speed = update.speed;
     this._position = update.distance;
     if(this._typeFlags & UserTypeFlags.Local) {
@@ -155,5 +182,6 @@ export class User extends UserDataRecorder {
       console.log("We received an update about remote user ", this.getId(), this._name);
       this.notifyPower(new Date().getTime(), update.power);
     }
+    this.notePacket(tmNow);
   }
 }

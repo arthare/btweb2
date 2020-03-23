@@ -1,14 +1,20 @@
 <div class="user-set-up__content">
-    <div class="user-set-up__element">
-        {{input value=userName placeholder="Your Name"}}
-    </div>
-    <div class="user-set-up__element">
-        <button class="user-set-up__button" {{action 'connectDevice'}}>Connect Device</button>
-    </div>
-    <div class="user-set-up__element">
-        {{input value=userHandicap placeholder="Your Handicap or FTP"}}
-    </div>
-    <div class="user-set-up__element">
-        <button class="user-set-up__button" {{action 'done'}} disabled={{disableDone}}>Done</button>
-    </div>
+  <div class="user-set-up__title">
+    Set Up Your User
+  </div>
+  <div class="user-set-up__element">
+    <div class="user-set-up__label">Your Name</div>
+    {{input value=userName placeholder="Your Name" class="user-set-up__input"}}
+  </div>
+  <div class="user-set-up__element">
+    <div class="user-set-up__label">Pick Your Device</div>
+    <button class="user-set-up__button" {{action 'connectDevice'}}>Connect Device</button>
+  </div>
+  <div class="user-set-up__element">
+    <div class="user-set-up__label">Your Handicap</div>
+    {{input value=userHandicap placeholder="Your Handicap or FTP" class="user-set-up__input"}}
+  </div>
+  <div class="user-set-up__element">
+    <button class="user-set-up__button" {{action 'done'}} disabled={{disableDone}}>Done</button>
+  </div>
 </div>

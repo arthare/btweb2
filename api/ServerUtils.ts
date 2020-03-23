@@ -16,7 +16,7 @@ export class PureCosineMap extends RideMapPartial {
   }
 }
 export function makeSimpleMap() {
-  const pureCosineMap = new PureCosineMap(5000);
+  const pureCosineMap = new PureCosineMap(50);
 
   const map:RideMap = new RideMapHandicap(new ServerMapDescription(pureCosineMap));
   return map;
