@@ -15,6 +15,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   const w = canvas.width;
   const h = canvas.height;
 
+  ctx.resetTransform();
   const skyGradient = ctx.createLinearGradient(0,0,w,h);
   skyGradient.addColorStop(0, "#35D6ed");
   skyGradient.addColorStop(1, "#c9f6ff");

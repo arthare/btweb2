@@ -154,7 +154,6 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     charOut.setUint8(5, 33);
     charOut.setUint8(6, 0);
 
-    console.log("ftms device talking about slope ", slopeInWholePercent);
     writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut);
   }
   

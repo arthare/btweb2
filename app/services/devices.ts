@@ -52,6 +52,7 @@ export default class Devices extends Service.extend({
   getUsers(tmNow:number):User[] {
     return this.users.filter((user) => {
       return user.getUserType() & UserTypeFlags.Local ||
+             user.getUserType() & UserTypeFlags.Ai ||
              user.getMsSinceLastPacket(tmNow) < 5000 ||
              user.isFinished();
     });

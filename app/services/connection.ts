@@ -20,7 +20,7 @@ export default class Connection extends Service.extend({
   _lastServerRaceState:S2CRaceStateUpdate|null = null;
   raceResults:S2CFinishUpdate|null = null;
 
-  _performStartupNegotiate(ws:WebSocket, user:User, accountId:string):Promise<ClientConnectionResponse> {
+  _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
     return new Promise((resolve, reject) => {
       ws.onmessage = (msg:MessageEvent) => {
@@ -43,7 +43,7 @@ export default class Connection extends Service.extend({
         riderName: user.getName(),
         accountId: accountId,
         riderHandicap: user.getHandicap(),
-        gameId: 'asdf',
+        gameId: gameId,
       }
       const bm:C2SBasicMessage = {
         payload: connect,
@@ -73,7 +73,7 @@ export default class Connection extends Service.extend({
       if(!user) {
         throw new Error("You don't have a user, how do you expect to connect?");
       }
-      return this._performStartupNegotiate(ws, user, accountId).then((ccr:ClientConnectionResponse) => {
+      return this._performStartupNegotiate(ws, user, accountId, gameId).then((ccr:ClientConnectionResponse) => {
         user.setId(ccr.yourAssignedId);
 
         const map = new RideMapHandicap(ccr.map);

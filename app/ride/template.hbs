@@ -1,23 +1,7 @@
 {{#if connection.preRace}}
   {{display-pre-race frame=frame localRiders=localRiders remoteRiders=remoteRiders}}
 {{else if connection.racing}}
-  {{#each localRiders as |riderDisplay|}}
-    <div>
-      Name: {{riderDisplay.name}}<br />
-      Position: {{riderDisplay.distance}}<br />
-      Speed: {{riderDisplay.speed}}<br />
-      Slope: {{riderDisplay.slope}}<br />
-    </div>
-  {{/each}}
-  <h3>Remote Riders</h3>
-  {{#each remoteRiders as |riderDisplay|}}
-    <div>
-      Name: {{riderDisplay.name}}<br />
-      Position: {{riderDisplay.distance}}<br />
-      Speed: {{riderDisplay.speed}}<br />
-      Slope: {{riderDisplay.slope}}<br />
-    </div>
-  {{/each}}
+  {{display-race raceState=_raceState}}
 {{else if connection.postRace}}
   {{display-post-race frame=frame results=connection.raceResults}}
 {{/if}}

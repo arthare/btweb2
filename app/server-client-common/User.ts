@@ -199,7 +199,6 @@ export class User extends UserDataRecorder implements SlopeSource {
       // we're local, so we won't re-absorb the power from the server
     } else {
       // we're a remote or AI user, so we should try to be as similar to the server as possible
-      console.log("We received an update about remote user ", this.getId(), this._name);
       this.notifyPower(new Date().getTime(), update.power);
     }
     this.notePacket(tmNow);

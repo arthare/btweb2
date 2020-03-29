@@ -53,9 +53,9 @@ class Rng {
 
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
-const map = makeSimpleMap(50);
-const sg = new ServerGame(map, 'asdf', 10);
-races.set('asdf', sg);
+const map = makeSimpleMap(15000);
+const sg = new ServerGame(map, 'Will Start On Join', 10);
+races.set('Will Start On Join', sg);
 
 function hasRaceAtTime(tmWhen) {
   let found;
@@ -218,7 +218,6 @@ wss.on('connection', (wsConnection) => {
 
         } else {
 
-          console.log("doing a position update for user ", user.getName());
           const response:S2CPositionUpdate = buildClientPositionUpdate(tmNow, user, game.userProvider, 16);
   
           return sendResponse(tmNow, wsConnection, BasicMessageType.S2CPositionUpdate, game, response);

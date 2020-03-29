@@ -17,9 +17,10 @@ export default class LeaderBoard extends Component.extend({
 
   @computed("frame")
   get rankings():UserDisplay[]|null {
+    const tmNow = new Date().getTime();
     const rs:RaceState|null = this.get('raceState');
     if(rs) {
-      let users = rs.getUserProvider().getUsers();
+      let users = rs.getUserProvider().getUsers(tmNow);
 
       users = users.sort((u1, u2) => {
         return u1.getDistance() > u2.getDistance() ? -1 : 1;
