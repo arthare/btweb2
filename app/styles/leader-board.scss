@@ -1,0 +1,51 @@
+.leader-board {
+  &__container {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 1px solid black;
+    max-width: 320px;
+  }
+  &__title {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 16px;
+  }
+  &__rank {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    padding: 4px;
+    box-sizing: border-box;
+    border-top: 0.5px solid rgba(0,0,0,1.0);
+
+    background-color: rgb(255,255,255);
+
+    &:nth-child(2n+1) {
+      background-color: rgb(240,240,240);
+    }
+
+    &.local.human {
+      font-weight: bold;
+    }
+    &.ai {
+      font-weight: lighter;
+      font-style: italic;
+    }
+    &.human {
+      background-color: rgb(255,200,200);
+    }
+
+    &-text {
+      flex: 0 0 32px;
+    }
+    &-name {
+      flex: 1 1 0px;
+    }
+    &-distance {
+      flex: 0 0 64px;
+    }
+  }
+}

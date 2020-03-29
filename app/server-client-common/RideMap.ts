@@ -15,6 +15,29 @@ export abstract class RideMapPartial implements RideMapElevationOnly {
   abstract getLength():number;
 }
 
+
+export class PureCosineMap extends RideMapPartial {
+  _length:number;
+  constructor(length:number) {
+    super();
+    this._length = length;
+  }
+  getElevationAtDistance(meters: number): number {
+    return Math.sin(meters / 1000)*25;
+  }
+  getLength(): number {
+    return this._length;
+  }
+}
+
+export interface MapBounds {
+  minElev:number;
+  maxElev:number;
+  minDist:number;
+  maxDist:number;
+}
+
 export interface RideMap extends RideMapPartial {
   getPowerTransform(who:User):(power:number)=>number;
+  getBounds():MapBounds;
 }

@@ -17,6 +17,7 @@ export interface UserDisplay {
   speed: string;
   slope: string;
   elevation: string;
+  classString: string;
 }
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
@@ -159,6 +160,20 @@ export class User extends UserDataRecorder {
 
   getDisplay(raceState:RaceState|null):UserDisplay {
     const map = raceState && raceState.getMap() || null;
+
+    let classes = [];
+    if(this._typeFlags & UserTypeFlags.Local) {
+      classes.push("local");
+    }
+    if(!(this._typeFlags & UserTypeFlags.Ai)) {
+      classes.push("human");
+    } else {
+      classes.push("ai");
+    }
+    if(this._typeFlags & UserTypeFlags.Remote) {
+      classes.push("remote");
+    }
+
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
@@ -166,6 +181,7 @@ export class User extends UserDataRecorder {
       speed: (this._speed*3.6).toFixed(1) + 'km/h',
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
+      classString: classes.join(' '),
     }
   }
 

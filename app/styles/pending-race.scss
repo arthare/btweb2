@@ -1,0 +1,21 @@
+.pending-race {
+  &__key {
+    font-weight: bold;
+  }
+  &__value {
+
+  }
+  &__row {
+    text-align: left;
+  }
+  &__content {
+    border: 1px solid white;
+    padding: 16px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  &__join-button {
+    @include big-button();
+  }
+}

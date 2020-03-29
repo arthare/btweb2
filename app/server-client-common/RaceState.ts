@@ -77,4 +77,7 @@ export class RaceState {
     })
   }
 
+  getUserProvider():UserProvider {
+    return this._userProvider;
+  }
 }

@@ -16,6 +16,6 @@ export function formatSecondsHms(seconds:number) {
     const m = Math.floor(seconds / 60);
     seconds -= m*60;
 
-    return `${h}h ${m}m ${seconds.toFixed(1)}`;
+    return `${h}h ${m}m ${seconds.toFixed(1)}s`;
   }
 }

@@ -1,4 +1,4 @@
-import { RideMapPartial } from "./RideMap";
+import { RideMapPartial, MapBounds } from "./RideMap";
 import { User } from "./User";
 import { ServerMapDescription } from "./communication";
 import { assert2 } from "./Utils";
@@ -6,10 +6,29 @@ import { assert2 } from "./Utils";
 export class RideMapHandicap extends RideMapPartial {
   _length:number;
   _mapDesc:ServerMapDescription;
+
+  minDist:number;
+  maxDist:number;
+  minElev:number;
+  maxElev:number;
+
   constructor(mapDesc:ServerMapDescription) {
     super();
+    if(mapDesc.elevations.length <= 0 || mapDesc.distances.length <= 0) {
+      throw new Error("Map description is bogus");
+    }
     this._length = mapDesc.distances[mapDesc.distances.length-1];
     this._mapDesc = mapDesc;
+
+    this.minDist = mapDesc.distances[0];
+    this.maxDist = this._length;
+    this.minElev = mapDesc.elevations[0];
+    this.maxElev = mapDesc.elevations[0];
+    mapDesc.elevations.forEach((elev) => {
+      this.minElev = Math.min(elev, this.minElev);
+      this.maxElev = Math.max(elev, this.maxElev);
+    })
+
   }
   
   _indexBelowMeters(targetMeters:number):number {
@@ -65,6 +84,14 @@ export class RideMapHandicap extends RideMapPartial {
 
   getLength():number {
     return this._length;
+  }
+  getBounds():MapBounds {
+    return {
+      minElev: this.minElev,
+      maxElev: this.maxElev,
+      minDist: this.minDist,
+      maxDist: this.maxDist,
+    }
   }
   
 }

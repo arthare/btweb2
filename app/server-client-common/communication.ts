@@ -166,12 +166,24 @@ export class ServerHttpGameListElement {
     this.whoIn = game.userProvider.getUsers(tmNow).filter((user) => {
       return !(user.getUserType() & UserTypeFlags.Ai);
     }).map((user) => user.getName());
+
+    const n = 100;
+    const map = game.raceState.getMap();
+    const mapLen = map.getLength();
+    this.elevations = [];
+    for(var x = 0;x < 100; x++) {
+      const pct = x / n;
+      
+      const elev = map.getElevationAtDistance(pct*mapLen);
+      this.elevations.push(elev);
+    }
   }
   name: string;
   status: CurrentRaceState;
   tmScheduledStart: number;
   tmActualStart: number;
   whoIn: string[];
+  elevations: number[];
 }
 export interface ServerHttpGameList {
   races: ServerHttpGameListElement[];

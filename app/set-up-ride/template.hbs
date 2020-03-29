@@ -5,6 +5,6 @@
   </div>
 
   {{#each model.races as |race|}}
-    {{pending-race race=race joinRace=(action 'joinRace')}}
+    {{pending-race frame=frame race=race joinRace=(action 'joinRace')}}
   {{/each}}
 </div>

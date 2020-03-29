@@ -53,9 +53,60 @@ class Rng {
 
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
-const map = makeSimpleMap();
+const map = makeSimpleMap(50);
 const sg = new ServerGame(map, 'asdf');
 races.set('asdf', sg);
+
+function hasRaceAtTime(tmWhen) {
+  let found;
+  races.forEach((value:ServerGame, key) => {
+    if(value.getRaceScheduledStartTime() === tmWhen) {
+      found = key;
+    }
+  });
+
+  if(found) {
+    return true;
+  }
+  return false;
+}
+
+function populatePrescheduledRaces() {
+  const ms15Minutes = 15 * 60000;
+
+  // this will get us a precise timestamp every 15 minutes
+  const tmNow = new Date().getTime();
+  const tmNowish = Math.floor(tmNow / ms15Minutes)*ms15Minutes;
+
+  let nPreschedule = 6;
+  for(var x = tmNowish; x < tmNowish + nPreschedule*ms15Minutes; x += ms15Minutes) {
+    if(x < tmNow) {
+      continue; // in the past, we don't care
+    }
+    const tmOfPreschedule = x;
+    if(hasRaceAtTime(tmNowish)) {
+      // ok we already have this one
+    } else {
+      // gotta make a new race!
+      const c15s = Math.floor(x / ms15Minutes);
+      let map:RideMap;
+      if(c15s & 1) {
+        map = makeSimpleMap(20000)
+      } else {
+        map = makeSimpleMap(40000);
+      }
+      let date = new Date(x);
+      const name = `${(map.getLength() / 1000).toFixed(1)}km on CosineMap. ${date.toISOString()}`;
+      const sg = new ServerGame(map, name);
+      sg.scheduleRaceStartTime(x);
+      console.log("making prescheduled race at ", date.toLocaleTimeString());
+      races.set(name, sg);
+    }
+  }
+  setTimeout(populatePrescheduledRaces, ms15Minutes);
+}
+populatePrescheduledRaces();
+
 
 const lastSentTo:Map<number,Rng> = new Map<number,Rng>();
 function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:UserProvider, n:number):S2CPositionUpdate {

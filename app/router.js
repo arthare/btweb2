@@ -11,6 +11,7 @@ Router.map(function() {
   this.route('set-up-ride');
   this.route('ride', {path:'/ride/:gameId'});
   this.route('set-up-join');
+  this.route('test-hacks');
 });
 
 export default Router;

@@ -90,6 +90,9 @@ export class ServerGame {
     this._scheduleTick();
     return newId;
   }
+  public scheduleRaceStartTime(tmWhen:number) {
+    this._tmScheduledRaceStart = tmWhen;
+  }
   public getLastRaceState():CurrentRaceState {
     return this._lastRaceStateMode;
   }
