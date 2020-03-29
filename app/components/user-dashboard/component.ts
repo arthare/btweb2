@@ -9,6 +9,8 @@ export default class UserDashboard extends Component.extend({
   user: <User|null>null,
   frame: <number|null>null,
   raceState: <RaceState|null>null,
+
+  classNames: ['user-dashboard__container'],
 }) {
   // normal class body definition here
   didInsertElement() {

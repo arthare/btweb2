@@ -43,15 +43,21 @@ export class ServerUserProvider implements UserProvider {
   getUsers(tmNow:number): User[] {
     return this.users.filter((user) => {
       return user.getMsSinceLastPacket(tmNow) < 5000 ||  // either this user is still obviously connected
-             user.isFinished(); // or this user has finished
+             user.isFinished() ||
+             user.getUserType() & UserTypeFlags.Ai; // or this user has finished
     });
   }
   getUser(id:number):ServerUser|null {
     return this.users.find((user) => user.getId() === id) || null;
   }
-  addUser(ccr:ClientConnectionRequest):number {
+  addUser(ccr:ClientConnectionRequest, userTypeFlags?:UserTypeFlags):number {
+
+    if(!userTypeFlags) {
+      userTypeFlags = 0;
+    }
+
     let newId = userIdCounter++;
-    const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote);
+    const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
     user.setId(newId);
     this.users.push(user);
     userIdToUserMap.set(newId, user);
@@ -61,9 +67,19 @@ export class ServerUserProvider implements UserProvider {
   users:ServerUser[];
 }
 export class ServerGame {
-  constructor(map:RideMap, gameId:string) {
+  constructor(map:RideMap, gameId:string, cAis:number) {
     this.userProvider = new ServerUserProvider();
     this.raceState = new RaceState(map, this.userProvider, gameId);
+
+    for(var x = 0;x < cAis; x++) {
+      this.userProvider.addUser({
+        riderName:`AI ${x}`,
+        accountId:"-1",
+        riderHandicap:300,
+        gameId:gameId,
+      }, UserTypeFlags.Ai)
+    }
+
     this._timeout = null;
     this._tmScheduledRaceStart = -1;
     this._tmRaceStart = -1;
@@ -109,6 +125,12 @@ export class ServerGame {
     const tmNow = new Date().getTime();
 
     let thisRaceState:CurrentRaceState|null = null;
+
+    this.userProvider.getUsers(tmNow).forEach((user:User) => {
+      if(user.getUserType() & UserTypeFlags.Ai) {
+        user.notifyPower(tmNow, Math.random()*50 + 225);
+      }
+    })
 
     if(tmNow < this._tmScheduledRaceStart) {
       // not ready for race start yet, so don't run the physics

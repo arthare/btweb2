@@ -54,7 +54,7 @@ class Rng {
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
 const map = makeSimpleMap(50);
-const sg = new ServerGame(map, 'asdf');
+const sg = new ServerGame(map, 'asdf', 10);
 races.set('asdf', sg);
 
 function hasRaceAtTime(tmWhen) {
@@ -97,7 +97,7 @@ function populatePrescheduledRaces() {
       }
       let date = new Date(x);
       const name = `${(map.getLength() / 1000).toFixed(1)}km on CosineMap. ${date.toISOString()}`;
-      const sg = new ServerGame(map, name);
+      const sg = new ServerGame(map, name, 10);
       sg.scheduleRaceStartTime(x);
       console.log("making prescheduled race at ", date.toLocaleTimeString());
       races.set(name, sg);

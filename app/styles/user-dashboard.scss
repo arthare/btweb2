@@ -1,0 +1,14 @@
+.user-dashboard {
+  &__container {
+    background-color: white;
+  }
+  &__tr {
+    background-color: white;
+    & td {
+      padding: 8px;
+    }
+    &:nth-child(2n+1) {
+      background-color: rgb(220,220,220);
+    }
+  }
+}

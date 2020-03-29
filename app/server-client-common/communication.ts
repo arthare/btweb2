@@ -166,6 +166,9 @@ export class ServerHttpGameListElement {
     this.whoIn = game.userProvider.getUsers(tmNow).filter((user) => {
       return !(user.getUserType() & UserTypeFlags.Ai);
     }).map((user) => user.getName());
+    this.whoInAi = game.userProvider.getUsers(tmNow).filter((user) => {
+      return user.getUserType() & UserTypeFlags.Ai;
+    }).map((user) => user.getName());
 
     const n = 100;
     const map = game.raceState.getMap();
@@ -183,6 +186,7 @@ export class ServerHttpGameListElement {
   tmScheduledStart: number;
   tmActualStart: number;
   whoIn: string[];
+  whoInAi: string[];
   elevations: number[];
 }
 export interface ServerHttpGameList {

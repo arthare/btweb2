@@ -47,19 +47,19 @@ export default class TestHacks extends Controller.extend({
     const userProvider = new FakeUserProvider();
     this.set('raceState', new RaceState(fullMap, userProvider, "Test Game"));
 
+
     const fnUpdatePowers = () => {
       if(!this.isDestroyed) {
         const tmNow = new Date().getTime();
-        userProvider.getUsers(tmNow).forEach((user:User) => {
-          user.notifyPower(tmNow, 200 + Math.random()*50);
+        userProvider.getUsers(tmNow).forEach((user) => {
+          user.notifyPower(tmNow, Math.random()*50 + 200);
         })
-
-        this.incrementProperty('frame');
 
         setTimeout(fnUpdatePowers, 200);
       }
     }
     setTimeout(fnUpdatePowers);
+    
 
   }
 }
