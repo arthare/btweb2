@@ -1,4 +1,5 @@
-import { WebBluetoothDevice, ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient } from "./WebBluetoothDevice";
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice } from "./WebBluetoothDevice";
+import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps } from "./DeviceUtils";
 
 export interface DeviceFactory {
     findPowermeter():Promise<ConnectedDeviceInterface>;
@@ -7,7 +8,7 @@ export interface DeviceFactory {
     findTrainer():Promise<ConnectedDeviceInterface>;
 }
 
-class TestPowermeter extends PowerDataDistributor {
+export class TestPowermeter extends PowerDataDistributor {
     _interval:any = null;
 
     constructor() {
@@ -38,11 +39,40 @@ class TestPowermeter extends PowerDataDistributor {
     hasHrm(): boolean {
         return false;
     }
+    updateSlope(tmNow:number): void {
+      return;
+    }
 }
 
 class TestDeviceFactory implements DeviceFactory {
     findPowermeter():Promise<ConnectedDeviceInterface>{
-        return Promise.resolve(new TestPowermeter());
+
+      const filters = {
+        filters: [
+          {services: ['cycling_power']},
+          {services: ['fitness_machine']},
+        ]
+      }
+      return navigator.bluetooth.requestDevice(filters).then((device) => {
+        if(device.gatt) {
+          return device.gatt.connect();
+        } else {
+          throw new Error("No device gatt?");
+        }
+      }).then((gattServer) => {
+        return gattServer.getPrimaryServices().then((services) => {
+          const ftms = getFtms(services);
+          const cps = getCps(services);
+
+          if(ftms) {
+            return new BluetoothFtmsDevice(gattServer);
+          } else if(cps) {
+            throw new Error("Cps not implemented yet");
+          } else {
+            throw new Error("We don't recognize what kind of device this is");
+          }
+        })
+      });
     }
     findHrm():Promise<ConnectedDeviceInterface> {
         throw new Error("Test HRM not implemented");

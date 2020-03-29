@@ -1,4 +1,4 @@
-import { CadenceRecipient, PowerRecipient, HrmRecipient } from "../pojs/WebBluetoothDevice";
+import { CadenceRecipient, PowerRecipient, HrmRecipient, SlopeSource } from "../pojs/WebBluetoothDevice";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { RaceState } from "./RaceState";
@@ -39,7 +39,6 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   public getLastPower():number {
     return this._lastPower;
   }
-
   setFinishTime(tmNow:number) {
     this._tmFinish = tmNow;
   }
@@ -65,12 +64,13 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   }
 }
 
-export class User extends UserDataRecorder {
+export class User extends UserDataRecorder implements SlopeSource {
 
   private _massKg: number;
   private _handicap: number;
   private _typeFlags:number;
   private _name:string;
+  private _lastSlopeWholePercent:number = 0;
 
   private _lastT:number = 0;
   private _speed:number = 0;
@@ -84,6 +84,9 @@ export class User extends UserDataRecorder {
     this._typeFlags = typeFlags;
     this._name = name;
     this._lastT = new Date().getTime() / 1000.0;
+  }
+  getLastSlopeInWholePercent(): number {
+    return this._lastSlopeWholePercent;
   }
 
   getDistance():number {
@@ -126,6 +129,7 @@ export class User extends UserDataRecorder {
     const aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
 
     const slope = map.getSlopeAtDistance(this._position);
+    this._lastSlopeWholePercent = slope*100;
     const theta = Math.atan(slope);
 
     const sinSquared = Math.sin(theta)*Math.sin(theta);

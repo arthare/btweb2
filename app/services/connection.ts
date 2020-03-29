@@ -84,7 +84,7 @@ export default class Connection extends Service.extend({
         return this._raceState;
       })
     }).then((raceState:RaceState) => {
-      this.scheduleTick();
+      this.scheduleNetworkTick();
       return raceState;
     })
     
@@ -173,7 +173,7 @@ export default class Connection extends Service.extend({
         payload: update,
       };
       this._ws.send(JSON.stringify(wrapper));
-      this.scheduleTick();
+      this.scheduleNetworkTick();
     }
   }
 
@@ -185,7 +185,7 @@ export default class Connection extends Service.extend({
     }
   }
 
-  scheduleTick() {
+  scheduleNetworkTick() {
     this._timeout = setTimeout(() => {
       this.tick();
     }, 500);

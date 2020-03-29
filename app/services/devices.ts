@@ -2,7 +2,7 @@ import Service from '@ember/service';
 import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
-import { UserProvider } from 'bt-web2/server-client-common/RaceState';
+import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
 import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 import Ember from 'ember';
 
@@ -40,15 +40,10 @@ export default class Devices extends Service.extend({
     const newUser = new User(user.name, 80, user.handicap, UserTypeFlags.Local);
     this.users.push(newUser);
     const device = user.device;
-    if(device.hasCadence()) {
-      device.setCadenceRecipient(newUser);
-    }
-    if(device.hasPower()) {
-      device.setPowerRecipient(newUser);
-    }
-    if(device.hasHrm()) {
-      device.setHrmRecipient(newUser);
-    }
+    device.setCadenceRecipient(newUser);
+    device.setPowerRecipient(newUser);
+    device.setHrmRecipient(newUser);
+    device.setSlopeSource(newUser);
   }
   getLocalUser():User|undefined {
     return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
@@ -60,6 +55,11 @@ export default class Devices extends Service.extend({
              user.getMsSinceLastPacket(tmNow) < 5000 ||
              user.isFinished();
     });
+  }
+  updateSlopes(tmNow:number) {
+    this.devices.forEach((device) => {
+      device.updateSlope(tmNow);
+    })
   }
   getUser(id:number):User|null {
     return this.users.find((user) => user.getId() === id) || null;

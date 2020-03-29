@@ -54,6 +54,8 @@ export default class Ride extends Controller.extend({
       throw new Error("Failed to find race state");
     }
     raceState.tick(tmNow);
+
+    this.devices.updateSlopes(tmNow);
     
 
 

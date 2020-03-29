@@ -1,3 +1,4 @@
+import { writeToCharacteristic, monitorCharacteristic } from "./DeviceUtils";
 
 export enum BTDeviceState {
   Ok,
@@ -15,33 +16,32 @@ export interface CadenceRecipient {
 export interface HrmRecipient {
   notifyHrm(tmNow:number, hrm:number):void;
 }
+export interface SlopeSource {
+  getLastSlopeInWholePercent():number;
+}
 
 export interface ConnectedDeviceInterface {
   disconnect():Promise<void>;
   getState():BTDeviceState;
   name():string;
 
-  hasPower():boolean;
-  hasCadence():boolean;
-  hasHrm():boolean;
-
   setPowerRecipient(who:PowerRecipient):void;
   setCadenceRecipient(who:CadenceRecipient):void;
   setHrmRecipient(who:HrmRecipient):void;
+  setSlopeSource(who:SlopeSource):void;
+  updateSlope(tmNow:number):void; // tell your device to update its slope
 }
 
 export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   private _powerOutput:PowerRecipient[] = [];
   private _cadenceOutput:CadenceRecipient[] = [];
   private _hrmOutput:HrmRecipient[] = [];
+  protected _slopeSource:SlopeSource|null = null;
 
   abstract disconnect():Promise<void>;
   abstract getState():BTDeviceState;
   abstract name():string;
-
-  abstract hasPower():boolean;
-  abstract hasCadence():boolean;
-  abstract hasHrm():boolean;
+  abstract updateSlope(tmNow:number):void;
 
   public setPowerRecipient(who: PowerRecipient): void {
     this._powerOutput.push(who);
@@ -52,63 +52,209 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   public setHrmRecipient(who: HrmRecipient): void {
     this._hrmOutput.push(who);
   }
+  public setSlopeSource(who: SlopeSource):void {
+    this._slopeSource = who;
+  }
 
   protected _notifyNewPower(tmNow:number, watts:number) :void {
     this._powerOutput.forEach((pwr) => {
       pwr.notifyPower(tmNow, watts);
     });
   }
+  protected _notifyNewCadence(tmNow:number, cadence:number) :void {
+    this._cadenceOutput.forEach((pwr) => {
+      pwr.notifyCadence(tmNow, cadence);
+    });
+  }
+
 }
 
-export abstract class WebBluetoothDevice extends PowerDataDistributor {
-  gattDevice:BluetoothDevice;
+
+abstract class BluetoothDeviceShared extends PowerDataDistributor {
+  protected _gattDevice:BluetoothRemoteGATTServer;
+  protected _state:BTDeviceState;
+
+  public _startupPromise:Promise<any> = Promise.resolve();
 
 
-  constructor(gattDevice:BluetoothDevice) {
+  constructor(gattDevice:BluetoothRemoteGATTServer) {
     super();
-    this.gattDevice = gattDevice;
-  }
-  connect() : Promise<BluetoothRemoteGATTServer> {
-    if(this.gattDevice.gatt) {
-      return this.gattDevice.gatt.connect();
-    } else {
-      throw new Error("No Gatt Device");
-    }
+    this._gattDevice = gattDevice;
+    this._state = BTDeviceState.Disconnected;
   }
   disconnect(): Promise<void> {
-    throw new Error("Method not implemented.");
+    this._gattDevice.disconnect();
+    return Promise.resolve();
   }
   getState(): BTDeviceState {
-    throw new Error("Method not implemented.");
+    return this._state;
   }
   name(): string {
-    throw new Error("Method not implemented.");
+    return this._gattDevice.device.name || "Unknown";
   }
-  abstract hasPower():boolean;
-  abstract hasCadence():boolean;
-  abstract hasHrm():boolean;
+  abstract hasPower(): boolean;
+  abstract hasCadence(): boolean;
+  abstract hasHrm(): boolean;
+
 }
 
-export class PowermeterDevice extends WebBluetoothDevice {
-  constructor(gattDevice:BluetoothDevice) {
-    super(gattDevice);
-  }
-  connect():Promise<BluetoothRemoteGATTServer> {
-    return super.connect().then((server:BluetoothRemoteGATTServer) => {
-      // alright, so they claim this is a powermeter.  Let's grab cycling power service and get it hooked up
+export class BluetoothFtmsDevice extends BluetoothDeviceShared {
+  _hasSeenCadence: boolean = false;
 
-      return server.getPrimaryService('cycling_power').then((cps) => {
-        // hooray, cps!
-        return cps.getCharacteristic('cycling_power_measurement').then((cpm) => {
-          cpm.addEventListener('characteristicvaluechanged', (evt:any) => {
-            if(evt && evt.target) {
-              return this._parseCpmEvent(evt.target.value);
-            }
-          })
-        })
+  constructor(gattDevice:BluetoothRemoteGATTServer) {
+    super(gattDevice);
+
+    this._startupPromise = this._startupPromise.then(() => {
+      // need to start up property monitoring for ftms
+
+      const fnIndoorBikeData = (evt:any) => { this._decodeIndoorBikeData(evt.target.value)};
+      return monitorCharacteristic(gattDevice, 'fitness_machine', 'indoor_bike_data', fnIndoorBikeData).then(() => {
+
+        const fnFtmsStatus = (evt:any) => { this._decodeFitnessMachineStatus(evt.target.value)};
+        return monitorCharacteristic(gattDevice, 'fitness_machine', 'fitness_machine_status', fnFtmsStatus);
       }).then(() => {
-        return server;
-      })
+        const fnFtmsControlPoint = (evt:any) => { this._decodeFtmsControlPoint(evt.target.value)};
+        return monitorCharacteristic(gattDevice, 'fitness_machine', 'fitness_machine_control_point', fnFtmsControlPoint);
+      }).then(() => {
+        const charOut = new DataView(new ArrayBuffer(1));
+        charOut.setUint8(0, 0); // request control
+    
+        return writeToCharacteristic(gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut);
+      });
+    })
+  }
+
+  _tmLastSlopeUpdate:number = 0;
+  updateSlope(tmNow:number):void {
+    // this is not a trainer, but we don't want to force all the powermeters and hrms to implement this method.
+    if(!this._slopeSource) {
+      return;
+    }
+
+    const dtMs = tmNow - this._tmLastSlopeUpdate;
+    if(dtMs < 500) {
+      return; // don't update the ftms device too often
+    }
+    this._tmLastSlopeUpdate = tmNow;
+
+    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
+    const charOut = new DataView(new ArrayBuffer(20));
+    charOut.setUint8(0, 0x11); // setIndoorBikesimParams
+
+    // the actual object looks like:
+    // typedef struct
+    // {
+    //   int16_t windMmPerSec;
+    //   int16_t gradeHundredths;
+    //   uint8_t crrTenThousandths;
+    //   uint8_t windResistanceCoefficientHundredths; // in "kilograms per meter"
+    // } INDOORBIKESIMPARAMS;
+    charOut.setInt16(1, 0, true);
+    charOut.setInt16(3, slopeInWholePercent*100, true);
+    charOut.setUint8(5, 33);
+    charOut.setUint8(6, 0);
+
+    console.log("ftms device talking about slope ", slopeInWholePercent);
+    writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut);
+  }
+  
+  hasPower(): boolean {
+    return true;
+  }
+  hasCadence(): boolean {
+    return this._hasSeenCadence;
+  }
+  hasHrm():boolean {
+    return false;
+  }
+  _decodeFtmsControlPoint(dataView:DataView):any {
+    // we're mainly just looking for the "control not permitted" response so we can re-request control
+    if(dataView.getUint8(0) === 0x80) {
+      // this is a response
+      if(dataView.getUint8(2) === 0x5) {
+        // this says "control not permitted"
+        const dvTakeControl:DataView = new DataView(new ArrayBuffer(1));
+        dvTakeControl.setUint8(0, 0);
+        console.log("taking control");
+        return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', dvTakeControl);
+      }
+    }
+  }
+  _decodeIndoorBikeData(dataView:DataView) {
+
+    const tmNow = new Date().getTime();
+    const update:any = {};
+
+    const flags = dataView.getUint16(0, true);
+    
+    const MORE_DATA = 1<<0;
+    const AVERAGE_SPEED = 1<<1;
+    const INSTANT_CADENCE = 1<<2;
+    const AVERAGE_CADENCE = 1<<3;
+    const TOTALDISTANCE = 1<<4;
+    const RESISTANCELEVEL = 1<<5;
+    const INSTANT_POWER = 1<<6;
+    const AVERAGE_POWER = 1<<7;
+    const EXPENDED_ENERGY = 1<<8;
+    const HEART_RATE = 1<<9;
+    
+    let pos = 2;
+    if(!(flags & MORE_DATA)) {
+      const kph100 = dataView.getUint16(pos, true);
+      pos += 2;
+
+      update.lastSpeedKph = kph100 / 100;
+    }
+    if(flags & AVERAGE_SPEED) {
+      pos += 2; // we don't care about this, so we'll just skip the bytes
+    }
+
+    if(flags & INSTANT_CADENCE) {
+      const cadence2 = dataView.getUint16(pos, true);
+      pos += 2;
+      this._notifyNewCadence(tmNow, cadence2 / 2);
+      this._hasSeenCadence = true;
+    }
+    
+
+    if(flags & AVERAGE_CADENCE) {
+      pos += 2;
+    }
+
+    if(flags & TOTALDISTANCE) {
+      pos += 3;
+    }
+
+    if(flags & RESISTANCELEVEL) {
+      pos += 2;
+    }
+
+    if(flags & INSTANT_POWER) {
+      const power = dataView.getInt16(pos, true);
+      pos += 2;
+      this._notifyNewPower(tmNow, power);
+    }
+
+    if(flags & AVERAGE_POWER) {
+      pos += 2;
+    }
+
+
+  }
+  _decodeFitnessMachineStatus(value:DataView) {
+    console.log("ftms status: ", value);
+  }
+}
+
+
+export class PowermeterDevice extends BluetoothDeviceShared {
+  constructor(gattDevice:BluetoothRemoteGATTServer) {
+    super(gattDevice);
+    this._startupPromise = this._startupPromise.then(() => {
+      
+      const fnCps = (evt:any) => {this._parseCpmEvent(evt.target.value);};
+      return monitorCharacteristic(gattDevice, 'cycling_power', 'cycling_power_measurement', fnCps);
+
     })
   }
   hasPower():boolean {
@@ -122,6 +268,10 @@ export class PowermeterDevice extends WebBluetoothDevice {
   }
 
   _parseCpmEvent(buf:DataView) {
-    debugger; // todo: finish me
+    console.log("todo: gotta parse cps: ", buf);
+  }
+
+  updateSlope(tmNow:number) {
+
   }
 }
