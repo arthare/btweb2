@@ -8,6 +8,7 @@ import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { UserTypeFlags, UserDisplay } from 'bt-web2/server-client-common/User';
 import Connection from 'bt-web2/services/connection';
+import ENV from 'bt-web2/config/environment';
 
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
@@ -26,7 +27,7 @@ export default class Ride extends Controller.extend({
     if(!user) {
       throw new Error("User isn't valid");
     }
-    const targetHost = 'localhost';
+    const targetHost = ENV.gameServerHost;
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState:RaceState) => {
       this._raceState = raceState;
       this.myTimeout = setTimeout(() => this._tick(), 15);

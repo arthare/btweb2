@@ -241,7 +241,6 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
 
   }
   _decodeFitnessMachineStatus(value:DataView) {
-    console.log("ftms status: ", value);
   }
 }
 

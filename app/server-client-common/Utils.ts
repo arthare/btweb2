@@ -1,6 +1,8 @@
 export function assert2(f:any, reason?:string) {
   if(!f) {
-    console.error("Assert failure: ", reason, new Error().stack?.toString());
+    const err = new Error();
+    
+    console.error("Assert failure: ", reason, err && err.stack && err.stack.toString && err.stack.toString());
     debugger;
   }
 }

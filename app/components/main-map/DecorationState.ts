@@ -46,7 +46,6 @@ export class DecorationState {
   }
   public draw(ctx:CanvasRenderingContext2D, layer:Layer) {
     const rg = this._decorations.get(layer);
-    console.log("drawing ", rg.length, " for layer ", layer);
     if(rg) {
       rg.forEach((dec) => {
         dec.draw(ctx)

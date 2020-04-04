@@ -19,6 +19,7 @@ export interface UserDisplay {
   slope: string;
   elevation: string;
   classString: string;
+  lastWattsSaved: string;
 }
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
@@ -76,6 +77,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _lastT:number = 0;
   private _speed:number = 0;
   protected _position:number = 0;
+  private _lastWattsSaved:number = 0;
   
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
@@ -127,7 +129,34 @@ export class User extends UserDataRecorder implements SlopeSource {
 
     const rho = 1.225;
     const cda = 0.25;
-    const aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
+    let aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
+
+
+    const draftingClose = 2;
+    const draftingFar = 10;
+    let closestRider:User|null = null;
+    let closestRiderDist:number = 1e30;
+    otherUsers.forEach((user) => {
+      const userAhead = user.getDistance() - this.getDistance();
+      if(userAhead >= draftingClose && userAhead <= draftingFar) {
+        if(!closestRider || userAhead < closestRiderDist) {
+          closestRiderDist = userAhead;
+          closestRider = user;
+        }
+      }
+    });
+    if(closestRider) {
+      // there was a draftable rider
+      assert2(closestRiderDist >= draftingClose && closestRiderDist <= draftingFar);
+      const pctClose = 0.67;
+      const pctFar = 1.0;
+      const myPct = (closestRiderDist - draftingClose) / (draftingFar - draftingClose);
+      // myPct will be 1.0 when we're really far, 0.0 when we're really close
+      const myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
+      const newtonsSaved = (1-myPctReduction)*aeroForce;
+      aeroForce *= myPctReduction;
+      this.setLastWattsSaved(Math.abs(newtonsSaved * this._speed));
+    }
 
     const slope = map.getSlopeAtDistance(this._position);
     this._lastSlopeWholePercent = slope*100;
@@ -161,7 +190,12 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
   }
 
-
+  public getLastWattsSaved() {
+    return this._lastWattsSaved;
+  }
+  private setLastWattsSaved(watts:number) {
+    this._lastWattsSaved = watts;
+  }
 
   getDisplay(raceState:RaceState|null):UserDisplay {
     const map = raceState && raceState.getMap() || null;
@@ -187,11 +221,16 @@ export class User extends UserDataRecorder implements SlopeSource {
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
       classString: classes.join(' '),
+      lastWattsSaved: this.getLastWattsSaved().toFixed(1) + 'W',
     }
   }
 
-  absorbNameUpdate(name:string) {
+  absorbNameUpdate(name:string, type:number) {
     this._name = name;
+    if(!(this._typeFlags & UserTypeFlags.Local)) {
+      console.log("nonlocal user " + name + " absorbing type flags " + type);
+      this._typeFlags = type;
+    }
   }
   absorbPositionUpdate(tmNow:number, update:S2CPositionUpdateUser) {
     this._speed = update.speed;

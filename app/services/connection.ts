@@ -7,6 +7,7 @@ import Ember from 'ember';
 import Devices from './devices';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { computed } from '@ember/object';
+import ENV from 'bt-web2/config/environment';
 
 export default class Connection extends Service.extend({
   // anything which *must* be merged to prototype here
@@ -57,7 +58,7 @@ export default class Connection extends Service.extend({
   }
 
   connect(targetHost:string, gameId:string, accountId:string, user:User):Promise<RaceState> {
-    const url = `ws://${targetHost}:8080`;
+    const url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
 
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(url);

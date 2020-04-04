@@ -6,6 +6,7 @@ module.exports = function(environment) {
     environment,
     rootURL: '',
     apiRoot: 'http://localhost:8081',
+    gameServerHost: 'localhost',
     locationType: 'auto',
     EmberENV: {
       FEATURES: {
@@ -48,6 +49,7 @@ module.exports = function(environment) {
     // here you can enable a production-specific feature
     ENV.rootURL = '/tourjs';
     ENV.apiRoot = 'https://www.staczero.com/tourjs-api';
+    ENV.gameServerHost = 'www.stacero.com';
   }
 
   return ENV;

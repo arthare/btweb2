@@ -63,7 +63,6 @@ export default class MiniMap extends Component.extend({
         } else {
           ctx.lineTo(px, py);
         }
-        console.log("drawing at ", px, py);
       })
       ctx.lineTo(w, h);
       ctx.lineTo(0, h);
