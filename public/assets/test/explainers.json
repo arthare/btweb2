@@ -1,0 +1,72 @@
+[
+  {
+    "title": "3 Year Warranty",
+    "text": "4iiii powermeters are waterproof, durable, and designed to be accurate and precise even in the harshest conditions.  Because of this, we are happy to offer an industry-leading 3-year warranty.",
+    "image": "calendar.jpg",
+    "imageAlt": "A calendar",
+    "ctas": [
+      {
+        "url": "/collections/power-meters",
+        "text": "Shop 4iiii Powermeters"
+      }
+    ]
+  }, {
+      "title": "Factory Install or Ride Ready?",
+      "text": "You can choose to buy a complete crank or crankset ready to ride with a powermeter preinstalled, or you can have our factory specialists install a powermeter on your existing crank or crankset.",
+      "image": "fi-box.jpg",
+      "imageAlt": "A 4iiii factory install box with a 4iiii powermeter inside",
+      "ctas": [
+          {
+              "url": "/collections/power-meters",
+              "text": "Shop Now"
+          }, {
+              "url": "https://www.4iiii.com/4iiii-product-finder",
+              "text": "Compatibility Checker"
+          }
+      ]
+  }, {
+      "title": "PRECISION or Podiiiium?",
+      "text": "PRECISION and Podiiiium powermeters provide the same class-leading low weight, ruggedness and accuracy.  Podiiiium products include a rechargeable lithium-ion battery, while PRECISION products use a replaceable CR2032 battery.",
+      "image": "mtb.jpg",
+      "imageAlt": "A mountain biking with a 4iiii powermeter",
+      "imageStyle": "cover",
+      "ctas": [
+          {
+              "url": "/collections/power-meters",
+              "text": "Shop Now"
+          }, {
+              "url": "https://www.4iiii.com/4iiii-product-finder",
+              "text": "Compatibility Checker"
+          }
+      ]
+  }, {
+    "title": "Why Train With Power?",
+    "text": "Training with power with a powermeter lets you keep a real-time view on how hard your body is actually working in a ride or race, and lets you measure your long-term fitness in precise terms.  Learn more below.",
+    "image": "rogelli.jpg",
+    "imageAlt": "A cyclist appreciating their well-planned training thanks to their powermeter",
+    "imageStyle": "cover",
+    "ctas": [
+      {
+        "url": "/collections/power-meters",
+        "text": "Shop Now"
+      }, {
+        "url": "/pages/why-train-with-power",
+        "text": "Why Train With Power?"
+      }
+    ]
+  }, {
+    "title": "Viiiiva: More Than Just a Heart Rate Monitor",
+    "text": "A perfect companion to your PRECISION or Podiiiium Powermeter, Viiiiva not only measures your heart rate, but also stores up to 65 hours of data from connected sensors and lets you bridge ANT+-only devices to bluetooth-enabled devices like your phone, tablet, or PC.",
+    "image": "viiiiva-heart-rate-monitor.jpg",
+    "imageAlt": "Viiiiva Heart Rate Monitor, data recorder, and ANT+ bridge",
+    "ctas": [
+      {
+        "url": "/collections/heart-rate-monitors",
+        "text": "Shop Now"
+      }, {
+        "url": "/pages/viiiiva-heart-rate-monitor",
+        "text": "Learn More About Viiiiva"
+      }
+    ]
+  }
+]

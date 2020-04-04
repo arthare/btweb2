@@ -1,17 +1,25 @@
 .display-race {
-  &__info-container {
-    display: flex;
-    flex-direction: row;
-    flex: 0 0 auto;
+  &__rankings-container {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+  }
+  &__status-container {
+    position: absolute;
+    right: 0;
+    bottom: 0;
   }
   &__content {
     display: flex;
     flex-direction: column;
-    max-height: 100vh;
+    height: 100vh;
     background-color: red;
   }
   &__main-holder {
-    flex: 1 1 0px;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
   }
 
 }

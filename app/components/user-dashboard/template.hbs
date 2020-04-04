@@ -1,24 +1,27 @@
 {{#if userDisplay}}
-  <table class="user-dashboard__table">
-    <tr class="user-dashboard__tr">
-      <td>Name:</td>
-      <td>{{userDisplay.name}}</td>
-    </tr>
-    <tr  class="user-dashboard__tr">
-      <td>Power:</td>
-      <td>{{userDisplay.lastPower}}</td>
-    </tr>
-    <tr class="user-dashboard__tr">
-      <td>Distance:</td>
-      <td>{{userDisplay.distance}}</td>
-    </tr>
-    <tr class="user-dashboard__tr">
-      <td>Speed:</td>
-      <td>{{userDisplay.speed}}</td>
-    </tr>
-    <tr class="user-dashboard__tr">
-      <td>Slope:</td>
-      <td>{{userDisplay.slope}}</td>
-    </tr>
-  </table>
+  <div class="user-dashboard__table">
+    <div class="user-dashboard__title">
+      Your Status
+    </div>
+    <div class="user-dashboard__tr">
+      <div class="user-dashboard__label">Name:</div>
+      <div class="user-dashboard__value">{{userDisplay.name}}</div>
+    </div>
+    <div  class="user-dashboard__tr">
+      <div class="user-dashboard__label">Power:</div>
+      <div class="user-dashboard__value">{{userDisplay.lastPower}}</div>
+    </div>
+    <div class="user-dashboard__tr">
+      <div class="user-dashboard__label">Distance:</div>
+      <div class="user-dashboard__value">{{userDisplay.distance}}</div>
+    </div>
+    <div class="user-dashboard__tr">
+      <div class="user-dashboard__label">Speed:</div>
+      <div class="user-dashboard__value">{{userDisplay.speed}}</div>
+    </div>
+    <div class="user-dashboard__tr">
+      <div class="user-dashboard__label">Slope:</div>
+      <div class="user-dashboard__value">{{userDisplay.slope}}</div>
+    </div>
+  </div>
 {{/if}}

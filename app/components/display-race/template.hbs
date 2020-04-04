@@ -2,9 +2,11 @@
 <div class="display-race__content">
   <div class="display-race__main-holder">
     {{main-map raceState=raceState}}
-  </div>
-  <div class="display-race__info-container">
-    {{user-dashboard raceState=raceState frame=frame}}
-    {{leader-board raceState=raceState frame=frame}}
+    <div class="display-race__rankings-container">
+      {{leader-board raceState=raceState frame=frame}}
+    </div>
+    <div class="display-race__status-container">
+      {{user-dashboard raceState=raceState frame=frame}}
+    </div>
   </div>
 </div>

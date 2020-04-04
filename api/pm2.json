@@ -1,0 +1,8 @@
+{
+  "apps": [{
+      "name": "tourjs_api",
+      "script": "api/index.js",
+      "args": "production",
+      "restart_delay": 30000
+  }]
+}

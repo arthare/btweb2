@@ -11,6 +11,7 @@ export enum UserTypeFlags {
 }
 
 export interface UserDisplay {
+  rankString?: string;
   name: string;
   lastPower: string;
   distance: string;

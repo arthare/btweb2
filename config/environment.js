@@ -46,6 +46,8 @@ module.exports = function(environment) {
 
   if (environment === 'production') {
     // here you can enable a production-specific feature
+    ENV.rootURL = '/tourjs';
+    ENV.apiRoot = 'https://www.staczero.com/tourjs-api';
   }
 
   return ENV;

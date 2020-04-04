@@ -11,11 +11,11 @@ class FakeUserProvider implements UserProvider {
   constructor() {
     this.users = [
       new User("Local User", 80, 300, UserTypeFlags.Local),
-      new User("AI Remote 1", 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote),
-      new User("AI Remote 2", 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote),
-      new User("AI Remote 3", 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote),
       new User("Human Remote", 80, 300, UserTypeFlags.Remote),
     ];
+    for(var x = 1;x < 50; x++) {
+      this.users.push(new User(`AI Remote ${x}`, 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote));
+    }
     this.users.forEach((user, index) => {
       user.setId(index);
     });
@@ -23,7 +23,7 @@ class FakeUserProvider implements UserProvider {
 
   getUsers(tmNow: number): User[] {
     
-    return this.users;
+    return this.users.slice();
   }  
   
   getUser(id: number): User | null {
@@ -51,8 +51,8 @@ export default class TestHacks extends Controller.extend({
     const fnUpdatePowers = () => {
       if(!this.isDestroyed) {
         const tmNow = new Date().getTime();
-        userProvider.getUsers(tmNow).forEach((user) => {
-          user.notifyPower(tmNow, Math.random()*50 + 200);
+        userProvider.getUsers(tmNow).forEach((user, index) => {
+          user.notifyPower(tmNow, Math.random()*50 + 200 + index*2);
         })
 
         setTimeout(fnUpdatePowers, 200);

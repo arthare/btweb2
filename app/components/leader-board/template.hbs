@@ -1,10 +1,10 @@
 <div class="leader-board__title">
-  Leader Board:
+  Leaderboard:
 </div>
 {{#each rankings as |ranking index|}}
   <div class="leader-board__rank {{ranking.classString}}">
     <span class="leader-board__rank-text">
-      #{{add index 1}}
+      {{ranking.rankString}}
     </span>
     <span class="leader-board__rank-name">
       {{ranking.name}}

@@ -1,1 +1,2 @@
-echo "I wish I had easy deploying set up!"
+ember build --environment=production
+scp -r dist/* root@staczero.com:/var/www/tourjs/

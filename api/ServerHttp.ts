@@ -6,7 +6,7 @@ import { ServerHttpGameList, ServerHttpGameListElement } from '../app/server-cli
 let app = <core.Express>express();
 
 function setHeaders(req:core.Request, res:core.Response) {
-  res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+  res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || req.headers['Host'] || 'staczero.com');
   res.setHeader('Access-Control-Allow-Headers', '*');
 }
 
