@@ -35,6 +35,7 @@ const wss = new WebSocket.Server({
 
 function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorMessage:string) {
   const ret:S2CBasicMessage = {
+    timeStamp:tmNow,
     type: BasicMessageType.ServerError,
     raceState: new S2CRaceStateUpdate(tmNow, serverGame),
     payload: <ServerError>{
@@ -48,6 +49,7 @@ function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorM
 function sendResponse(tmNow:number, ws:WebSocket, type:BasicMessageType, serverGame:ServerGame, msg:ClientConnectionResponse|S2CPositionUpdate|S2CNameUpdate|S2CFinishUpdate) {
 
   const bm:S2CBasicMessage = {
+    timeStamp: tmNow,
     type,
     raceState: new S2CRaceStateUpdate(tmNow, serverGame),
     payload: msg,
@@ -86,14 +88,14 @@ function hasRaceAtTime(tmWhen) {
 }
 
 function populatePrescheduledRaces() {
-  const ms15Minutes = 15 * 60000;
+  const msRaceStartInterval = 2.5 * 60000;
 
   // this will get us a precise timestamp every 15 minutes
   const tmNow = new Date().getTime();
-  const tmNowish = Math.floor(tmNow / ms15Minutes)*ms15Minutes;
+  const tmNowish = Math.floor(tmNow / msRaceStartInterval)*msRaceStartInterval;
 
   let nPreschedule = 6;
-  for(var x = tmNowish; x < tmNowish + nPreschedule*ms15Minutes; x += ms15Minutes) {
+  for(var x = tmNowish; x < tmNowish + nPreschedule*msRaceStartInterval; x += msRaceStartInterval) {
     if(x < tmNow) {
       continue; // in the past, we don't care
     }
@@ -102,12 +104,12 @@ function populatePrescheduledRaces() {
       // ok we already have this one
     } else {
       // gotta make a new race!
-      const c15s = Math.floor(x / ms15Minutes);
+      const c15s = Math.floor(x / msRaceStartInterval);
       let map:RideMap;
       if(c15s & 1) {
-        map = makeSimpleMap(20000)
+        map = makeSimpleMap(5000)
       } else {
-        map = makeSimpleMap(40000);
+        map = makeSimpleMap(2500);
       }
       let date = new Date(x);
       const name = `${(map.getLength() / 1000).toFixed(1)}km on CosineMap. ${date.toISOString()}`;
@@ -117,7 +119,7 @@ function populatePrescheduledRaces() {
       races.set(name, sg);
     }
   }
-  setTimeout(populatePrescheduledRaces, ms15Minutes);
+  setTimeout(populatePrescheduledRaces, msRaceStartInterval);
 }
 populatePrescheduledRaces();
 

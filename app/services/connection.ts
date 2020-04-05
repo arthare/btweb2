@@ -20,6 +20,7 @@ export default class Connection extends Service.extend({
   _gameId:string = '';
   _lastServerRaceState:S2CRaceStateUpdate|null = null;
   raceResults:S2CFinishUpdate|null = null;
+  _lastTimeStamp = 0;
 
   _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
@@ -100,6 +101,12 @@ export default class Connection extends Service.extend({
     } catch(e) {
       throw new Error("Invalid message received: " + event.data);
     }
+    if(bm.timeStamp < this._lastTimeStamp) {
+      console.log("bouncing a message because it's ealier than the last one we got");
+    } else if(!isFinite(bm.timeStamp)) {
+      return;
+    }
+    this._lastTimeStamp = bm.timeStamp;
 
     this.set('_lastServerRaceState', bm.raceState);
     if(this._raceState) {

@@ -149,7 +149,6 @@ export class DecorationFactory {
           // this thing gets to be generated!
   
           const generatedDecoration = decSpec.generateDecoration(rightSideOfScreen, rideMap);
-          console.log("generating a ", decSpec.name, " because our probability was ", probDuringMotion, generatedDecoration);
           if(generatedDecoration) {
             generatedDecorations.push(generatedDecoration);
           }

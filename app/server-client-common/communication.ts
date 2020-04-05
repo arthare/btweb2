@@ -27,6 +27,7 @@ export interface C2SBasicMessage {
   payload:any; // check type, then cast to the appropriate message
 }
 export interface S2CBasicMessage {
+  timeStamp:number;
   type:BasicMessageType;
   raceState:S2CRaceStateUpdate;
   payload:any; // check type, then cast to the appropriate message

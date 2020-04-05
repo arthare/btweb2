@@ -156,6 +156,8 @@ export class User extends UserDataRecorder implements SlopeSource {
       const newtonsSaved = (1-myPctReduction)*aeroForce;
       aeroForce *= myPctReduction;
       this.setLastWattsSaved(Math.abs(newtonsSaved * this._speed));
+    } else {
+      this.setLastWattsSaved(0);
     }
 
     const slope = map.getSlopeAtDistance(this._position);
