@@ -58,7 +58,7 @@ export default class Connection extends Service.extend({
   }
 
   connect(targetHost:string, gameId:string, accountId:string, user:User):Promise<RaceState> {
-    const url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
+    const url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `wss://${targetHost}:8080`;
 
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(url);

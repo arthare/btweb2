@@ -1,0 +1,4 @@
+{
+  "privateKeyPath": "/etc/letsencrypt/live/staczero.com/privkey.pem",
+  "fullChain": "/etc/letsencrypt/live/staczero.com/fullchain.pem"
+}

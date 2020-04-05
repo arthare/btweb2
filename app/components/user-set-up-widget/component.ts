@@ -1,8 +1,9 @@
 import Component from '@ember/component';
 import { getDeviceFactory } from 'bt-web2/pojs/DeviceFactory';
-import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor } from 'bt-web2/pojs/WebBluetoothDevice';
 import Ember from 'ember';
 import { computed } from '@ember/object';
+import Devices from 'bt-web2/services/devices';
 
 export interface UserSetupParameters {
   name:string;
@@ -10,9 +11,31 @@ export interface UserSetupParameters {
   device:ConnectedDeviceInterface;
 }
 
+class FakeDevice extends PowerDataDistributor {
+  constructor() {
+    super();
+    setInterval(() => {
+      this._notifyNewPower(new Date().getTime(), Math.random()*50 + 200);
+    }, 500);
+  }
+  updateSlope(tmNow: number): void {
+    
+  }
+  disconnect(): Promise<void> {
+    return Promise.resolve();
+  }  
+  getState(): BTDeviceState {
+    return BTDeviceState.Ok;
+  }
+  name(): string {
+    return "Fake Device";
+  }
+
+}
+
 export default class UserSetUp extends Component.extend({
   // anything which *must* be merged to prototype here
-  devices: <any>Ember.inject.service('devices'),
+  devices: <Devices><unknown>Ember.inject.service('devices'),
 
   userName:'Art',
   userHandicap:'300',
@@ -21,10 +44,18 @@ export default class UserSetUp extends Component.extend({
 
   actions: { 
     connectDevice() {
-      return getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
+
+      if(window.location.hostname === 'localhost') {
+
+        const device = new FakeDevice();
         this.set('device', device);
         this.devices.addDevice(device);
-      });
+      } else {
+        return getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
+          this.set('device', device);
+          this.devices.addDevice(device);
+        });
+      }
     },
     done() {
       if(this.device) {

@@ -5,8 +5,8 @@ module.exports = function(environment) {
     modulePrefix: 'bt-web2',
     environment,
     rootURL: '',
-    apiRoot: 'http://localhost:8081',
-    gameServerHost: 'localhost',
+    apiRoot: 'https://www.staczero.com/tourjs-api',
+    gameServerHost: 'staczero.com',
     locationType: 'auto',
     EmberENV: {
       FEATURES: {

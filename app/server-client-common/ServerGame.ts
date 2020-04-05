@@ -72,10 +72,11 @@ export class ServerGame {
     this.raceState = new RaceState(map, this.userProvider, gameId);
 
     for(var x = 0;x < cAis; x++) {
+      const aiStrength = Math.random()*75 + 225;
       this.userProvider.addUser({
-        riderName:`AI ${x}`,
+        riderName:`AI ${x} (${aiStrength.toFixed(0)}W)`,
         accountId:"-1",
-        riderHandicap:300,
+        riderHandicap: aiStrength,
         gameId:gameId,
       }, UserTypeFlags.Ai)
     }
@@ -128,7 +129,9 @@ export class ServerGame {
 
     this.userProvider.getUsers(tmNow).forEach((user:User) => {
       if(user.getUserType() & UserTypeFlags.Ai) {
-        user.notifyPower(tmNow, Math.random()*50 + 225);
+        const spread = 50;
+        const pct = user.getHandicap() / 300;
+        user.notifyPower(tmNow, pct*user.getHandicap() + Math.random()*spread - spread/2);
       }
     })
 

@@ -14,6 +14,7 @@ declare const config: {
   locationType: string;
   rootURL: string;
   apiRoot: string;
+  gameServerHost: string;
 };
 
 declare global {

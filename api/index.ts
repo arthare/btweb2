@@ -10,8 +10,22 @@ import { SERVER_PHYSICS_FRAME_RATE } from './ServerConstants';
 import { ServerGame } from '../app/server-client-common/ServerGame';
 import { setUpServerHttp } from './ServerHttp';
 
+var fs = require('fs');
+
+// read ssl certificate
+const config = JSON.parse(fs.readFileSync('./ssl-config.json'));
+var privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+var certificate = fs.readFileSync(config.fullChain, 'utf8');
+
+var credentials = { key: privateKey, cert: certificate };
+var https = require('https');
+
+//pass in your credentials to create an https server
+var httpsServer = https.createServer(credentials);
+httpsServer.listen(8080);
+
 const wss = new WebSocket.Server({
-  port: 8080,
+  server: httpsServer,
 });
 
 
