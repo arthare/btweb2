@@ -86,7 +86,7 @@ export class S2CFinishUpdate {
     this.rankings = [];
     this.times = [];
     users.forEach((user, index) => {
-      this.rankings.push(index+1);
+      this.rankings.push(user.getId());
       this.times.push(user.getRaceTimeSeconds(tmRaceStart));
     })
   }
@@ -177,6 +177,7 @@ export class ServerHttpGameListElement {
     const n = 100;
     const map = game.raceState.getMap();
     const mapLen = map.getLength();
+    this.lengthMeters = mapLen;
     this.elevations = [];
     for(var x = 0;x < 100; x++) {
       const pct = x / n;
@@ -192,6 +193,7 @@ export class ServerHttpGameListElement {
   whoIn: string[];
   whoInAi: string[];
   elevations: number[];
+  lengthMeters: number;
 }
 export interface ServerHttpGameList {
   races: ServerHttpGameListElement[];

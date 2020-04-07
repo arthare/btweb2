@@ -35,6 +35,14 @@
     </span>
   </div>
   <div class="pending-race__row">
+    <span class="pending-race__key">
+      Length:
+    </span>
+    <span class="pending-race__value">
+      {{lengthString}}
+    </span>
+  </div>
+  <div class="pending-race__row">
     {{mini-map race=race}}
   </div>
   <button class="pending-race__join-button" {{action joinRace race.name}}>Join</button>

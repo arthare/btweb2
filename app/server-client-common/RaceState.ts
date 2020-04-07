@@ -15,17 +15,39 @@ export class RaceState {
   private _map:RideMap;
   private _userProvider:UserProvider;
   private _gameId:string;
+  private _tmUnfinishedHuman:number = 0;
+  private _stopped:boolean = false;
   constructor(map:RideMap, users:UserProvider, gameId:string) {
     this._map = map;
     this._userProvider = users;
     this._gameId = gameId;
+    this._tmUnfinishedHuman = new Date().getTime();
+  }
+  stop() {
+    this._stopped = true;
   }
   tick(tmNow:number) {
-
+    if(this._stopped) {
+      return;
+    }
     const users = this._userProvider.getUsers(tmNow);
     users.forEach((user) => {
       user.physicsTick(tmNow, this._map, users);
+
+      if(user.getUserType() & UserTypeFlags.Ai) {
+        
+      } else {
+        // it's a human!
+        if(user.isFinished()) {
+          // they're finished
+        } else {
+          this._tmUnfinishedHuman = tmNow;
+        }
+      }
     });
+  }
+  getSecondsSinceLastNonFinishedHuman(tmNow:number):number {
+    return Math.max(0, (tmNow - this._tmUnfinishedHuman) / 1000.0);
   }
   getGameId():string {
     return this._gameId;
@@ -43,16 +65,20 @@ export class RaceState {
     return allLocal[0];
   }
 
-  isAllHumansFinished():boolean {
-    const tmNow = new Date().getTime();
+  isAllHumansFinished(tmNow:number):boolean {
 
     const humans = this._userProvider.getUsers(tmNow).filter((user) => !(user.getUserType() & UserTypeFlags.Ai));
     return humans.every((user) =>{
       return user.getDistance() >= this._map.getLength();
     });
   }
-  isAnyHumansFinished():boolean {
-    const tmNow = new Date().getTime();
+  isAllRacersFinished(tmNow:number):boolean {
+    const users = this._userProvider.getUsers(tmNow);
+    return users.every((user) => {
+      return user.getDistance() >= this._map.getLength();
+    });
+  }
+  isAnyHumansFinished(tmNow:number):boolean {
 
     const humans = this._userProvider.getUsers(tmNow).filter((user) => !(user.getUserType() & UserTypeFlags.Ai));
     return !!humans.find((user) =>{
@@ -66,6 +92,7 @@ export class RaceState {
       if(user) {
         user.absorbPositionUpdate(tmNow, client);
       }
+
     })
   }
   absorbNameUpdate(msg:S2CNameUpdate) {

@@ -1,5 +1,6 @@
 import { DecorationPosition, Decoration, DecorationBase, MovingDecoration } from "./DecorationItems";
 import { RideMapElevationOnly, RideMap } from "bt-web2/server-client-common/RideMap";
+import ENV from 'bt-web2/config/environment';
 
 export enum Layer {
   FarScenery = "FarScenery", // mountains, distant forests
@@ -128,7 +129,7 @@ export class DecorationFactory {
             this._availableDecorations.push(new LoadedDecoration(decSpec, imageElements));
           }
         }
-        img.src = imgUrl;
+        img.src = ENV.rootURL + imgUrl;
       })
     })
   }

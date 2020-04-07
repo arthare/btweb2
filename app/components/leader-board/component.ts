@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { UserDisplay, UserTypeFlags } from 'bt-web2/server-client-common/User';
+import { UserDisplay, UserTypeFlags, User } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { computed } from '@ember/object';
@@ -38,8 +38,8 @@ export default class LeaderBoard extends Component.extend({
       }
 
       let nToShow = 5;
-      let ixStart = Math.max(0, Math.min(users.length - nToShow - 1, ixUser - 2));
-      let ixEnd = Math.min(ixStart + nToShow, users.length - 1);
+      let ixStart = Math.max(0, Math.min(users.length - nToShow, ixUser - 2));
+      let ixEnd = Math.min(ixStart + nToShow, users.length);
       users = users.slice(ixStart, ixEnd);
 
       return users.map((user, index) => {

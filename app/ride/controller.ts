@@ -14,6 +14,19 @@ export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices:<Devices><unknown>Ember.inject.service(),
   connection:<Connection><unknown>Ember.inject.service(),
+
+  actions: {
+    newRide() {
+      this.connection.disconnect();
+      const raceState:RaceState|null = this.get('_raceState');
+      
+      if(raceState) {
+        raceState.stop();
+      }
+      this.devices.getLocalUser()?.setId(-1);
+      this.transitionToRoute('set-up-ride');
+    }
+  }
 }) {
   // normal class body definition here
   lastLocalMeters: number = 0;
@@ -41,6 +54,10 @@ export default class Ride extends Controller.extend({
   }
 
   _tick() {
+    if(this.isDestroyed || this.isDestroying) {
+      console.log("Skipping a tick() in /ride because we're destroyed");
+      return;
+    }
     const tmNow = new Date().getTime();
     const users = this.devices.getUsers(tmNow);
     if(users.length <= 0) {
@@ -56,6 +73,13 @@ export default class Ride extends Controller.extend({
     }
     raceState.tick(tmNow);
 
+    {
+      const user = raceState.getLocalUser();
+      if(user) {
+        window.pending.lastPhysics = user.getDistance();
+        window.tick(tmNow);
+      }
+    }
     this.devices.updateSlopes(tmNow);
     
 

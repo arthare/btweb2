@@ -4,6 +4,10 @@
     {{main-map raceState=raceState}}
     <div class="display-race__rankings-container">
       {{leader-board raceState=raceState frame=frame}}
+
+      <div class="display-race__mini-map-container">
+        {{mini-map-live raceState=raceState}}
+      </div>
     </div>
     <div class="display-race__status-container">
       {{user-dashboard raceState=raceState frame=frame}}

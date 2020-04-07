@@ -6,6 +6,10 @@ import { UserTypeFlags } from 'bt-web2/server-client-common/User';
 import { DecorationState } from './DecorationState';
 import { DecorationFactory, ThemeConfig, Layer } from './DecorationFactory';
 
+export const local_color = 'white';
+export const human_color = 'lightpink';
+export const ai_color = 'black';
+
 function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number) {
   // ok, all we have to do is paint the map!  How hard can it be?
 
@@ -28,8 +32,14 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   let {maxElev, minElev, minDist, maxDist} = map.getBounds();
   // let's sample an appropriate # of elevations given our screen size
   const nElevsToSample = Math.floor(w / 3);
-  minDist = localUser.getDistance() - 50;
-  maxDist = localUser.getDistance() + 50;
+  window.pending.tmNow = tmNow;
+  window.pending.lastDraw = localUser.getDistance();
+  window.tick(tmNow);
+  
+  const distToShow = (w/1920)*150;
+
+  minDist = localUser.getDistance() - distToShow/2;
+  maxDist = localUser.getDistance() + distToShow/2;
   for(var x = 0; x <= nElevsToSample; x++) {
     const pct = x / nElevsToSample;
 
@@ -92,7 +102,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
     const isHuman = !(typeFlags & UserTypeFlags.Ai);
     if(isLocal && isHuman) {
       const sz = 3;
-      ctx.fillStyle = "#FFF";
+      ctx.fillStyle = local_color;
       ctx.fillRect(dist-sz / 2,elev,sz,sz);
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 0.1;
@@ -103,11 +113,11 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       let borderColor = 'black';
       if(isHuman) {
         sz = 2.5;
-        fillColor = 'lightpink';
+        fillColor = human_color;
         borderColor = 'black';
       } else {
         sz = 2;
-        fillColor = 'black';
+        fillColor = ai_color;
         borderColor = 'white';
       }
       ctx.fillStyle = fillColor;
@@ -125,11 +135,11 @@ const defaultThemeConfig:ThemeConfig = {
   decorationSpecs: [
     {
       name: "Clouds",
-      minDimensions: {x:8,y:8},
-      maxDimensions: {x:10,y:10},
+      minDimensions: {x:12,y:8},
+      maxDimensions: {x:16,y:10},
       minAltitude: 12,
       maxAltitude: 22,
-      imageUrl: ['/assets/cloud1.png', '/assets/cloud2.png'],
+      imageUrl: ['assets/cloud1.png', 'assets/cloud2.png'],
       layer: Layer.NearSky,
       frequencyPerKm:50,
     }, {
@@ -138,12 +148,12 @@ const defaultThemeConfig:ThemeConfig = {
       maxDimensions: {x:1.2,y:1.2},
       minAltitude: -16,
       maxAltitude: -2,
-      imageUrl: ['/assets/grass2.png', 
-                '/assets/grass3.png', 
-                '/assets/grass4.png',
-                '/assets/grass5.png',
-                '/assets/grass6.png',
-                '/assets/grass7.png',
+      imageUrl: ['assets/grass2.png', 
+                'assets/grass3.png', 
+                'assets/grass4.png',
+                'assets/grass5.png',
+                'assets/grass6.png',
+                'assets/grass7.png',
               ],
       layer: Layer.Underground,
       frequencyPerKm:1000,
@@ -153,8 +163,8 @@ const defaultThemeConfig:ThemeConfig = {
       maxDimensions: {x:4,y:4},
       minAltitude: 2.0,
       maxAltitude: 2.0,
-      imageUrl: ['/assets/store1.webp', 
-                '/assets/store2.webp', 
+      imageUrl: ['assets/store1.webp', 
+                'assets/store2.webp', 
               ],
       layer: Layer.NearRoadside,
       frequencyPerKm:20,

@@ -11,7 +11,7 @@
     border-top: 1px solid black;
   }
   &__label {
-    flex: 0 0 64px;
+    flex: 0 0 120px;
     text-align: left;
   }
   &__title {
@@ -29,4 +29,22 @@
     text-align: right;
   }
   
+}
+
+@media screen and (max-width: 640px) {
+  .user-dashboard {
+    &__container {
+      max-width: 100vw;
+      min-width: 100vw;
+    }
+    &__tr {
+      padding: 2px;
+    }
+    &__title {
+      font-size: 18px;
+    }
+    &__value {
+      font-size: 14px;
+    }
+  }
 }

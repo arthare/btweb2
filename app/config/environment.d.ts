@@ -17,10 +17,21 @@ declare const config: {
   gameServerHost: string;
 };
 
+interface DebugLocation {
+  tmNow:number;
+  tmOfPend:number;
+  lastPhysics:number;
+  lastNetwork:number;
+  lastDraw:number;
+}
+
 declare global {
   interface Window {
     _: any,
     assert2: Function;
+    localLocations: DebugLocation[];
+    pending:DebugLocation;
+    tick: (tmOfPend:number)=>void;
   }
 
 }

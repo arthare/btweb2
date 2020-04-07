@@ -23,3 +23,20 @@
   }
 
 }
+
+@media screen and (max-width:640px) {
+  .display-race {
+    &__rankings-container {
+      top: 0;
+      left: 0;
+      bottom: auto;
+      width: 100vw;
+    }
+    &__mini-map-container {
+      opacity: 0.7;
+      width: 100vw;
+      height: 80px;
+      background-color: rgba(0,0,0,0.5);
+    }
+  }
+}

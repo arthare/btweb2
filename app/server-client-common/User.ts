@@ -58,7 +58,11 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   }
 
   setId(newId:number) {
-    assert2(this._id < 0 || newId === this._id, "we should only be assigning IDs once...");
+    if(newId < 0) {
+      assert2(this._id >= 0, "You're only allowed setting back to a negative id when you're disconnecting");
+    } else if(newId >= 0) {
+      assert2(this._id < 0, "You're only allowed setting positive IDs when you're connecting");
+    }
     this._id = newId;
   }
   getId() {
@@ -186,6 +190,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     const lastPosition = this._position;
     const mapLength = map.getLength();
     this._position += Math.min(map.getLength(), this._speed * dtSeconds);
+    this._position = Math.min(map.getLength(), this._position);
 
     if(lastPosition < mapLength && this._position >= mapLength) {
       this.setFinishTime(tmNow);
@@ -230,7 +235,6 @@ export class User extends UserDataRecorder implements SlopeSource {
   absorbNameUpdate(name:string, type:number) {
     this._name = name;
     if(!(this._typeFlags & UserTypeFlags.Local)) {
-      console.log("nonlocal user " + name + " absorbing type flags " + type);
       this._typeFlags = type;
     }
   }
@@ -239,6 +243,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._position = update.distance;
     if(this._typeFlags & UserTypeFlags.Local) {
       // we're local, so we won't re-absorb the power from the server
+      console.log("Local user told position ", this._position, " and time ", tmNow);
     } else {
       // we're a remote or AI user, so we should try to be as similar to the server as possible
       this.notifyPower(new Date().getTime(), update.power);

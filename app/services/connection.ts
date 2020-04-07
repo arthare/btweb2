@@ -59,8 +59,7 @@ export default class Connection extends Service.extend({
   }
 
   connect(targetHost:string, gameId:string, accountId:string, user:User):Promise<RaceState> {
-    const url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `wss://${targetHost}:8080`;
-
+    let url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(url);
       ws.onopen = () => {
@@ -101,8 +100,9 @@ export default class Connection extends Service.extend({
     } catch(e) {
       throw new Error("Invalid message received: " + event.data);
     }
-    if(bm.timeStamp < this._lastTimeStamp) {
-      console.log("bouncing a message because it's ealier than the last one we got");
+    if(bm.timeStamp <= this._lastTimeStamp) {
+      console.log("bouncing a message because it's earlier or same-time as the last one we got");
+      return;
     } else if(!isFinite(bm.timeStamp)) {
       return;
     }
@@ -126,7 +126,14 @@ export default class Connection extends Service.extend({
           })
           
 
-          this._raceState.absorbPositionUpdate(tmNow, bm.payload);
+          this._raceState.absorbPositionUpdate(bm.timeStamp, bm.payload);
+          {
+            const user = this._raceState.getLocalUser();
+            if(user) {
+              window.pending.lastPhysics = user.getDistance();
+              window.tick(bm.timeStamp);
+            }
+          }
           break;
         }
         case BasicMessageType.ServerError:
@@ -147,6 +154,15 @@ export default class Connection extends Service.extend({
       this._raceState = null;
     }
     
+  }
+
+  disconnect() {
+    this._timeout = null;
+    if(this._ws) {
+      this._ws.onmessage = () => {};
+      this._ws.close();
+    }
+    this._raceState = null;
   }
 
   getUserName(userId:number):string {

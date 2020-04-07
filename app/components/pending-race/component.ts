@@ -25,6 +25,12 @@ export default class PendingRace extends Component.extend({
   }
 
   @computed("race", "frame")
+  get lengthString():string {
+    const race:ServerHttpGameListElement = this.get('race');
+    return `${(race.lengthMeters / 1000).toFixed(1)}km`;
+  }
+
+  @computed("race", "frame")
   get statusString():string {
     const race:ServerHttpGameListElement = this.get('race');
     const frame = this.get('frame');
