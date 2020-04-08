@@ -10,7 +10,11 @@ export const local_color = 'white';
 export const human_color = 'lightpink';
 export const ai_color = 'black';
 
-function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number) {
+class PaintFrameState {
+  public userPositions:Map<number,number> = new Map();
+}
+
+function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
   // ok, all we have to do is paint the map!  How hard can it be?
 
   const tmNow = new Date().getTime();
@@ -25,6 +29,25 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   if(!localUser) {
     throw new Error("Trying to display a map without a local user?");
   }
+  
+  const userProvider = raceState.getUserProvider();
+  const users = userProvider.getUsers(tmNow);
+
+
+
+  const smoothMix = 0.85;
+  users.forEach((user) => {
+    if(paintState.userPositions.has(user.getId())) {
+      const actualPos = user.getDistance();
+      const paintPos = paintState.userPositions.get(user.getId()) || user.getDistance();
+      if(actualPos < paintPos && user.getUserType() & UserTypeFlags.Local) {
+        console.log(tmNow, "local user is at ", actualPos, " compared to paintPos of ", paintPos);
+      }
+      paintState.userPositions.set(user.getId(), smoothMix*paintPos + (1-smoothMix)*actualPos);
+    } else {
+      paintState.userPositions.set(user.getId(), user.getDistance());
+    }
+  })
 
   const map:RideMap = raceState.getMap();
   let elevs:number[] = [];
@@ -38,8 +61,10 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   
   const distToShow = (w/1920)*150;
 
-  minDist = localUser.getDistance() - distToShow/2;
-  maxDist = localUser.getDistance() + distToShow/2;
+  let localUserDistance = paintState.userPositions.get(localUser.getId()) || localUser.getDistance();
+
+  minDist = localUserDistance - distToShow/2;
+  maxDist = localUserDistance + distToShow/2;
   for(var x = 0; x <= nElevsToSample; x++) {
     const pct = x / nElevsToSample;
 
@@ -91,10 +116,8 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   decorationState.draw(ctx, Layer.Underground);
 
   // ok, gotta draw the cyclists
-  const userProvider = raceState.getUserProvider();
-  const users = userProvider.getUsers(tmNow);
   users.forEach((user) => {
-    const dist = user.getDistance();
+    const dist = paintState.userPositions.get(user.getId()) || user.getDistance();
     const elev = map.getElevationAtDistance(dist);
 
     const typeFlags = user.getUserType();
@@ -127,6 +150,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       ctx.strokeRect(dist-sz/2,elev,sz,sz);
     }
   })
+
 
 }
 
@@ -200,6 +224,7 @@ export default class MainMap extends Component.extend({
     const decorationState = new DecorationState(raceState?.getMap(), decorationFactory);
 
     let lastTime = 0;
+    const paintState = new PaintFrameState();
     const handleAnimationFrame = (time:number) => {
       if(raceState) {
         
@@ -210,7 +235,7 @@ export default class MainMap extends Component.extend({
         lastTime = time;
 
         raceState.tick(new Date().getTime());
-        paintCanvasFrame(canvas, raceState, time, decorationState, dt);
+        paintCanvasFrame(canvas, raceState, time, decorationState, dt, paintState);
 
         requestAnimationFrame(handleAnimationFrame);
       } else {

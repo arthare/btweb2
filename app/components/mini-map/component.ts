@@ -35,9 +35,11 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
 
   const elevSpan = maxElev - minElev;
   
+  ctx.scale(1,-1);
+  ctx.translate(0,-h);
   ctx.beginPath();
   ctx.fillStyle = grassGradient;
-  const elevs = [minElev, ...elevations, maxElev];
+  const elevs = [...elevations];
   elevs.forEach((elev, index) => {
     const pctX = index / (elevations.length - 1);
     const pctY = (elev - minElev) / elevSpan;
@@ -45,13 +47,14 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
     const py = pctY * h;
 
     if(index === 0) {
-      ctx.moveTo(0, py);
+      ctx.lineTo(0, py);
     } else {
       ctx.lineTo(px, py);
     }
   })
-  ctx.lineTo(w, h);
-  ctx.lineTo(0, h);
+  ctx.lineTo(w, 0);
+  ctx.lineTo(0, 0);
+  ctx.lineTo(0, (elevations[0] - minElev) / elevSpan);
   ctx.closePath();
   ctx.fill();
 
@@ -67,6 +70,7 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
   }
   if(humanPositions) {
     ctx.strokeStyle = human_color;
+    ctx.lineWidth = 2.0;
     ctx.beginPath();
     humanPositions.forEach((positionPct) => {
       assert2(positionPct >= 0 && positionPct <= 1.0);
@@ -78,6 +82,7 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
   if(localPositionPct) {
     assert2(localPositionPct >= 0 && localPositionPct <= 1.0);
     ctx.strokeStyle = local_color;
+    ctx.lineWidth = 3.0;
     ctx.beginPath();
     ctx.moveTo(localPositionPct*w, 0);
     ctx.lineTo(localPositionPct*w, h);

@@ -212,7 +212,7 @@ export default class Connection extends Service.extend({
   scheduleNetworkTick() {
     this._timeout = setTimeout(() => {
       this.tick();
-    }, 500);
+    }, 250);
   }
 }
 
