@@ -2,16 +2,68 @@ import Component from '@ember/component';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { RideMap, RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
 import setupContextWithTheseCoords from 'bt-web2/pojs/setupContextWithTheseCoords';
-import { UserTypeFlags } from 'bt-web2/server-client-common/User';
+import { UserTypeFlags, User } from 'bt-web2/server-client-common/User';
 import { DecorationState } from './DecorationState';
 import { DecorationFactory, ThemeConfig, Layer } from './DecorationFactory';
+import Ember from 'ember';
+import Connection from 'bt-web2/services/connection';
 
 export const local_color = 'white';
 export const human_color = 'lightpink';
 export const ai_color = 'black';
 
+class DisplayUser {
+  constructor(user:User) {
+    this.distance = user.getDistance();
+    this.image = null;
+    this.loadingImage = false;
+  }
+  public distance:number = 0;
+  public image:HTMLImageElement|null = null;
+  public loadingImage:boolean = false;
+}
+
 class PaintFrameState {
-  public userPositions:Map<number,number> = new Map();
+  public userPaint:Map<number,DisplayUser> = new Map();
+}
+
+function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:PaintFrameState) {
+  const users = raceState.getUserProvider().getUsers(tmNow);
+
+  let needToLoad = users.find((user) => user.getImage() && !paintState.userPaint.get(user.getId())?.image);
+  let anyUsersNeedLoading = false;
+  let anyUsersLoading = false;
+  users.forEach((user) => {
+    const paintUser = paintState.userPaint.get(user.getId()) || new DisplayUser(user);
+
+    if(!paintUser.image && user.getImage()) {
+      anyUsersNeedLoading = true;
+    }
+    if(paintUser.loadingImage && user.getImage()) {
+      anyUsersLoading = true;
+    }
+
+    paintState.userPaint.set(user.getId(), paintUser);
+  })
+
+  if(!anyUsersLoading && anyUsersNeedLoading) {
+    // some users need to load!
+    if(needToLoad) {
+      const imageBase64 = needToLoad.getImage();
+      const paintUser = paintState.userPaint.get(needToLoad.getId());
+      
+      if(paintUser && imageBase64) {
+        paintUser.loadingImage = true;
+        const img = document.createElement('img');
+        img.onload = () => {
+          paintUser.loadingImage = false;
+          paintUser.image = img;
+        }
+        console.log("loading image for ", needToLoad.getName());
+        img.src = imageBase64;
+      }
+    }
+  }
 }
 
 function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
@@ -37,15 +89,18 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
 
   const smoothMix = 0.85;
   users.forEach((user) => {
-    if(paintState.userPositions.has(user.getId())) {
+    if(paintState.userPaint.has(user.getId())) {
       const actualPos = user.getDistance();
-      const paintPos = paintState.userPositions.get(user.getId()) || user.getDistance();
+      const displayUser = paintState.userPaint.get(user.getId()) || new DisplayUser(user);
+      const paintPos = displayUser.distance;
       if(actualPos < paintPos && user.getUserType() & UserTypeFlags.Local) {
         console.log(tmNow, "local user is at ", actualPos, " compared to paintPos of ", paintPos);
       }
-      paintState.userPositions.set(user.getId(), smoothMix*paintPos + (1-smoothMix)*actualPos);
+      displayUser.distance = smoothMix*paintPos + (1-smoothMix)*actualPos;
+      paintState.userPaint.set(user.getId(), displayUser);
     } else {
-      paintState.userPositions.set(user.getId(), user.getDistance());
+      const displayUser = new DisplayUser(user);
+      paintState.userPaint.set(user.getId(), displayUser);
     }
   })
 
@@ -61,7 +116,8 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   
   const distToShow = (w/1920)*150;
 
-  let localUserDistance = paintState.userPositions.get(localUser.getId()) || localUser.getDistance();
+  const localUserPaint = paintState.userPaint.get(localUser.getId()) || new DisplayUser(localUser);
+  let localUserDistance = localUserPaint.distance || localUser.getDistance();
 
   minDist = localUserDistance - distToShow/2;
   maxDist = localUserDistance + distToShow/2;
@@ -115,41 +171,61 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
 
   decorationState.draw(ctx, Layer.Underground);
 
-  // ok, gotta draw the cyclists
-  users.forEach((user) => {
-    const dist = paintState.userPositions.get(user.getId()) || user.getDistance();
+
+  const drawAUser = (user:User) => {
+    const dist = paintState.userPaint.get(user.getId())?.distance || user.getDistance();
     const elev = map.getElevationAtDistance(dist);
 
     const typeFlags = user.getUserType();
     const isLocal = typeFlags & UserTypeFlags.Local;
     const isHuman = !(typeFlags & UserTypeFlags.Ai);
+    let userImage = paintState.userPaint.get(user.getId())?.image;
+    let fillColor = 'lightpink';
+    let borderColor = 'black';
+    let sz = 2;
     if(isLocal && isHuman) {
-      const sz = 3;
-      ctx.fillStyle = local_color;
-      ctx.fillRect(dist-sz / 2,elev,sz,sz);
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 0.1;
-      ctx.strokeRect(dist-sz/2,elev,sz,sz);
+      sz = 3;
+      fillColor = 'white';
+      borderColor = 'black';
+    } else if(isHuman) {
+      sz = 2.5;
+      fillColor = human_color;
+      borderColor = 'black';
     } else {
-      let sz = 2;
-      let fillColor = 'lightpink';
-      let borderColor = 'black';
-      if(isHuman) {
-        sz = 2.5;
-        fillColor = human_color;
-        borderColor = 'black';
-      } else {
-        sz = 2;
-        fillColor = ai_color;
-        borderColor = 'white';
-      }
-      ctx.fillStyle = fillColor;
-      ctx.fillRect(dist-sz / 2,elev,sz,sz);
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 0.1;
-      ctx.strokeRect(dist-sz/2,elev,sz,sz);
+      // ai
+      sz = 2;
+      fillColor = ai_color;
+      borderColor = 'white';
     }
+    ctx.fillStyle = fillColor;
+    
+
+    if(userImage) {
+      ctx.drawImage(userImage, dist-sz / 2,elev,sz,sz);
+    } else {
+      ctx.fillRect(dist-sz / 2,elev,sz,sz);
+    }
+    
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 0.1;
+    ctx.strokeRect(dist-sz/2,elev,sz,sz);
+  }
+
+  // ok, gotta draw the cyclists
+  
+  const ais = users.filter((user) => {
+    return user.getUserType() & UserTypeFlags.Ai;
+  });
+  const humansNotLocal = users.filter((user) => {
+    return !(user.getUserType() & UserTypeFlags.Ai) && !(user.getUserType() & UserTypeFlags.Local);
   })
+  const localUsers = users.filter((user) => {
+    return user.getUserType() & UserTypeFlags.Local;
+  })
+  ais.forEach(drawAUser);
+  humansNotLocal.forEach(drawAUser);
+  localUsers.forEach(drawAUser);
+
 
 
 }
@@ -198,6 +274,7 @@ const defaultThemeConfig:ThemeConfig = {
 
 export default class MainMap extends Component.extend({
   // anything which *must* be merged to prototype here
+  connection: <Connection><unknown>Ember.inject.service('connection'),
   classNames: ['main-map__container'],
   tagName: 'canvas',
 
@@ -222,10 +299,11 @@ export default class MainMap extends Component.extend({
     }
     const decorationFactory = new DecorationFactory(defaultThemeConfig);
     const decorationState = new DecorationState(raceState?.getMap(), decorationFactory);
-
     let lastTime = 0;
     const paintState = new PaintFrameState();
+    let frame = 0;
     const handleAnimationFrame = (time:number) => {
+      frame++;
       if(raceState) {
         
         let dt = 0;
@@ -234,7 +312,11 @@ export default class MainMap extends Component.extend({
         }
         lastTime = time;
 
-        raceState.tick(new Date().getTime());
+        const tmNow = new Date().getTime();
+        raceState.tick(tmNow);
+        if(frame % 5 == 0) {
+          doPaintFrameStateUpdates(tmNow, raceState, paintState);
+        }
         paintCanvasFrame(canvas, raceState, time, decorationState, dt, paintState);
 
         requestAnimationFrame(handleAnimationFrame);

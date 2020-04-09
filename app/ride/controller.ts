@@ -14,6 +14,7 @@ export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices:<Devices><unknown>Ember.inject.service(),
   connection:<Connection><unknown>Ember.inject.service(),
+  _raceState:<RaceState|null>null,
 
   actions: {
     newRide() {
@@ -42,7 +43,7 @@ export default class Ride extends Controller.extend({
     }
     const targetHost = ENV.gameServerHost;
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState:RaceState) => {
-      this._raceState = raceState;
+      this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
       return this._raceState;
     }, (failure:any) => {

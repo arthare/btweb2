@@ -77,6 +77,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _typeFlags:number;
   private _name:string;
   private _lastSlopeWholePercent:number = 0;
+  private _imageBase64:string|null = null;
 
   private _lastT:number = 0;
   private _speed:number = 0;
@@ -105,6 +106,9 @@ export class User extends UserDataRecorder implements SlopeSource {
 
   getName():string {
     return this._name;
+  }
+  getImage():string|null {
+    return this._imageBase64;
   }
 
   getUserType():number {
@@ -229,6 +233,16 @@ export class User extends UserDataRecorder implements SlopeSource {
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
       classString: classes.join(' '),
       lastWattsSaved: this.getLastWattsSaved().toFixed(1) + 'W',
+    }
+  }
+
+  setImage(imageBase64:string) {
+    assert2(imageBase64.startsWith('data:'));
+    if(this.getUserType() & UserTypeFlags.Ai) {
+      // I don't want to store images for hundreds of AI characters
+      this._imageBase64 = null;
+    } else {
+      this._imageBase64 = imageBase64;
     }
   }
 

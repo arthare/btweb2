@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage } from '../app/server-client-common/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate } from '../app/server-client-common/communication';
 import { assert2 } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
 import { User, UserTypeFlags } from '../app/server-client-common/User';
@@ -62,7 +62,13 @@ function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorM
   socket.send(JSON.stringify(ret));
 }
 
-function sendResponse(tmNow:number, ws:WebSocket, type:BasicMessageType, serverGame:ServerGame, msg:ClientConnectionResponse|S2CPositionUpdate|S2CNameUpdate|S2CFinishUpdate) {
+function sendResponse(
+  tmNow:number, 
+  ws:WebSocket, 
+  type:BasicMessageType, 
+  serverGame:ServerGame, 
+  msg:ClientConnectionResponse|S2CPositionUpdate|S2CNameUpdate|S2CFinishUpdate|S2CImageUpdate
+) {
 
   const bm:S2CBasicMessage = {
     timeStamp: tmNow,
@@ -206,10 +212,12 @@ function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsCo
   const raceState = game.getLastRaceState();
   let tmSinceName = user && (tmNow - user.getLastNameUpdate()) || 0x7fffffff;
   let tmSinceFinish = user.getTimeSinceFinishUpdate(tmNow);
+  let tmSinceImage = user && (tmNow - user.getLastImageUpdate()) || 0x7fffffff;
   switch(raceState) {
     case CurrentRaceState.PreRace:
       tmSinceFinish = 0; // don't send finish info pre-race, that doesn't make any sense
       tmSinceName *= 10; // send name stuff way more frequently pre-race
+      tmSinceImage *= 10; // really pound the images out in the prerace state
       break;
     case CurrentRaceState.Racing:
       if(!game.raceState.isAnyHumansFinished(tmNow)) {
@@ -236,7 +244,21 @@ function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsCo
     user.noteLastNameUpdate(tmNow);
 
     return sendResponse(tmNow, wsConnection, BasicMessageType.S2CNameUpdate, game, response);
+  } else if(tmSinceImage >= 10000) {
+    // time for an image!
+    const users = game.raceState.getUserProvider().getUsers(tmNow);
+    const userWithoutImageSent = users.find((otherUser) => {
+      return otherUser.getId() != user.getId() && otherUser.getImage() && !user.hasBeenSentImageFor(otherUser.getId());
+    });
+    user.noteImageSent(tmNow, userWithoutImageSent && userWithoutImageSent.getId() || -1);
+    if(userWithoutImageSent) {
+      // ok, the recipient user here hasn't received an image for userWithoutImageSent yet
 
+      console.log("sending ", userWithoutImageSent.getName(), " image to ", user.getName());
+      const response:S2CImageUpdate = new S2CImageUpdate(userWithoutImageSent);
+      return sendResponse(tmNow, wsConnection, BasicMessageType.S2CImageUpdate, game, response);
+    }
+    
   } else if(!game.raceState.isAllRacersFinished(tmNow)) {
 
     const response:S2CPositionUpdate = buildClientPositionUpdate(tmNow, user, game.userProvider, 16);

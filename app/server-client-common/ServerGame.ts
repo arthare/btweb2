@@ -4,16 +4,31 @@ import { ClientConnectionRequest, CurrentRaceState } from "./communication";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
+import fs from 'fs';
 
 export class ServerUser extends User {
   _tmLastNameSent:number;
   _tmLastFinishUpdate:number;
+  _tmLastImageUpdate:number;
+  _usersIveBeenSentImagesFor:Set<number> = new Set();
 
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super(name, massKg, handicap, typeFlags);
 
     this._tmLastFinishUpdate = -1;
     this._tmLastNameSent = -1;
+    this._tmLastImageUpdate = -1;
+  }
+
+  hasBeenSentImageFor(userId:number) {
+    return this._usersIveBeenSentImagesFor.has(userId);
+  }
+  noteImageSent(tmNow:number, userId:number) {
+    this._usersIveBeenSentImagesFor.add(userId);
+    this._tmLastImageUpdate = tmNow;
+  }
+  getLastImageUpdate() {
+    return this._tmLastImageUpdate;
   }
 
   noteLastNameUpdate(tmWhen:number) {
@@ -58,6 +73,10 @@ export class ServerUserProvider implements UserProvider {
 
     let newId = userIdCounter++;
     const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
+    if(ccr.imageBase64) {
+      console.log("user ", ccr.riderName, " has an image!");
+      user.setImage(ccr.imageBase64);
+    }
     user.setId(newId);
     this.users.push(user);
     userIdToUserMap.set(newId, user);
@@ -78,6 +97,7 @@ export class ServerGame {
         accountId:"-1",
         riderHandicap: aiStrength,
         gameId:gameId,
+        imageBase64: null,
       }, UserTypeFlags.Ai)
     }
 

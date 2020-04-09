@@ -14,6 +14,7 @@ export enum BasicMessageType {
   S2CPositionUpdate,
   S2CNameUpdate,
   S2CFinishUpdate,
+  S2CImageUpdate,
 }
 
 export enum CurrentRaceState {
@@ -116,6 +117,7 @@ export class ServerMapDescription {
 
 export interface ClientConnectionRequest {
   riderName:string; // name of your rider.  So the "Jones Household" account might have riders "SarahJones" and "GeorgeJones"
+  imageBase64:string|null; // image of your rider
   accountId:string;
   riderHandicap:number;
   gameId:string;
@@ -125,6 +127,21 @@ export interface ClientConnectionResponse {
   map:ServerMapDescription; // here's the map we're riding on.
 }
 
+export class S2CImageUpdate {
+
+  constructor(user:User) {
+    this.id = user.getId();
+
+    const image = user.getImage();
+    if(!image) {
+      throw new Error("You're trying to send an image update for a user without an image?");
+    }
+    this.imageBase64 = image;
+  }
+
+  id:number;
+  imageBase64:string;
+}
 export class S2CNameUpdate {
 
   constructor(tmNow:number, provider:UserProvider) {

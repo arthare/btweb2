@@ -7,6 +7,11 @@
     {{input value=userName placeholder="Your Name" class="user-set-up__input"}}
   </div>
   <div class="user-set-up__element">
+    <div class="user-set-up__label">Your Picture</div>
+    <img class="user-set-up__image">
+    <input type="file" accept="image/*">
+  </div>
+  <div class="user-set-up__element">
     <div class="user-set-up__label">Pick Your Device</div>
     <button class="user-set-up__button" {{action 'connectDevice'}}>Connect Device</button>
   </div>
