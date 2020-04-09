@@ -80,8 +80,6 @@ export default class CreateRideWidget extends Component.extend({
 
   @computed("meters", "rideName")
   get race():RideMapElevationOnly {
-    console.log("return a race");
-
     return new PureCosineMap(parseInt('' + this.get('meters')));
   }
 

@@ -17,26 +17,18 @@ let wss:WebSocket.Server;
 
 try {
   const config = JSON.parse(fs.readFileSync('./ssl-config.json'));
-  console.log(20);
   var privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-  console.log(22);
   var certificate = fs.readFileSync(config.fullChain, 'utf8');
-  console.log(24);
 
   var credentials = { key: privateKey, cert: certificate };
-  console.log(27);
   var https = require('https');
-  console.log(29);
   
   //pass in your credentials to create an https server
   var httpsServer = https.createServer(credentials);
-  console.log(33);
   httpsServer.listen(8080);
-  console.log(35);
   wss = new WebSocket.Server({
     server: httpsServer,
   });
-  console.log(39);
 } catch(e) {
   wss = new WebSocket.Server({
     port: 8080,

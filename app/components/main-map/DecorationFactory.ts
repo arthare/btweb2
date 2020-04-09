@@ -125,7 +125,6 @@ export class DecorationFactory {
           imageElements.push(flipImage(img));
           cLoaded++;
           if(cLoaded === cNeededToLoad) {
-            console.log("loaded the " + cNeededToLoad + " images for ", decSpec.name);
             this._availableDecorations.push(new LoadedDecoration(decSpec, imageElements));
           }
         }

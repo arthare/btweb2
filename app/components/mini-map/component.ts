@@ -64,7 +64,7 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
     ctx.strokeStyle = ai_color;
     ctx.beginPath();
     aiPositions.forEach((positionPct) => {
-      assert2(positionPct >= 0 && positionPct <= 1.0);
+      assert2(positionPct >= -0.001 && positionPct <= 1.001);
       ctx.moveTo(positionPct*w, 0);
       ctx.lineTo(positionPct*w, h);
     })
@@ -121,7 +121,6 @@ export default class MiniMap extends Component.extend({
     for(var pct = 0; pct <= 1.0; pct += 0.01) {
       elevations.push(race.getElevationAtDistance(pct*len));
     }
-    console.log("drawing minimap with ", elevations);
     drawMinimap(canvas, elevations, w, h);
 
     const png = canvas.toDataURL();

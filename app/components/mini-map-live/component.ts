@@ -22,7 +22,6 @@ export default class MiniMapLive extends Component.extend({
     }
     const tmNow = new Date().getTime();
 
-    console.log("live minimap frame!");
     const canvas = this.element.querySelector('canvas');
     if(!canvas) {
       throw new Error("canvas not found");

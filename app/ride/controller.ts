@@ -12,16 +12,16 @@ import ENV from 'bt-web2/config/environment';
 
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
-  devices:<Devices><unknown>Ember.inject.service(),
-  connection:<Connection><unknown>Ember.inject.service(),
-  _raceState:<RaceState|null>null,
+  devices: <Devices><unknown>Ember.inject.service(),
+  connection: <Connection><unknown>Ember.inject.service(),
+  _raceState: <RaceState | null>null,
 
   actions: {
     newRide() {
       this.connection.disconnect();
-      const raceState:RaceState|null = this.get('_raceState');
-      
-      if(raceState) {
+      const raceState: RaceState | null = this.get('_raceState');
+
+      if (raceState) {
         raceState.stop();
       }
       this.devices.getLocalUser()?.setId(-1);
@@ -31,58 +31,57 @@ export default class Ride extends Controller.extend({
 }) {
   // normal class body definition here
   lastLocalMeters: number = 0;
-  myTimeout:any = 0;
-  frame:number = 0;
-  _raceState:RaceState|null = null;
+  myTimeout: any = 0;
+  frame: number = 0;
+  _raceState: RaceState | null = null;
 
-  _setup(gameId:string):Promise<any> {
+  _setup(gameId: string): Promise<any> {
 
     const user = this.devices.getLocalUser();
-    if(!user) {
+    if (!user) {
       throw new Error("User isn't valid");
     }
     const targetHost = ENV.gameServerHost;
-    return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState:RaceState) => {
+    return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {
       this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
       return this._raceState;
-    }, (failure:any) => {
+    }, (failure: any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);
-      if(yn) {
+      if (yn) {
         return this.transitionToRoute('set-up-user');
       }
     })
   }
 
   _tick() {
-    if(this.isDestroyed || this.isDestroying) {
-      console.log("Skipping a tick() in /ride because we're destroyed");
+    if (this.isDestroyed || this.isDestroying) {
       return;
     }
     const tmNow = new Date().getTime();
     const users = this.devices.getUsers(tmNow);
-    if(users.length <= 0) {
+    if (users.length <= 0) {
       const yn = confirm("There aren't any users.  Start setup again?");
-      if(yn) {
+      if (yn) {
         return this.transitionToRoute('set-up-user');
       }
     }
 
     const raceState = this._raceState;
-    if(!raceState) {
+    if (!raceState) {
       throw new Error("Failed to find race state");
     }
     raceState.tick(tmNow);
 
     {
       const user = raceState.getLocalUser();
-      if(user) {
+      if (user) {
         window.pending.lastPhysics = user.getDistance();
         window.tick(tmNow);
       }
     }
     this.devices.updateSlopes(tmNow);
-    
+
 
 
     this.myTimeout = setTimeout(() => this._tick(), 15);
@@ -90,8 +89,8 @@ export default class Ride extends Controller.extend({
   }
 
   @computed("frame")
-  get localRiders():UserDisplay[] {
-    if(!this._raceState) {
+  get localRiders(): UserDisplay[] {
+    if (!this._raceState) {
       return [];
     }
     const tmNow = new Date().getTime();
@@ -103,8 +102,8 @@ export default class Ride extends Controller.extend({
     })
   }
   @computed("frame")
-  get remoteRiders():UserDisplay[] {
-    if(!this._raceState) {
+  get remoteRiders(): UserDisplay[] {
+    if (!this._raceState) {
       return [];
     }
     const tmNow = new Date().getTime();
@@ -115,7 +114,7 @@ export default class Ride extends Controller.extend({
       return localUser.getDisplay(this._raceState);
     })
   }
-  
+
 }
 
 // DO NOT DELETE: this is how TypeScript knows how to look up your controllers.

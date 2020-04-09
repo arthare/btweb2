@@ -1,4 +1,5 @@
-import { writeToCharacteristic, monitorCharacteristic } from "./DeviceUtils";
+import { writeToCharacteristic, monitorCharacteristic, serviceUuids } from "./DeviceUtils";
+import { assert2 } from "bt-web2/server-client-common/Utils";
 
 export enum BTDeviceState {
   Ok,
@@ -174,7 +175,6 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
         // this says "control not permitted"
         const dvTakeControl:DataView = new DataView(new ArrayBuffer(1));
         dvTakeControl.setUint8(0, 0);
-        console.log("taking control");
         return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', dvTakeControl);
       }
     }
@@ -276,6 +276,72 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
   }
   hasCadence(): boolean {
     return this._hasSeenCadence;
+  }
+  hasHrm():boolean {
+    return false;
+  }
+}
+
+
+export class BluetoothKickrDevice extends BluetoothCpsDevice {
+  constructor(gattDevice:BluetoothRemoteGATTServer) {
+    super(gattDevice);
+
+    this._startupPromise = this._startupPromise.then(() => {
+      return monitorCharacteristic(gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, (evt:any) => console.log("kickr evt ", evt.target.value));
+    }).catch((failure) => {
+      throw failure;
+    })
+  }
+
+  _tmLastSlopeUpdate:number = 0;
+  updateSlope(tmNow:number):void {
+   // we're a kickr!  despite launching as the "open source" trainer, our protocol does
+   // not appear to be public.  Therefore, I'm going to send hills as resistance levels
+   // since I can't figure out how to reliably do the sim-mode commands.
+
+    // this is not a trainer, but we don't want to force all the powermeters and hrms to implement this method.
+    if(!this._slopeSource) {
+      return;
+    }
+
+    const dtMs = tmNow - this._tmLastSlopeUpdate;
+    if(dtMs < 500) {
+      return; // don't update the ftms device too often
+    }
+
+    // from goobering around with nRF connect and trainerroad's "set resistance strength"
+    // slider, it looks like the kickr's set resistance command looks like:
+    // 6 bytes: [01 40 01 00 XX YY]
+    // XX: LSB of a 16-bit uint
+    // YY: MSB of a 16-bit uint
+    // the uint goes from 0 (full resistance) to 16383 (no resistance), which is a little strange
+    // but whatevs.
+    this._tmLastSlopeUpdate = tmNow;
+
+    const charOut = new DataView(new ArrayBuffer(3));
+    charOut.setUint8(0, 0x40);
+
+    const minSlope = -20;
+    const maxSlope = 40; // if we ever peg the kickr at max slope, you basically can't turn the pedals
+    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
+    let slopeClamped = Math.max(slopeInWholePercent, minSlope);
+    slopeClamped = Math.min(slopeClamped, maxSlope);
+
+    const span = (maxSlope - minSlope);
+    const offset = slopeInWholePercent - minSlope;
+    const pct = offset / span;
+    assert2(pct >= 0 && pct <= 1);
+    const uint16 = (1-pct) * 16383;
+    charOut.setUint8(1, uint16 & 0xff);
+    charOut.setUint8(2, (uint16>>8) & 0xff);
+
+    writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut);
+
+  }
+  
+  hasCadence(): boolean {
+    return false;
   }
   hasHrm():boolean {
     return false;

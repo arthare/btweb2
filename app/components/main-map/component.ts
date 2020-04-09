@@ -72,7 +72,6 @@ function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:
           paintUser.loadingImage = false;
           paintUser.image = img;
         }
-        console.log("loading image for ", needToLoad.getName());
         img.src = imageBase64;
       }
     }
@@ -106,9 +105,6 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       const actualPos = user.getDistance();
       const displayUser = paintState.userPaint.get(user.getId()) || new DisplayUser(user);
       const paintPos = displayUser.distance;
-      if(actualPos < paintPos && user.getUserType() & UserTypeFlags.Local) {
-        console.log(tmNow, "local user is at ", actualPos, " compared to paintPos of ", paintPos);
-      }
       displayUser.distance = smoothMix*paintPos + (1-smoothMix)*actualPos;
       paintState.userPaint.set(user.getId(), displayUser);
     } else {
@@ -357,7 +353,6 @@ export default class MainMap extends Component.extend({
     canvas.width = canvas.parentElement?.clientWidth;
     canvas.height = canvas.parentElement?.clientHeight;
     //canvas.height = canvas.clientHeight;
-    console.log("canvas set up to be ", canvas.width, " x ", canvas.height);
 
     const raceState:RaceState|null = this.get('raceState');
     if(!raceState) {

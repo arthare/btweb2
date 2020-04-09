@@ -1,5 +1,5 @@
-import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice } from "./WebBluetoothDevice";
-import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps } from "./DeviceUtils";
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice } from "./WebBluetoothDevice";
+import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids } from "./DeviceUtils";
 
 export interface DeviceFactory {
     findPowermeter():Promise<ConnectedDeviceInterface>;
@@ -51,6 +51,7 @@ class TestDeviceFactory implements DeviceFactory {
         filters: [
           {services: ['cycling_power']},
           {services: ['fitness_machine']},
+          {services: [serviceUuids.kickrService]},
         ]
       }
       return navigator.bluetooth.requestDevice(filters).then((device) => {
@@ -63,9 +64,12 @@ class TestDeviceFactory implements DeviceFactory {
         return gattServer.getPrimaryServices().then((services) => {
           const ftms = getFtms(services);
           const cps = getCps(services);
+          const kickr = getKickrService(services);
 
           if(ftms) {
             return new BluetoothFtmsDevice(gattServer);
+          } else if(kickr) {
+            return new BluetoothKickrDevice(gattServer);
           } else if(cps) {
             return new BluetoothCpsDevice(gattServer);
           } else {
