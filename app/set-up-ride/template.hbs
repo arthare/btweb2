@@ -1,5 +1,14 @@
 {{tourjs-header}}
 <div class="set-up-ride__content">
+  <div class="set-up-ride__create-your-own">
+    {{#unless settingUpRide}}
+      <button class="set-up-ride__create-your-own--button" {{action 'toggleRideWidget'}}>
+        Schedule Ride
+      </button>
+    {{else}}
+      {{create-race-widget onRaceCreated=(action 'onRaceCreated')}}
+    {{/unless}}
+  </div>
   <div class="set-up-ride__title">
     Current Joinable Rides
   </div>

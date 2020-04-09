@@ -88,7 +88,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _lastT:number = 0;
   private _speed:number = 0;
   protected _position:number = 0;
-  private _lastDraftSaving:DraftSavings = 0;
+  private _lastDraftSaving:DraftSavings = {watts:0, pctOfMax:0, fromDistance:0};
   
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {

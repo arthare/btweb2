@@ -2,6 +2,8 @@ import Component from '@ember/component';
 import { ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
 import { human_color, local_color, ai_color } from '../main-map/component';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
+import Ember from 'ember';
 
 export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:number, h:number, localPositionPct?:number, humanPositions?:number[], aiPositions?:number[]) {
   
@@ -93,13 +95,17 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
 export default class MiniMap extends Component.extend({
   // anything which *must* be merged to prototype here
   classNames: ['mini-map__container'],
-  race: <ServerHttpGameListElement|null>null,
+  race: <RideMapElevationOnly|null>null,
+
+  _onChangeRace: Ember.observer('race', function(this:MiniMap) {
+    this._redraw();
+  }),
 }) {
   // normal class body definition here
-  didInsertElement() {
-    // we need to draw a minimap for this guy
 
-    const race:ServerHttpGameListElement|null = this.get('race');
+  _redraw() {
+
+    const race:RideMapElevationOnly|null = this.get('race');
     if(!race) {
       throw new Error("you gotta provide your minimap a race!");
     }
@@ -109,13 +115,25 @@ export default class MiniMap extends Component.extend({
 
     const w = this.element.clientWidth;
     const h = this.element.clientHeight;
-    drawMinimap(canvas, race.elevations, w, h);
+
+    const elevations = [];
+    const len = race.getLength();
+    for(var pct = 0; pct <= 1.0; pct += 0.01) {
+      elevations.push(race.getElevationAtDistance(pct*len));
+    }
+    console.log("drawing minimap with ", elevations);
+    drawMinimap(canvas, elevations, w, h);
 
     const png = canvas.toDataURL();
     const img = this.element.querySelector('img');
     if(img) {
       img.src = png;
     }
-    
+
+  }
+
+  didInsertElement() {
+    // we need to draw a minimap for this guy
+    this._redraw();
   }
 };

@@ -2,12 +2,21 @@ import Controller from '@ember/controller';
 
 export default class SetUpRide extends Controller.extend({
   // anything which *must* be merged to prototype here
+  settingUpRide: false,
+
   actions: {
     go() {
       this.transitionToRoute('ride');
     },
     joinRace(gameId:string) {
       this.transitionToRoute('ride', gameId);
+    },
+    toggleRideWidget() {
+      this.toggleProperty('settingUpRide');
+    },
+    onRaceCreated() {
+      alert("Your ride has been created!");
+      this.set('settingUpRide', false);
     }
   },
 

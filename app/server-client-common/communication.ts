@@ -1,7 +1,7 @@
 import { RaceState, UserProvider } from "./RaceState";
 import { User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
-import { RideMap, RideMapElevationOnly } from "./RideMap";
+import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
 
 
@@ -176,6 +176,50 @@ export class ClientToServerUpdate {
   gameId:string;
   userId:number;
   lastPower:number;
+}
+
+export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:number, elevations:number[]) {
+  const pctRaw = meters / lengthMeters;
+  const n = elevations.length;
+  if(pctRaw < 0) {
+    return elevations[0];
+  } else if(pctRaw >= 1) {
+    return elevations[n - 1];
+  } else {
+    const ixLeft = Math.floor(pctRaw * n);
+    const ixRight = ixLeft + 1;
+
+    const distLeft = (ixLeft / n)*lengthMeters;
+    const distRight = (ixRight / n)*lengthMeters;
+    const elevLeft = elevations[ixLeft];
+    const elevRight = elevations[ixRight];
+
+    const offset = meters - distLeft;
+    const span = distRight - distLeft;
+    const pct = offset / span;
+    assert2(pct >= -0.001 && pct <= 1.001);
+    assert2(offset >= -0.001);
+    assert2(distRight > distLeft);
+    return pct*elevRight + (1-pct)*elevLeft;
+  }
+
+}
+
+// a wrapper class to start translating a ScheduleRacePostRequest into a map we can actually load and ride
+export class SimpleElevationMap extends RideMapPartial {
+  elevations:number[];
+  lengthMeters:number;
+  constructor(elevations:number[], lengthMeters:number) {
+    super();
+    this.elevations = elevations;
+    this.lengthMeters = lengthMeters;
+  }
+  getElevationAtDistance(meters: number): number {
+    return getElevationFromEvenSpacedSamples(meters, this.lengthMeters, this.elevations);
+  }
+  getLength(): number {
+    return this.lengthMeters;
+  }
 }
 
 export class ServerHttpGameListElement {

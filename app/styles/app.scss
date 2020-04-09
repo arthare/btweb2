@@ -9,11 +9,13 @@
 @import './user-dashboard.scss';
 @import './display-race';
 @import './mini-map-live.scss';
+@import './create-race-widget.scss';
 
 * {
   font-family: sans-serif;
   padding: 0;
   margin: 0;
+  box-sizing: border-box;
 }
 body {
   background-color: lightpink;

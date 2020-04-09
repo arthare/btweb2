@@ -1,8 +1,8 @@
 import Route from '@ember/routing/route';
 import ENV from 'bt-web2/config/environment';
-import { ServerHttpGameList } from 'bt-web2/server-client-common/communication';
+import { ServerHttpGameList, ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
 
-function apiGet(endPoint:string, data?:any):Promise<any> {
+export function apiGet(endPoint:string, data?:any):Promise<any> {
   const apiRoot:string = ENV.apiRoot;
   const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
 
@@ -13,6 +13,20 @@ function apiGet(endPoint:string, data?:any):Promise<any> {
 
   return fetch(apiRoot + slash + endPoint + queries, {
     method: 'GET',
+  }).then((response) => {
+    return response.json();
+  })
+}
+export function apiPost(endPoint:string, data?:any):Promise<any> {
+  const apiRoot:string = ENV.apiRoot;
+  const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
+
+  return fetch(apiRoot + slash + endPoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data && JSON.stringify(data),
   }).then((response) => {
     return response.json();
   })

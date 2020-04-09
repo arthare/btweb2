@@ -1,7 +1,9 @@
 import Component from '@ember/component';
 import { assert2, formatSecondsHms } from 'bt-web2/server-client-common/Utils';
-import { ServerHttpGameListElement, CurrentRaceState } from 'bt-web2/server-client-common/communication';
+import { ServerHttpGameListElement, CurrentRaceState, getElevationFromEvenSpacedSamples, SimpleElevationMap } from 'bt-web2/server-client-common/communication';
 import { computed } from '@ember/object';
+import { RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
+import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 
 export default class PendingRace extends Component.extend({
   // anything which *must* be merged to prototype here
@@ -28,6 +30,12 @@ export default class PendingRace extends Component.extend({
   get lengthString():string {
     const race:ServerHttpGameListElement = this.get('race');
     return `${(race.lengthMeters / 1000).toFixed(1)}km`;
+  }
+
+  @computed("race")
+  get raceElevations():RideMapElevationOnly {
+    const race:ServerHttpGameListElement = this.get('race');
+    return new SimpleElevationMap(race.elevations, race.lengthMeters);
   }
 
   @computed("race", "frame")
