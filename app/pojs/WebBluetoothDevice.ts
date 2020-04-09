@@ -1,5 +1,5 @@
 import { writeToCharacteristic, monitorCharacteristic, serviceUuids } from "./DeviceUtils";
-import { assert2 } from "bt-web2/server-client-common/Utils";
+import { assert2 } from '../server-client-common/Utils';
 
 export enum BTDeviceState {
   Ok,
