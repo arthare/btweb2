@@ -23,7 +23,10 @@ export default class MiniMapLive extends Component.extend({
     const tmNow = new Date().getTime();
 
     console.log("live minimap frame!");
-    const canvas = document.createElement('canvas');
+    const canvas = this.element.querySelector('canvas');
+    if(!canvas) {
+      throw new Error("canvas not found");
+    }
     canvas.width = this.element.clientWidth;
     canvas.height = this.element.clientHeight;
 
@@ -31,7 +34,7 @@ export default class MiniMapLive extends Component.extend({
     const raceState = this.get('raceState');
     if(raceState) {
       const map = raceState.getMap();
-      for(var pct = 0; pct <= 1.0; pct += 0.005) {
+      for(var pct = 0; pct <= 1.0; pct += 0.01) {
         elevations.push(map.getElevationAtDistance(pct * map.getLength()));
       }
   
@@ -55,15 +58,13 @@ export default class MiniMapLive extends Component.extend({
 
       const w = this.element.clientWidth;
       const h = this.element.clientHeight;
-      drawMinimap(canvas, elevations, w, h, localPosition, humanPositions, aiPositions);
-  
-      const dataUri = canvas.toDataURL();
-      const img = this.element.querySelector('img');
-      if(img) {
-        img.src = dataUri;
-      }
+      requestAnimationFrame(() => {
+        drawMinimap(canvas, elevations, w, h, localPosition, humanPositions, aiPositions);
+      })
+
+      
     }
 
-    setTimeout(() => this._doFrame(), 1000);
+    setTimeout(() => this._doFrame(), 250);
   }
 };

@@ -10,8 +10,8 @@ class FakeUserProvider implements UserProvider {
 
   constructor() {
     this.users = [
-      new User("Local User", 80, 300, UserTypeFlags.Local),
-      new User("Human Remote", 80, 300, UserTypeFlags.Remote),
+      new User("Local User", 80, 350, UserTypeFlags.Local),
+      new User("Human Remote", 80, 280, UserTypeFlags.Remote),
     ];
 
     for(var x = 1;x < 50; x++) {

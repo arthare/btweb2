@@ -25,10 +25,23 @@ class DisplayUser {
 
 class PaintFrameState {
   public userPaint:Map<number,DisplayUser> = new Map();
+
+  public defaultAiImage:HTMLImageElement|null = null;
+  public loadingAi = false;
 }
 
 function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:PaintFrameState) {
   const users = raceState.getUserProvider().getUsers(tmNow);
+
+  if(!paintState.defaultAiImage && !paintState.loadingAi) {
+    paintState.loadingAi = true;
+    const imgAi = document.createElement('img');
+    imgAi.onload = () => {
+      paintState.defaultAiImage = imgAi;
+      paintState.loadingAi = false;
+    }
+    imgAi.src = "/assets/ai.png";
+  }
 
   let needToLoad = users.find((user) => user.getImage() && !paintState.userPaint.get(user.getId())?.image);
   let anyUsersNeedLoading = false;
@@ -183,32 +196,85 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
     let fillColor = 'lightpink';
     let borderColor = 'black';
     let sz = 2;
+    let nameToDraw;
     if(isLocal && isHuman) {
       sz = 3;
       fillColor = 'white';
       borderColor = 'black';
+      nameToDraw = user.getName();
     } else if(isHuman) {
       sz = 2.5;
       fillColor = human_color;
       borderColor = 'black';
+      nameToDraw = user.getName();
     } else {
       // ai
       sz = 2;
       fillColor = ai_color;
-      borderColor = 'white';
+      borderColor = 'transparent';
+      userImage = paintState.defaultAiImage;
     }
-    ctx.fillStyle = fillColor;
     
+    { // actually doing the user draw
+      const before = ctx.getTransform();
+      const slope = map.getSlopeAtDistance(user.getDistance());
+      const angleDegrees = -Math.atan(slope);
+      ctx.translate(dist-sz / 2,elev + sz/2);
+      ctx.rotate(-angleDegrees);
+      ctx.scale(1,-1);
 
-    if(userImage) {
-      ctx.drawImage(userImage, dist-sz / 2,elev,sz,sz);
-    } else {
-      ctx.fillRect(dist-sz / 2,elev,sz,sz);
+      if(userImage) {
+        ctx.drawImage(userImage, -sz / 2, -sz / 2, sz,sz);
+      } else {
+        // no image yet - let's draw a filler
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(-sz / 2,-sz / 2,sz,sz);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 0.1;
+        ctx.strokeRect(-sz/2,-sz / 2,sz,sz);
+      }
+
+      // ok let's draw a name
+      if(nameToDraw) {
+        const before2 = ctx.getTransform();
+        ctx.font = `${sz}px Arial`;
+
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle = fillColor;
+        ctx.lineWidth = 0.3;
+        ctx.translate(0, -sz/2);
+        ctx.rotate(-Math.PI/3);
+        ctx.strokeText(nameToDraw, 0, 0);
+        ctx.fillText(nameToDraw, 0, 0);
+        ctx.setTransform(before2);
+      }
+
+      
+
+      ctx.setTransform(before);
+      
+      if(user.getUserType() & UserTypeFlags.Local) {
+        // a local guy!
+        const draftStats = user.getLastWattsSaved();
+
+        if(draftStats.pctOfMax > 0) {
+          // a local guy!  let's draw their drafting status
+          const myDist = user.getDistance();
+          const deltaAhead = draftStats.fromDistance - myDist;
+          const pct = draftStats.pctOfMax;
+  
+          ctx.lineWidth = 0.8 * pct;
+          ctx.strokeStyle = `rgba(255,255,255,${pct})`;
+          ctx.beginPath();
+  
+          ctx.moveTo(dist,map.getElevationAtDistance(dist) - 0.4);
+          ctx.lineTo(dist+deltaAhead,map.getElevationAtDistance(dist+deltaAhead) - 0.4);
+          ctx.stroke();
+
+        }
+      }
     }
     
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 0.1;
-    ctx.strokeRect(dist-sz/2,elev,sz,sz);
   }
 
   // ok, gotta draw the cyclists

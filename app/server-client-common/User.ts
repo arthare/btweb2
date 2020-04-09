@@ -70,6 +70,12 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   }
 }
 
+export interface DraftSavings {
+  watts:number;
+  pctOfMax:number;
+  fromDistance:number;
+}
+
 export class User extends UserDataRecorder implements SlopeSource {
 
   private _massKg: number;
@@ -82,7 +88,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _lastT:number = 0;
   private _speed:number = 0;
   protected _position:number = 0;
-  private _lastWattsSaved:number = 0;
+  private _lastDraftSaving:DraftSavings = 0;
   
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
@@ -163,9 +169,11 @@ export class User extends UserDataRecorder implements SlopeSource {
       const myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
       const newtonsSaved = (1-myPctReduction)*aeroForce;
       aeroForce *= myPctReduction;
-      this.setLastWattsSaved(Math.abs(newtonsSaved * this._speed));
+
+      const wattsSaved = Math.abs(newtonsSaved * this._speed);
+      this.setLastWattsSaved(wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
     } else {
-      this.setLastWattsSaved(0);
+      this.setLastWattsSaved(0, 0, this.getDistance());
     }
 
     const slope = map.getSlopeAtDistance(this._position);
@@ -201,11 +209,19 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
   }
 
-  public getLastWattsSaved() {
-    return this._lastWattsSaved;
+  public getLastWattsSaved():DraftSavings {
+    return this._lastDraftSaving || {
+      watts: 0,
+      pctOfMax: 0,
+      fromDistance: 0,
+    };
   }
-  private setLastWattsSaved(watts:number) {
-    this._lastWattsSaved = watts;
+  private setLastWattsSaved(watts:number, pctOfMax:number, fromDistance:number) {
+    this._lastDraftSaving = {
+      watts,
+      pctOfMax,
+      fromDistance,
+    }
   }
 
   getDisplay(raceState:RaceState|null):UserDisplay {
@@ -232,7 +248,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
       classString: classes.join(' '),
-      lastWattsSaved: this.getLastWattsSaved().toFixed(1) + 'W',
+      lastWattsSaved: this.getLastWattsSaved().watts.toFixed(1) + 'W',
     }
   }
 
