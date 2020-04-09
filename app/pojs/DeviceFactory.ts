@@ -1,4 +1,4 @@
-import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice } from "./WebBluetoothDevice";
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice } from "./WebBluetoothDevice";
 import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps } from "./DeviceUtils";
 
 export interface DeviceFactory {
@@ -67,7 +67,7 @@ class TestDeviceFactory implements DeviceFactory {
           if(ftms) {
             return new BluetoothFtmsDevice(gattServer);
           } else if(cps) {
-            throw new Error("Cps not implemented yet");
+            return new BluetoothCpsDevice(gattServer);
           } else {
             throw new Error("We don't recognize what kind of device this is");
           }

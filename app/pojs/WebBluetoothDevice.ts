@@ -245,31 +245,39 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
 }
 
 
-export class PowermeterDevice extends BluetoothDeviceShared {
+export class BluetoothCpsDevice extends BluetoothDeviceShared {
+  updateSlope(tmNow: number): void {
+    // powermeters don't have slope adjustment, dummy!
+  }
+  _hasSeenCadence: boolean = false;
+
   constructor(gattDevice:BluetoothRemoteGATTServer) {
     super(gattDevice);
-    this._startupPromise = this._startupPromise.then(() => {
-      
-      const fnCps = (evt:any) => {this._parseCpmEvent(evt.target.value);};
-      return monitorCharacteristic(gattDevice, 'cycling_power', 'cycling_power_measurement', fnCps);
 
+    this._startupPromise = this._startupPromise.then(() => {
+      // need to start up property monitoring for ftms
+
+      return monitorCharacteristic(gattDevice, 'cycling_power', 'cycling_power_measurement', (evt:any) => this.onPowerMeasurementChanged(evt.target.value));
     })
   }
-  hasPower():boolean {
-      return true;
+
+  onPowerMeasurementChanged(buf:DataView) {
+    const tmNow = new Date().getTime();
+    const flags = buf.getUint16(0);
+    const power = buf.getInt16(2, true);
+
+    console.log('power device sez ', power);
+    this._notifyNewPower(tmNow, power);
+
   }
-  hasCadence():boolean {
-      return true;
+
+  hasPower(): boolean {
+    return true;
+  }
+  hasCadence(): boolean {
+    return this._hasSeenCadence;
   }
   hasHrm():boolean {
-      return false;
-  }
-
-  _parseCpmEvent(buf:DataView) {
-    console.log("todo: gotta parse cps: ", buf);
-  }
-
-  updateSlope(tmNow:number) {
-
+    return false;
   }
 }
