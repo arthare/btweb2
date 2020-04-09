@@ -25,6 +25,7 @@ export interface ConnectedDeviceInterface {
   disconnect():Promise<void>;
   getState():BTDeviceState;
   name():string;
+  getDeviceTypeDescription():string;
 
   setPowerRecipient(who:PowerRecipient):void;
   setCadenceRecipient(who:CadenceRecipient):void;
@@ -39,6 +40,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   private _hrmOutput:HrmRecipient[] = [];
   protected _slopeSource:SlopeSource|null = null;
 
+  abstract getDeviceTypeDescription():string;
   abstract disconnect():Promise<void>;
   abstract getState():BTDeviceState;
   abstract name():string;
@@ -123,6 +125,9 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
         return writeToCharacteristic(gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut);
       });
     })
+  }
+  getDeviceTypeDescription():string {
+    return "FTMS Smart Trainer";
   }
 
   _tmLastSlopeUpdate:number = 0;
@@ -249,6 +254,9 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
   updateSlope(tmNow: number): void {
     // powermeters don't have slope adjustment, dummy!
   }
+  getDeviceTypeDescription():string {
+    return "Bluetooth Powermeter";
+  }
   _hasSeenCadence: boolean = false;
 
   constructor(gattDevice:BluetoothRemoteGATTServer) {
@@ -292,6 +300,9 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     }).catch((failure) => {
       throw failure;
     })
+  }
+  getDeviceTypeDescription():string {
+    return "Wahoo Kickr";
   }
 
   _tmLastSlopeUpdate:number = 0;

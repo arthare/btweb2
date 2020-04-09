@@ -15,9 +15,11 @@ export default class Devices extends Service.extend({
   // normal class body definition here
   devices:ConnectedDeviceInterface[] = [];
   users:User[] = [];
+  deviceDescription:string = "No Device Connected";
 
   
   addDevice(device:ConnectedDeviceInterface) {
+    this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
     this.devices.push(device);
   }
 

@@ -89,6 +89,9 @@ class FakeDevice extends PowerDataDistributor {
       this._notifyNewPower(new Date().getTime(), Math.random()*50 + 200);
     }, 500);
   }
+  getDeviceTypeDescription():string {
+    return "Fake Device";
+  }
   updateSlope(tmNow: number): void {
     
   }
@@ -110,13 +113,15 @@ export default class UserSetUp extends Component.extend({
 
   userName:'Art',
   userHandicap:'300',
+  canDoBluetooth: true,
   device:<ConnectedDeviceInterface|null>null,
   onDone: (param:UserSetupParameters) => {},
 
   actions: { 
     connectDevice() {
 
-      if(window.location.hostname === 'localhost') {
+      const canDoBluetooth = this.get('canDoBluetooth');
+      if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
 
         const device = new FakeDevice();
         this.set('device', device);
@@ -152,6 +157,15 @@ export default class UserSetUp extends Component.extend({
   didInsertElement() {
     window.assert2(this.onDone);
     
+    if(!window.navigator || !window.navigator.bluetooth || !window.navigator.bluetooth.getAvailability) {
+      this.set('canDoBluetooth', false);
+    } else {
+      navigator.bluetooth.getAvailability().then((available) => {
+        console.log("Bluetooth is available? ", available);
+        this.set('canDoBluetooth', available);
+      })
+    }
+
     const lastImage = window.localStorage.getItem('lastImageBase64');
     if(lastImage) {
       this.setImage(lastImage, false);

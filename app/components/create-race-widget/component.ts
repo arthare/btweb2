@@ -15,7 +15,7 @@ export default class CreateRideWidget extends Component.extend({
   raceTime: '12:00',
   classNames: ['create-race-widget__container'],
 
-  onRaceCreated:()=>{},
+  onRaceCreated:(req:ScheduleRacePostRequest)=>{},
 
   devices: <Devices><unknown>Ember.inject.service('devices'),
 
@@ -38,12 +38,9 @@ export default class CreateRideWidget extends Component.extend({
         throw new Error("Invalid minutes");
       }
 
-      const raceDateSplit = raceDate.split('/');
-      
       let date = new Date(raceDate);
       const offset = date.getTimezoneOffset()*60*1000;
       date = new Date(date.getTime() + offset);
-      debugger;
       date.setHours(hoursOfDay);
       date.setMinutes(minutesOfHour);
 

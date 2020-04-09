@@ -19,6 +19,9 @@ export class TestPowermeter extends PowerDataDistributor {
         }, 500);
     }
 
+    getDeviceTypeDescription():string {
+      return "Fake Device";
+    }
     disconnect(): Promise<void> {
         clearInterval(this._interval);
         this._interval = null;
