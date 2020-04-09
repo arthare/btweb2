@@ -1,5 +1,5 @@
 import Service from '@ember/service';
-import { ClientToServerUpdate, C2SBasicMessage, S2CBasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate, S2CRaceStateUpdate, CurrentRaceState, S2CFinishUpdate}  from 'bt-web2/server-client-common/communication';
+import { ClientToServerUpdate, C2SBasicMessage, S2CBasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate, S2CRaceStateUpdate, CurrentRaceState, S2CFinishUpdate, S2CImageUpdate}  from 'bt-web2/server-client-common/communication';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { User } from 'bt-web2/server-client-common/User';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
@@ -21,6 +21,7 @@ export default class Connection extends Service.extend({
   _lastServerRaceState:S2CRaceStateUpdate|null = null;
   raceResults:S2CFinishUpdate|null = null;
   _lastTimeStamp = 0;
+  _imageSources:Map<number,string> = new Map();
 
   _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
@@ -43,6 +44,7 @@ export default class Connection extends Service.extend({
       // ok, we've got our listener set up
       const connect:ClientConnectionRequest = {
         riderName: user.getName(),
+        imageBase64: user.getImage(),
         accountId: accountId,
         riderHandicap: user.getHandicap(),
         gameId: gameId,
@@ -59,8 +61,7 @@ export default class Connection extends Service.extend({
   }
 
   connect(targetHost:string, gameId:string, accountId:string, user:User):Promise<RaceState> {
-    const url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `wss://${targetHost}:8080`;
-
+    let url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(url);
       ws.onopen = () => {
@@ -79,7 +80,8 @@ export default class Connection extends Service.extend({
         user.setId(ccr.yourAssignedId);
 
         const map = new RideMapHandicap(ccr.map);
-        this._raceState = new RaceState(map, this.devices, gameId);
+        const raceState = new RaceState(map, this.devices, gameId);
+        this.set('_raceState', raceState);
         this._ws = ws;
         this._gameId = gameId;
         ws.onmessage = (event:MessageEvent) => this._onMsgReceived(event);
@@ -101,8 +103,9 @@ export default class Connection extends Service.extend({
     } catch(e) {
       throw new Error("Invalid message received: " + event.data);
     }
-    if(bm.timeStamp < this._lastTimeStamp) {
-      console.log("bouncing a message because it's ealier than the last one we got");
+    if(bm.timeStamp <= this._lastTimeStamp) {
+      console.log("bouncing a message because it's earlier or same-time as the last one we got");
+      return;
     } else if(!isFinite(bm.timeStamp)) {
       return;
     }
@@ -121,12 +124,35 @@ export default class Connection extends Service.extend({
           posUpdate.clients.forEach((client) => {
             const hasIt = this.devices.getUser(client.id);
             if(!hasIt) {
-              this.devices.addRemoteUser(client);
+
+              const image = this._imageSources.get(client.id) || null;
+
+              this.devices.addRemoteUser(client, image);
             }
           })
           
 
-          this._raceState.absorbPositionUpdate(tmNow, bm.payload);
+          this._raceState.absorbPositionUpdate(bm.timeStamp, bm.payload);
+          {
+            const user = this._raceState.getLocalUser();
+            if(user) {
+              window.pending.lastPhysics = user.getDistance();
+              window.tick(bm.timeStamp);
+            }
+          }
+          break;
+        }
+        case BasicMessageType.S2CImageUpdate:
+        {
+          debugger;
+          const imageUpdate:S2CImageUpdate = bm.payload;
+          const user = this._raceState.getUserProvider().getUser(imageUpdate.id);
+          this._imageSources.set(imageUpdate.id, imageUpdate.imageBase64);
+          if(user) {
+            console.log("received an image for ", user.getName());
+            user.setImage(imageUpdate.imageBase64);
+          }
+
           break;
         }
         case BasicMessageType.ServerError:
@@ -147,6 +173,15 @@ export default class Connection extends Service.extend({
       this._raceState = null;
     }
     
+  }
+
+  disconnect() {
+    this._timeout = null;
+    if(this._ws) {
+      this._ws.onmessage = () => {};
+      this._ws.close();
+    }
+    this._raceState = null;
   }
 
   getUserName(userId:number):string {
@@ -196,7 +231,7 @@ export default class Connection extends Service.extend({
   scheduleNetworkTick() {
     this._timeout = setTimeout(() => {
       this.tick();
-    }, 500);
+    }, 250);
   }
 }
 

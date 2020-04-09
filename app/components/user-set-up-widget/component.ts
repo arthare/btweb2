@@ -9,6 +9,77 @@ export interface UserSetupParameters {
   name:string;
   handicap:number;
   device:ConnectedDeviceInterface;
+  imageBase64:string|null;
+}
+
+function handleFileSelect(this:UserSetUp, evt:any) {
+  var files = evt.target.files; // FileList object
+  // Loop through the FileList and render image files as thumbnails.
+  for (var i = 0, f; f = files[i]; i++) {
+
+    // Only process image files.
+    if (!f.type.match('image.*')) {
+      continue;
+    }
+
+    var reader = new FileReader();
+
+    // Closure to capture the file information.
+    reader.onload = ((theFile) => {
+      return (e:any) => {
+        // Render thumbnail.
+        this.setImage(e.target.result, false);
+      };
+    })(f);
+
+    // Read in the image file as a data URL.
+    reader.readAsDataURL(f);
+  }
+}
+
+function resizeImage(originalBase64:string, maxWidth:number, maxHeight:number):Promise<string> {
+
+  return new Promise((resolve) => {
+    var img = new Image;
+    img.onload = function() {
+      const aspect = img.width / img.height;
+
+      let desiredHeight = 64;
+      let desiredWidth = desiredHeight * aspect;
+      if(aspect > 1) {
+        // wider than high
+        desiredWidth = maxWidth;
+        desiredHeight = maxWidth / aspect;
+      } else {
+        desiredHeight = maxHeight;
+        desiredWidth = maxHeight * aspect;
+      }
+  
+      var canvas = document.createElement('canvas');
+      canvas.width = desiredWidth;
+      canvas.height = desiredHeight;
+      canvas.style.width = desiredWidth + 'px';
+      canvas.style.height = desiredHeight + 'px';
+      canvas.style.position = 'fixed';
+      canvas.style.left = '-10000px';
+      canvas.style.top = '0px';
+      canvas.style.zIndex = '10000';
+      canvas.style.border = "1px solid black";
+      document.body.appendChild(canvas);
+  
+      var ctx = canvas.getContext('2d');
+      if(ctx){
+        ctx.drawImage(img, 0, 0, desiredWidth, desiredHeight);
+    
+        var newDataUri = canvas.toDataURL('image/jpeg', 0.75);
+        document.body.removeChild(canvas);
+        resolve(newDataUri);
+      }
+    }
+    img.src = originalBase64;
+  })
+
+
 }
 
 class FakeDevice extends PowerDataDistributor {
@@ -59,10 +130,18 @@ export default class UserSetUp extends Component.extend({
     },
     done() {
       if(this.device) {
+
+        const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
+        let imageBase64 = null;
+        if(displayImage) {
+          imageBase64 = displayImage.src;
+        }
+
         this.onDone({
           name: this.userName,
           handicap: parseFloat(this.userHandicap),
           device: this.device,
+          imageBase64: imageBase64,
         })
       }
     }
@@ -72,6 +151,44 @@ export default class UserSetUp extends Component.extend({
 
   didInsertElement() {
     window.assert2(this.onDone);
+    
+    const lastImage = window.localStorage.getItem('lastImageBase64');
+    if(lastImage) {
+      this.setImage(lastImage, false);
+    }
+
+    const files = this.element.querySelector('input[type="file"]');
+    if(files) {
+      files.addEventListener('change', handleFileSelect.bind(this), false);
+    }
+  }
+
+  setImage(base64:string, recursed:boolean) {
+
+    if(!recursed) {
+      localStorage.setItem('lastImageBase64', base64);
+    }
+
+    const img:HTMLImageElement = document.createElement('img');
+    img.onload = () => {
+      // ok, we've got the image
+      if(img.width <= 64 && img.height <= 64) {
+        // this image is fine!
+        const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
+        if(displayImage) {
+          displayImage.src = base64;
+        } else {
+          // lol what
+        }
+      } else {
+        // we need to resize this sucker
+        
+        return resizeImage(base64, 64, 64).then((resizedBase64) => {
+          this.setImage(resizedBase64, true);
+        })
+      }
+    }
+    img.src = base64;
   }
 
   // normal class body definition here

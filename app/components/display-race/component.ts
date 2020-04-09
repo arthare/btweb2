@@ -1,6 +1,8 @@
 import Component from '@ember/component';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { computed } from '@ember/object';
+import { ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
 
 export default class DisplayRace extends Component.extend({
   // anything which *must* be merged to prototype here

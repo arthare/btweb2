@@ -29,15 +29,21 @@ export default class Devices extends Service.extend({
     this.users = [];
   }
 
-  addRemoteUser(pos:S2CPositionUpdateUser) {
+  addRemoteUser(pos:S2CPositionUpdateUser, image:string|null) {
     const tmNow = new Date().getTime();
     const newUser = new User("Unknown User " + pos.id, 80, 300, UserTypeFlags.Remote);
+    if(image) {
+      newUser.setImage(image);
+    }
     newUser.setId(pos.id);
     newUser.absorbPositionUpdate(tmNow, pos);
     this.users.push(newUser);
   }
   addUser(user:UserSetupParameters) {
     const newUser = new User(user.name, 80, user.handicap, UserTypeFlags.Local);
+    if(user.imageBase64) {
+      newUser.setImage(user.imageBase64);
+    }
     this.users.push(newUser);
     const device = user.device;
     device.setCadenceRecipient(newUser);

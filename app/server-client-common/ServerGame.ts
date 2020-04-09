@@ -4,16 +4,31 @@ import { ClientConnectionRequest, CurrentRaceState } from "./communication";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
+import fs from 'fs';
 
 export class ServerUser extends User {
   _tmLastNameSent:number;
   _tmLastFinishUpdate:number;
+  _tmLastImageUpdate:number;
+  _usersIveBeenSentImagesFor:Set<number> = new Set();
 
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super(name, massKg, handicap, typeFlags);
 
     this._tmLastFinishUpdate = -1;
     this._tmLastNameSent = -1;
+    this._tmLastImageUpdate = -1;
+  }
+
+  hasBeenSentImageFor(userId:number) {
+    return this._usersIveBeenSentImagesFor.has(userId);
+  }
+  noteImageSent(tmNow:number, userId:number) {
+    this._usersIveBeenSentImagesFor.add(userId);
+    this._tmLastImageUpdate = tmNow;
+  }
+  getLastImageUpdate() {
+    return this._tmLastImageUpdate;
   }
 
   noteLastNameUpdate(tmWhen:number) {
@@ -58,6 +73,10 @@ export class ServerUserProvider implements UserProvider {
 
     let newId = userIdCounter++;
     const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
+    if(ccr.imageBase64) {
+      console.log("user ", ccr.riderName, " has an image!");
+      user.setImage(ccr.imageBase64);
+    }
     user.setId(newId);
     this.users.push(user);
     userIdToUserMap.set(newId, user);
@@ -78,6 +97,7 @@ export class ServerGame {
         accountId:"-1",
         riderHandicap: aiStrength,
         gameId:gameId,
+        imageBase64: null,
       }, UserTypeFlags.Ai)
     }
 
@@ -88,6 +108,10 @@ export class ServerGame {
   private start(tmNow:number) {
     this._tmRaceStart = tmNow;
     this._scheduleTick();
+  }
+  public stop() {
+    this._stopped = true;
+    this.raceState.stop();
   }
   public addUser(tmNow:number, ccr:ClientConnectionRequest):number {
     // they've added a user.  So we want to perhaps manage the game start to tip it towards starting soon.
@@ -123,6 +147,9 @@ export class ServerGame {
     return userIdToUserMap.get(userId);
   }
   private _tick() {
+    if(this._stopped) {
+      return;
+    }
     const tmNow = new Date().getTime();
 
     let thisRaceState:CurrentRaceState|null = null;
@@ -146,14 +173,45 @@ export class ServerGame {
         this._tmRaceStart = tmNow; // record the very first timestamp that we applied physics
       }
 
-      if(this.raceState.isAllHumansFinished()) {
-        // all the humans are done, so we don't need a physics update or anything
-        thisRaceState = CurrentRaceState.PostRace;
-      } else {
-        this.raceState.tick(tmNow);
-        this._scheduleTick();
-        thisRaceState = CurrentRaceState.Racing;
+      switch(this._lastRaceStateMode) {
+        case CurrentRaceState.PreRace:
+          // our last race state was prerace, but our tmNow is greater than the scheduled race start time.  So we're definitely racing now!
+          thisRaceState = CurrentRaceState.Racing;
+          console.log(`we're past the scheduled start time of ${this.raceState.getGameId()}, so we're starting`);
+          this.raceState.tick(tmNow);
+          break;
+        case CurrentRaceState.Racing:
+        {
+          if(this.raceState.isAllHumansFinished(tmNow)) {
+            if(this.raceState.isAllRacersFinished(tmNow)) {
+              // ok, absolutely everyone is finished, so we _really_ don't need a physics update, and we're definitely post-race
+              thisRaceState = CurrentRaceState.PostRace;
+              console.log(`all racers (human and AI) are done ${this.raceState.getGameId()}, so we're post-race now`);
+            } else {
+              // some AIs are still going, and some humans may return at some point.
+              this.raceState.tick(tmNow);
+              const sSinceFinish = this.raceState.getSecondsSinceLastNonFinishedHuman(tmNow);
+              if(sSinceFinish >= 300) {
+                thisRaceState = CurrentRaceState.PostRace;
+                console.log("Been 5 minutes since we last saw an unfinished human on " + this.raceState.getGameId() + ", so we're going to post-race");
+              } else {
+                thisRaceState = CurrentRaceState.Racing;
+              }
+            }
+          } else {
+            // some humams are still racing
+            this.raceState.tick(tmNow);
+            thisRaceState = CurrentRaceState.Racing;
+          }
+          break;
+        }
+        case CurrentRaceState.PostRace:
+        {
+          thisRaceState = CurrentRaceState.PostRace;
+          break;
+        }
       }
+      this._scheduleTick();
     }
 
     assert2(thisRaceState !== null, "We must set this every time");
@@ -161,8 +219,13 @@ export class ServerGame {
   }
   
   private _scheduleTick() {
-    this._timeout = setTimeout(() => this._tick(), 1000 / SERVER_PHYSICS_FRAME_RATE);
+    if(this._stopped) {
+      // don't do anything!
+    } else {
+      this._timeout = setTimeout(() => this._tick(), 1000 / SERVER_PHYSICS_FRAME_RATE);
+    }
   }
+  private _stopped:boolean = false;
   private _timeout:any;
   private _tmRaceStart:number; // first timestamp that we applied physics
   private _tmScheduledRaceStart:number; // timestamp that we plan on starting the race

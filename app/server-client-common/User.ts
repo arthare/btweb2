@@ -58,12 +58,22 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   }
 
   setId(newId:number) {
-    assert2(this._id < 0 || newId === this._id, "we should only be assigning IDs once...");
+    if(newId < 0) {
+      assert2(this._id >= 0, "You're only allowed setting back to a negative id when you're disconnecting");
+    } else if(newId >= 0) {
+      assert2(this._id < 0, "You're only allowed setting positive IDs when you're connecting");
+    }
     this._id = newId;
   }
   getId() {
     return this._id;
   }
+}
+
+export interface DraftSavings {
+  watts:number;
+  pctOfMax:number;
+  fromDistance:number;
 }
 
 export class User extends UserDataRecorder implements SlopeSource {
@@ -73,11 +83,12 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _typeFlags:number;
   private _name:string;
   private _lastSlopeWholePercent:number = 0;
+  private _imageBase64:string|null = null;
 
   private _lastT:number = 0;
   private _speed:number = 0;
   protected _position:number = 0;
-  private _lastWattsSaved:number = 0;
+  private _lastDraftSaving:DraftSavings = {watts:0, pctOfMax:0, fromDistance:0};
   
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
@@ -101,6 +112,9 @@ export class User extends UserDataRecorder implements SlopeSource {
 
   getName():string {
     return this._name;
+  }
+  getImage():string|null {
+    return this._imageBase64;
   }
 
   getUserType():number {
@@ -155,9 +169,11 @@ export class User extends UserDataRecorder implements SlopeSource {
       const myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
       const newtonsSaved = (1-myPctReduction)*aeroForce;
       aeroForce *= myPctReduction;
-      this.setLastWattsSaved(Math.abs(newtonsSaved * this._speed));
+
+      const wattsSaved = Math.abs(newtonsSaved * this._speed);
+      this.setLastWattsSaved(wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
     } else {
-      this.setLastWattsSaved(0);
+      this.setLastWattsSaved(0, 0, this.getDistance());
     }
 
     const slope = map.getSlopeAtDistance(this._position);
@@ -186,17 +202,26 @@ export class User extends UserDataRecorder implements SlopeSource {
     const lastPosition = this._position;
     const mapLength = map.getLength();
     this._position += Math.min(map.getLength(), this._speed * dtSeconds);
+    this._position = Math.min(map.getLength(), this._position);
 
     if(lastPosition < mapLength && this._position >= mapLength) {
       this.setFinishTime(tmNow);
     }
   }
 
-  public getLastWattsSaved() {
-    return this._lastWattsSaved;
+  public getLastWattsSaved():DraftSavings {
+    return this._lastDraftSaving || {
+      watts: 0,
+      pctOfMax: 0,
+      fromDistance: 0,
+    };
   }
-  private setLastWattsSaved(watts:number) {
-    this._lastWattsSaved = watts;
+  private setLastWattsSaved(watts:number, pctOfMax:number, fromDistance:number) {
+    this._lastDraftSaving = {
+      watts,
+      pctOfMax,
+      fromDistance,
+    }
   }
 
   getDisplay(raceState:RaceState|null):UserDisplay {
@@ -223,14 +248,23 @@ export class User extends UserDataRecorder implements SlopeSource {
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
       classString: classes.join(' '),
-      lastWattsSaved: this.getLastWattsSaved().toFixed(1) + 'W',
+      lastWattsSaved: this.getLastWattsSaved().watts.toFixed(1) + 'W',
+    }
+  }
+
+  setImage(imageBase64:string) {
+    assert2(imageBase64.startsWith('data:'));
+    if(this.getUserType() & UserTypeFlags.Ai) {
+      // I don't want to store images for hundreds of AI characters
+      this._imageBase64 = null;
+    } else {
+      this._imageBase64 = imageBase64;
     }
   }
 
   absorbNameUpdate(name:string, type:number) {
     this._name = name;
     if(!(this._typeFlags & UserTypeFlags.Local)) {
-      console.log("nonlocal user " + name + " absorbing type flags " + type);
       this._typeFlags = type;
     }
   }
@@ -239,6 +273,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._position = update.distance;
     if(this._typeFlags & UserTypeFlags.Local) {
       // we're local, so we won't re-absorb the power from the server
+      console.log("Local user told position ", this._position, " and time ", tmNow);
     } else {
       // we're a remote or AI user, so we should try to be as similar to the server as possible
       this.notifyPower(new Date().getTime(), update.power);

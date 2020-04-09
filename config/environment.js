@@ -4,9 +4,9 @@ module.exports = function(environment) {
   let ENV = {
     modulePrefix: 'bt-web2',
     environment,
-    rootURL: '',
-    apiRoot: 'https://www.staczero.com/tourjs-api',
-    gameServerHost: 'staczero.com',
+    rootURL: '/',
+    apiRoot: 'http://localhost:8081',
+    gameServerHost: 'localhost',
     locationType: 'auto',
     EmberENV: {
       FEATURES: {
@@ -49,7 +49,7 @@ module.exports = function(environment) {
     // here you can enable a production-specific feature
     ENV.rootURL = '/tourjs';
     ENV.apiRoot = 'https://www.staczero.com/tourjs-api';
-    ENV.gameServerHost = 'www.stacero.com';
+    ENV.gameServerHost = 'staczero.com';
   }
 
   return ENV;

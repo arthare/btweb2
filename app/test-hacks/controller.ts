@@ -10,14 +10,17 @@ class FakeUserProvider implements UserProvider {
 
   constructor() {
     this.users = [
-      new User("Local User", 80, 300, UserTypeFlags.Local),
-      new User("Human Remote", 80, 300, UserTypeFlags.Remote),
+      new User("Local User", 80, 350, UserTypeFlags.Local),
+      new User("Human Remote", 80, 280, UserTypeFlags.Remote),
     ];
+
     for(var x = 1;x < 50; x++) {
-      this.users.push(new User(`AI Remote ${x}`, 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote));
+      const aiUser = new User(`AI Remote ${x}`, 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote);
+      this.users.push(aiUser);
     }
     this.users.forEach((user, index) => {
       user.setId(index);
+      user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAY0lEQVR42u3QAREAAAQEsJdcdHI4W4RVMp3HSoAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECLhvAcDdX8EOJRgWAAAAAElFTkSuQmCC');
     });
   }
 

@@ -19,6 +19,7 @@
     display: flex;
     flex-direction: row;
     padding: 4px;
+    font-size: 14px;
     box-sizing: border-box;
     border-top: 0.5px solid rgba(0,0,0,1.0);
 
@@ -46,6 +47,17 @@
     }
     &-distance {
       flex: 0 0 64px;
+    }
+  }
+}
+
+@media screen and (max-width:640px) {
+  .leader-board {
+    &__container {
+      min-width: 100vw;
+    }
+    &__rank {
+      padding: 2px;
     }
   }
 }

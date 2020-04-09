@@ -1,7 +1,13 @@
 {{#if connection.preRace}}
+  <button {{action 'newRide'}}>Disconnect &amp; Pick Another Ride</button>
   {{display-pre-race frame=frame localRiders=localRiders remoteRiders=remoteRiders}}
 {{else if connection.racing}}
-  {{display-race raceState=_raceState}}
+  {{#if _raceState}}
+    {{display-race raceState=_raceState}}
+  {{else}}
+    Connecting...
+  {{/if}}
 {{else if connection.postRace}}
+  <button {{action 'newRide'}}>Disconnect &amp; Pick Another Ride</button>
   {{display-post-race frame=frame results=connection.raceResults}}
 {{/if}}

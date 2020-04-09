@@ -2,11 +2,17 @@
 <div class="display-race__content">
   <div class="display-race__main-holder">
     {{main-map raceState=raceState}}
-    <div class="display-race__rankings-container">
-      {{leader-board raceState=raceState frame=frame}}
-    </div>
-    <div class="display-race__status-container">
-      {{user-dashboard raceState=raceState frame=frame}}
+    <div class="display-race__controls-container">
+      <div class="display-race__rankings-container">
+        {{leader-board raceState=raceState frame=frame}}
+      </div>
+      <div class="display-race__controls-gap"></div>
+      <div class="display-race__status-container">
+        {{user-dashboard raceState=raceState frame=frame}}
+      </div>
+      <div class="display-race__mini-map-container">
+        {{mini-map-live raceState=raceState}}
+      </div>
     </div>
   </div>
 </div>

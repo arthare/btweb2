@@ -1,10 +1,16 @@
 {{tourjs-header}}
 
+
 <div class="display-post-race__rankings">
   <h3>Rankings:</h3>
   {{#each processedRankings as |result|}}
     <div class="display-post-race__result">
-      {{result.rank}} - {{result.name}}: {{result.time}}
+      {{result.rank}} - {{result.name}}: 
+      {{#if result.time}}
+        {{result.time}}
+      {{else}}
+        Not Finished
+      {{/if}}
     </div>
   {{/each}}
 </div>

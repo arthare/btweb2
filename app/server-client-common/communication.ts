@@ -1,7 +1,7 @@
 import { RaceState, UserProvider } from "./RaceState";
 import { User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
-import { RideMap, RideMapElevationOnly } from "./RideMap";
+import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
 
 
@@ -14,6 +14,7 @@ export enum BasicMessageType {
   S2CPositionUpdate,
   S2CNameUpdate,
   S2CFinishUpdate,
+  S2CImageUpdate,
 }
 
 export enum CurrentRaceState {
@@ -86,7 +87,7 @@ export class S2CFinishUpdate {
     this.rankings = [];
     this.times = [];
     users.forEach((user, index) => {
-      this.rankings.push(index+1);
+      this.rankings.push(user.getId());
       this.times.push(user.getRaceTimeSeconds(tmRaceStart));
     })
   }
@@ -116,6 +117,7 @@ export class ServerMapDescription {
 
 export interface ClientConnectionRequest {
   riderName:string; // name of your rider.  So the "Jones Household" account might have riders "SarahJones" and "GeorgeJones"
+  imageBase64:string|null; // image of your rider
   accountId:string;
   riderHandicap:number;
   gameId:string;
@@ -125,6 +127,21 @@ export interface ClientConnectionResponse {
   map:ServerMapDescription; // here's the map we're riding on.
 }
 
+export class S2CImageUpdate {
+
+  constructor(user:User) {
+    this.id = user.getId();
+
+    const image = user.getImage();
+    if(!image) {
+      throw new Error("You're trying to send an image update for a user without an image?");
+    }
+    this.imageBase64 = image;
+  }
+
+  id:number;
+  imageBase64:string;
+}
 export class S2CNameUpdate {
 
   constructor(tmNow:number, provider:UserProvider) {
@@ -161,6 +178,50 @@ export class ClientToServerUpdate {
   lastPower:number;
 }
 
+export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:number, elevations:number[]) {
+  const pctRaw = meters / lengthMeters;
+  const n = elevations.length;
+  if(pctRaw < 0) {
+    return elevations[0];
+  } else if(pctRaw >= 1) {
+    return elevations[n - 1];
+  } else {
+    const ixLeft = Math.floor(pctRaw * n);
+    const ixRight = ixLeft + 1;
+
+    const distLeft = (ixLeft / n)*lengthMeters;
+    const distRight = (ixRight / n)*lengthMeters;
+    const elevLeft = elevations[ixLeft];
+    const elevRight = elevations[ixRight];
+
+    const offset = meters - distLeft;
+    const span = distRight - distLeft;
+    const pct = offset / span;
+    assert2(pct >= -0.001 && pct <= 1.001);
+    assert2(offset >= -0.001);
+    assert2(distRight > distLeft);
+    return pct*elevRight + (1-pct)*elevLeft;
+  }
+
+}
+
+// a wrapper class to start translating a ScheduleRacePostRequest into a map we can actually load and ride
+export class SimpleElevationMap extends RideMapPartial {
+  elevations:number[];
+  lengthMeters:number;
+  constructor(elevations:number[], lengthMeters:number) {
+    super();
+    this.elevations = elevations;
+    this.lengthMeters = lengthMeters;
+  }
+  getElevationAtDistance(meters: number): number {
+    return getElevationFromEvenSpacedSamples(meters, this.lengthMeters, this.elevations);
+  }
+  getLength(): number {
+    return this.lengthMeters;
+  }
+}
+
 export class ServerHttpGameListElement {
   constructor(tmNow:number, game:ServerGame) {
     this.name = game.raceState.getGameId();
@@ -177,6 +238,7 @@ export class ServerHttpGameListElement {
     const n = 100;
     const map = game.raceState.getMap();
     const mapLen = map.getLength();
+    this.lengthMeters = mapLen;
     this.elevations = [];
     for(var x = 0;x < 100; x++) {
       const pct = x / n;
@@ -192,6 +254,7 @@ export class ServerHttpGameListElement {
   whoIn: string[];
   whoInAi: string[];
   elevations: number[];
+  lengthMeters: number;
 }
 export interface ServerHttpGameList {
   races: ServerHttpGameListElement[];
