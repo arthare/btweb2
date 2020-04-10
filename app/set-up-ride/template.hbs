@@ -3,7 +3,7 @@
   <div class="set-up-ride__create-your-own">
     {{#unless settingUpRide}}
       <button class="set-up-ride__create-your-own--button" {{action 'toggleRideWidget'}}>
-        Schedule Ride
+        Preschedule Ride
       </button>
     {{else}}
       {{create-race-widget onRaceCreated=(action 'onRaceCreated')}}

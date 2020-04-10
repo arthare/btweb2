@@ -177,6 +177,16 @@ export default class Connection extends Service.extend({
 
   disconnect() {
     this._timeout = null;
+
+    const tmNow = new Date().getTime();
+
+    this.devices.endRace(tmNow);
+    const user = this.devices.getLocalUser();
+    if(user) {
+      user.setId(-1);
+    }
+
+
     if(this._ws) {
       this._ws.onmessage = () => {};
       this._ws.close();

@@ -12,6 +12,10 @@ export interface UserSetupParameters {
   imageBase64:string|null;
 }
 
+const USERSETUP_KEY_IMAGE = "user-set-up:lastImage";
+const USERSETUP_KEY_NAME = "user-set-up:lastName";
+const USERSETUP_KEY_HANDICAP = "user-set-up:lastHandicap";
+
 function handleFileSelect(this:UserSetUp, evt:any) {
   var files = evt.target.files; // FileList object
   // Loop through the FileList and render image files as thumbnails.
@@ -142,6 +146,9 @@ export default class UserSetUp extends Component.extend({
           imageBase64 = displayImage.src;
         }
 
+        localStorage.setItem(USERSETUP_KEY_HANDICAP, '' + this.userHandicap);
+        localStorage.setItem(USERSETUP_KEY_NAME, '' + this.userName);
+
         this.onDone({
           name: this.userName,
           handicap: parseFloat(this.userHandicap),
@@ -166,9 +173,19 @@ export default class UserSetUp extends Component.extend({
       })
     }
 
-    const lastImage = window.localStorage.getItem('lastImageBase64');
+    const lastImage = window.localStorage.getItem(USERSETUP_KEY_IMAGE);
     if(lastImage) {
       this.setImage(lastImage, false);
+    }
+
+    const lastName = window.localStorage.getItem(USERSETUP_KEY_NAME);
+    if(lastName) {
+      this.set('userName', lastName);
+    }
+
+    const lastHandicap = '' + window.localStorage.getItem(USERSETUP_KEY_HANDICAP);
+    if(lastHandicap && isFinite(parseFloat(lastHandicap)) ) {
+      this.set('userHandicap', lastHandicap);
     }
 
     const files = this.element.querySelector('input[type="file"]');
@@ -180,7 +197,7 @@ export default class UserSetUp extends Component.extend({
   setImage(base64:string, recursed:boolean) {
 
     if(!recursed) {
-      localStorage.setItem('lastImageBase64', base64);
+      localStorage.setItem(USERSETUP_KEY_IMAGE, base64);
     }
 
     const img:HTMLImageElement = document.createElement('img');

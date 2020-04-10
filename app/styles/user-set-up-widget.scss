@@ -13,7 +13,7 @@
     flex-direction: column;
   }
   &__title {
-    font-size: 32px;
+    font-size: $title-font-size-desktop;
     margin-bottom: 32px;
   }
   &__label {
@@ -35,5 +35,54 @@
     max-width: 64px;
     margin-left: auto;
     margin-right: auto;
+  }
+  &__imagefile {
+    border-radius: 16px;
+    border-bottom-color:rgb(238, 238, 238);
+    border-bottom-left-radius:16px;
+    border-bottom-right-radius:16px;
+    border-bottom-style:inset;
+    border-bottom-width:2px;
+    border-image-outset:0px;
+    border-image-repeat:stretch;
+    border-image-slice:100%;
+    border-image-source:none;
+    border-image-width:1;
+    border-left-color:rgb(238, 238, 238);
+    border-left-style:inset;
+    border-left-width:2px;
+    border-right-color:rgb(238, 238, 238);
+    border-right-style:inset;
+    border-right-width:2px;
+    border-top-color:rgb(238, 238, 238);
+    border-top-left-radius:16px;
+    border-top-right-radius:16px;
+    border-top-style:inset;
+    border-top-width:2px;
+
+    text-align: center;
+    position: relative;
+  }
+  &__file {
+    font-size: 0px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-width: 0 0 0 0;
+    border-image-width: 0 0 0 0;
+    line-height: 0;
+  }
+}
+
+@media screen and (max-width: $phone-switchover-max-width) {
+  .user-set-up {
+    &__title {
+      font-size: $title-font-size-phone;
+    }
   }
 }

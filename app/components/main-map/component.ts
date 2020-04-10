@@ -123,10 +123,14 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   window.pending.lastDraw = localUser.getDistance();
   window.tick(tmNow);
   
-  const distToShow = (w/1920)*150;
 
   const localUserPaint = paintState.userPaint.get(localUser.getId()) || new DisplayUser(localUser);
   let localUserDistance = localUserPaint.distance || localUser.getDistance();
+  let localUserSlope = map.getSlopeAtDistance(localUserDistance);
+  let localUserAngleRadians = -Math.atan(localUserSlope);
+
+  // aim to show more distance when we're going up or down big hills so phone people still have situational awareness
+  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*150;
 
   minDist = localUserDistance - distToShow/2;
   maxDist = localUserDistance + distToShow/2;
@@ -145,9 +149,8 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   const userElev = map.getElevationAtDistance(localUser.getDistance());
 
   ctx.resetTransform();
-  setupContextWithTheseCoords(canvas, ctx, minDist, userElev + elevSpan / 2, maxDist, userElev - elevSpan/2);
-
-
+  setupContextWithTheseCoords(canvas, ctx, minDist, userElev + elevSpan / 2, maxDist, userElev - elevSpan/2, localUserAngleRadians);
+  
 
   // time to start drawing!
   const skyGradient = ctx.createLinearGradient(0,0,w,h);

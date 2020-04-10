@@ -1,49 +1,47 @@
-<div class="pending-race__content">
-  <div class="pending-race__row">
-    <span class="pending-race__key">
-      What:
-    </span>
-    <span class="pending-race__value">
-      {{race.name}}
-    </span>
-  </div>
-
-  {{#if hasWhen}}
-    <div class="pending-race__row">
-      <span class="pending-race__key">
-        When:
-      </span>
-      <span class="pending-race__value">
-        {{raceTime}}
-      </span>
-    </div>
-  {{/if}}
-  <div class="pending-race__row">
-    <span class="pending-race__key">
-      Current Riders:
-    </span>
-    <span class="pending-race__value">
-      {{race.whoIn.length}} humans, {{race.whoInAi.length}} AI
-    </span>
-  </div>
-  <div class="pending-race__row">
-    <span class="pending-race__key">
-      Status:
-    </span>
-    <span class="pending-race__value">
-      {{statusString}}
-    </span>
-  </div>
-  <div class="pending-race__row">
-    <span class="pending-race__key">
-      Length:
-    </span>
-    <span class="pending-race__value">
-      {{lengthString}}
-    </span>
-  </div>
-  <div class="pending-race__row">
-    {{mini-map race=raceElevations}}
-  </div>
-  <button class="pending-race__join-button" {{action joinRace race.name}}>Join</button>
+<div class="pending-race__row">
+  <span class="pending-race__key">
+    What:
+  </span>
+  <span class="pending-race__value">
+    {{race.name}}
+  </span>
 </div>
+
+{{#if hasWhen}}
+  <div class="pending-race__row">
+    <span class="pending-race__key">
+      When:
+    </span>
+    <span class="pending-race__value">
+      {{raceTime}}
+    </span>
+  </div>
+{{/if}}
+<div class="pending-race__row">
+  <span class="pending-race__key">
+    Current Riders:
+  </span>
+  <span class="pending-race__value">
+    {{race.whoIn.length}} humans, {{race.whoInAi.length}} AI
+  </span>
+</div>
+<div class="pending-race__row">
+  <span class="pending-race__key">
+    Status:
+  </span>
+  <span class="pending-race__value">
+    {{statusString}}
+  </span>
+</div>
+<div class="pending-race__row">
+  <span class="pending-race__key">
+    Length:
+  </span>
+  <span class="pending-race__value">
+    {{lengthString}}
+  </span>
+</div>
+<div class="pending-race__row">
+  {{mini-map race=raceElevations}}
+</div>
+<button class="pending-race__join-button" {{action joinRace race.name}}>Join</button>

@@ -1,3 +1,10 @@
+$global-bg: white;
+
+$title-font-size-desktop: 32px;
+$title-font-size-phone: 24px;
+
+$phone-switchover-max-width: 640px;
+
 @mixin big-button {
   max-width: 320px;
   width: 100%;

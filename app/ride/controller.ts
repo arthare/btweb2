@@ -26,7 +26,7 @@ export default class Ride extends Controller.extend({
       }
       this.devices.getLocalUser()?.setId(-1);
       this.transitionToRoute('set-up-ride');
-    }
+    },
   }
 }) {
   // normal class body definition here
@@ -80,7 +80,7 @@ export default class Ride extends Controller.extend({
         window.tick(tmNow);
       }
     }
-    this.devices.updateSlopes(tmNow);
+    this.devices.tick(tmNow);
 
 
 
