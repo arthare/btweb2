@@ -8,6 +8,7 @@ import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 export default class PendingRace extends Component.extend({
   // anything which *must* be merged to prototype here
   classNames: ['pending-race__content'],
+  classNameBindings: ['hasHumans'],
   race:<ServerHttpGameListElement|null>null,
 }) {
   // normal class body definition here
@@ -15,6 +16,15 @@ export default class PendingRace extends Component.extend({
     assert2(this.joinRace);
   }
 
+  @computed("race")
+  get hasHumans():boolean {
+    const race = this.get('race');
+    if(race) {
+      return race.whoIn.length > 0;
+    } else {
+      return false;
+    }
+  }
   @computed("race")
   get raceTime():string {
     const race = this.get('race');

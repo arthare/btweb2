@@ -20,11 +20,81 @@
 body {
   background-color: $global-bg;
 }
+@keyframes pulse-yellow {
+  0% {color: darkgoldenrod;}
+  50% {color: orange;}
+  100% {color: darkgoldenrod;}
+}
 
 .application {
   &__container {
     //max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
+  }
+  &__user-status {
+    position: fixed;
+    top: 100vh;
+    height: 5vh;
+    width: 100%;
+    transition: top 0.25s;
+    background-color: white;
+    border: 1px solid green;
+    text-align: center;
+    padding-top: 4px;
+
+    &.user-valid {
+      top: 95vh;
+    }
+  }
+  &__bluetooth-warning {
+    position: fixed;
+    top: 100vh;
+    height: 10vh;
+    width: 100%;
+    transition: top 0.25s;
+    background-color: white;
+    text-align: center;
+    border: 1px solid red;
+    border-bottom: none;
+    display: flex;
+    flex-direction: row;
+    
+    &--text {
+      flex: 1 1 auto;
+      font-size: 8vh;
+      padding-top: 4px;
+    }
+    &--buttons {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+    }
+    &--button {
+      border-radius: 4px;
+      border: 1px solid black;
+      padding-left: 25px;
+      padding-right: 25px;
+      font-size: 32px;
+    }
+
+    &.device-gone {
+      top: 90vh;
+    }
+  }
+}
+
+i {
+  &.red {
+    color: red;
+  }
+  &.yellow {
+    color: darkgoldenrod;
+    animation-name: pulse-yellow;
+    animation-duration: 0.5s;
+    animation-iteration-count: infinite;
+  }
+  &.blue {
+    color: #3b5998;
   }
 }

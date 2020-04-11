@@ -1,6 +1,4 @@
 import Component from '@ember/component';
-import { getDeviceFactory } from 'bt-web2/pojs/DeviceFactory';
-import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor } from 'bt-web2/pojs/WebBluetoothDevice';
 import Ember from 'ember';
 import { computed } from '@ember/object';
 import Devices from 'bt-web2/services/devices';
@@ -8,13 +6,12 @@ import Devices from 'bt-web2/services/devices';
 export interface UserSetupParameters {
   name:string;
   handicap:number;
-  device:ConnectedDeviceInterface;
   imageBase64:string|null;
 }
 
-const USERSETUP_KEY_IMAGE = "user-set-up:lastImage";
-const USERSETUP_KEY_NAME = "user-set-up:lastName";
-const USERSETUP_KEY_HANDICAP = "user-set-up:lastHandicap";
+export const USERSETUP_KEY_IMAGE = "user-set-up:lastImage";
+export const USERSETUP_KEY_NAME = "user-set-up:lastName";
+export const USERSETUP_KEY_HANDICAP = "user-set-up:lastHandicap";
 
 function handleFileSelect(this:UserSetUp, evt:any) {
   var files = evt.target.files; // FileList object
@@ -86,31 +83,6 @@ function resizeImage(originalBase64:string, maxWidth:number, maxHeight:number):P
 
 }
 
-class FakeDevice extends PowerDataDistributor {
-  constructor() {
-    super();
-    setInterval(() => {
-      this._notifyNewPower(new Date().getTime(), Math.random()*50 + 200);
-    }, 500);
-  }
-  getDeviceTypeDescription():string {
-    return "Fake Device";
-  }
-  updateSlope(tmNow: number): void {
-    
-  }
-  disconnect(): Promise<void> {
-    return Promise.resolve();
-  }  
-  getState(): BTDeviceState {
-    return BTDeviceState.Ok;
-  }
-  name(): string {
-    return "Fake Device";
-  }
-
-}
-
 export default class UserSetUp extends Component.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service('devices'),
@@ -118,44 +90,24 @@ export default class UserSetUp extends Component.extend({
   userName:'Art',
   userHandicap:'300',
   canDoBluetooth: true,
-  device:<ConnectedDeviceInterface|null>null,
   onDone: (param:UserSetupParameters) => {},
 
   actions: { 
-    connectDevice() {
-
-      const canDoBluetooth = this.get('canDoBluetooth');
-      if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
-
-        const device = new FakeDevice();
-        this.set('device', device);
-        this.devices.addDevice(device);
-      } else {
-        return getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
-          this.set('device', device);
-          this.devices.addDevice(device);
-        });
-      }
-    },
     done() {
-      if(this.device) {
-
-        const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
-        let imageBase64 = null;
-        if(displayImage) {
-          imageBase64 = displayImage.src;
-        }
-
-        localStorage.setItem(USERSETUP_KEY_HANDICAP, '' + this.userHandicap);
-        localStorage.setItem(USERSETUP_KEY_NAME, '' + this.userName);
-
-        this.onDone({
-          name: this.userName,
-          handicap: parseFloat(this.userHandicap),
-          device: this.device,
-          imageBase64: imageBase64,
-        })
+      const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
+      let imageBase64 = null;
+      if(displayImage) {
+        imageBase64 = displayImage.src;
       }
+
+      localStorage.setItem(USERSETUP_KEY_HANDICAP, '' + this.userHandicap);
+      localStorage.setItem(USERSETUP_KEY_NAME, '' + this.userName);
+
+      this.onDone({
+        name: this.userName,
+        handicap: parseFloat(this.userHandicap),
+        imageBase64: imageBase64,
+      })
     }
 
   }
@@ -164,14 +116,6 @@ export default class UserSetUp extends Component.extend({
   didInsertElement() {
     window.assert2(this.onDone);
     
-    if(!window.navigator || !window.navigator.bluetooth || !window.navigator.bluetooth.getAvailability) {
-      this.set('canDoBluetooth', false);
-    } else {
-      navigator.bluetooth.getAvailability().then((available) => {
-        console.log("Bluetooth is available? ", available);
-        this.set('canDoBluetooth', available);
-      })
-    }
 
     const lastImage = window.localStorage.getItem(USERSETUP_KEY_IMAGE);
     if(lastImage) {
@@ -223,8 +167,8 @@ export default class UserSetUp extends Component.extend({
   }
 
   // normal class body definition here
-  @computed("userName", "userHandicap", "device")
+  @computed("userName", "userHandicap")
   get disableDone():boolean {
-    return !this.get('userName') || !this.get('userHandicap') || !this.get('device');
+    return !this.get('userName') || !this.get('userHandicap');
   }
 };

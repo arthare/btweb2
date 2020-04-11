@@ -42,6 +42,7 @@ try {
 
 
 function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorMessage:string) {
+  
   const ret:S2CBasicMessage = {
     timeStamp:tmNow,
     type: BasicMessageType.ServerError,
@@ -103,7 +104,7 @@ function hasRaceAtTime(tmWhen) {
 
 function populatePrescheduledRaces() {
   console.log("populating presched races?");
-  const msRaceStartInterval = 2.5 * 60000;
+  const msRaceStartInterval = 15 * 60000;
 
   // this will get us a precise timestamp every 15 minutes
   const tmNow = new Date().getTime();
@@ -123,9 +124,9 @@ function populatePrescheduledRaces() {
       const c15s = Math.floor(x / msRaceStartInterval);
       let map:RideMap;
       if(c15s & 1) {
-        map = makeSimpleMap(5000)
+        map = makeSimpleMap(10000)
       } else {
-        map = makeSimpleMap(2500);
+        map = makeSimpleMap(20000);
       }
       let date = new Date(x);
       console.log("making new race at ", date);
@@ -315,7 +316,36 @@ wss.on('connection', (wsConnection) => {
           return sendError(tmNow, game, wsConnection, "Game ID " + payload.gameId +" not found");
         }
         // ok, so they want to join this game
-        let newId = game.addUser(tmNow, payload);
+
+        // lets see if this user is maybe already in this game
+        let newId;
+        if(payload.imageBase64) {
+          const existingUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
+          if(existingUser) {
+            newId = existingUser.getId();
+            console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
+          }
+        }
+        
+        if(!newId) {
+          // we didn't find an existing user by any means.  Let's stick this guy at the back of the pack
+          const allUsers = game.userProvider.getUsers(tmNow);
+          let distanceToAssign = 0;
+          let speedToAssign = 0.5;
+          if(allUsers.length > 0) {
+            allUsers.sort((a,b) => a.getDistance() < b.getDistance() ? -1 : 1);
+            const deadLastUser = allUsers[0];
+            distanceToAssign = deadLastUser.getDistance();
+            speedToAssign = deadLastUser.getSpeed();
+          }
+          
+          newId = game.addUser(tmNow, payload);
+          const newUser = game.getUser(newId);
+          newUser.setDistance(distanceToAssign);
+          newUser.setSpeed(speedToAssign);
+        }
+        
+
         thisConnectionUserId = newId;
         assert2(newId >= 0);
         // and we need to produce a response

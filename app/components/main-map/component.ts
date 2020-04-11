@@ -99,7 +99,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
 
 
 
-  const smoothMix = 0.85;
+  const smoothMix = 0.33;
   users.forEach((user) => {
     if(paintState.userPaint.has(user.getId())) {
       const actualPos = user.getDistance();
@@ -130,7 +130,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   let localUserAngleRadians = -Math.atan(localUserSlope);
 
   // aim to show more distance when we're going up or down big hills so phone people still have situational awareness
-  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*150;
+  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*250;
 
   minDist = localUserDistance - distToShow/2;
   maxDist = localUserDistance + distToShow/2;
@@ -261,6 +261,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           const myDist = user.getDistance();
           const deltaAhead = draftStats.fromDistance - myDist;
           const pct = draftStats.pctOfMax;
+          const wattsSaved = draftStats.watts;
   
           ctx.lineWidth = 0.8 * pct;
           ctx.strokeStyle = `rgba(255,255,255,${pct})`;
@@ -269,6 +270,11 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           ctx.moveTo(dist,map.getElevationAtDistance(dist) - 0.4);
           ctx.lineTo(dist+deltaAhead,map.getElevationAtDistance(dist+deltaAhead) - 0.4);
           ctx.stroke();
+
+          const before = ctx.getTransform();
+          ctx.scale(1,-1);
+          ctx.fillText(wattsSaved.toFixed(0)+'W', (dist+deltaAhead),-(map.getElevationAtDistance(dist+deltaAhead) - 2));
+          ctx.setTransform(before);
 
         }
       }

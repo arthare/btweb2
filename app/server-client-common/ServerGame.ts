@@ -57,7 +57,7 @@ export class ServerUserProvider implements UserProvider {
   }
   getUsers(tmNow:number): User[] {
     return this.users.filter((user) => {
-      return user.getMsSinceLastPacket(tmNow) < 5000 ||  // either this user is still obviously connected
+      return user.getMsSinceLastPacket(tmNow) < 300000 ||  // either this user is still obviously connected
              user.isFinished() ||
              user.getUserType() & UserTypeFlags.Ai; // or this user has finished
     });
@@ -105,6 +105,23 @@ export class ServerGame {
     this._tmScheduledRaceStart = -1;
     this._tmRaceStart = -1;
   }
+
+  public findUserByImage(tmNow:number, imageBase64:string, riderName:string, handicap:number):ServerUser|null {
+
+    const users = this.userProvider.getUsers(tmNow);
+    const found:User|null = users.find((user) => {
+      return !(user.getUserType() & UserTypeFlags.Ai) &&
+              user.getHandicap() === handicap &&
+              user.getName() === riderName &&
+             user.getImage() && user.getImage() === imageBase64;
+    }) || null;
+
+    if(found) {
+      return <ServerUser>found;
+    }
+    return null;
+  }
+
   private start(tmNow:number) {
     this._tmRaceStart = tmNow;
     this._scheduleTick();

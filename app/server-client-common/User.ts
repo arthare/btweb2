@@ -24,12 +24,18 @@ export interface UserDisplay {
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
   private _lastPower:number = 0;
+  private _tmLastPower:number = 0;
   private _id:number = -1; // assigned by the server.  Positive when set
   private _tmFinish:number = -1;
   private _tmLastPacket:number = -1;
 
+  isPowerValid(tmNow:number):boolean {
+    return tmNow - this._tmLastPower < 2000;
+  }
+
   public notifyPower(tmNow:number, watts:number):void {
     this._lastPower = watts;
+    this._tmLastPower = tmNow;
   }
   public notifyCadence(tmNow:number, cadence:number):void {
 
@@ -99,6 +105,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._name = name;
     this._lastT = new Date().getTime() / 1000.0;
   }
+
+  setDistance(dist:number) {
+    this._position = dist;
+  }
+  setSpeed(speed:number) {
+    this._speed = speed;
+  }
+
   getLastSlopeInWholePercent(): number {
     return this._lastSlopeWholePercent;
   }

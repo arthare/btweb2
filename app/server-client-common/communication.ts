@@ -52,16 +52,23 @@ export class S2CRaceStateUpdate {
   constructor(tmNow:number, serverGame:ServerGame) {
     let msUntil = -1;
     let tmNextState = -1;
-    switch(serverGame.getLastRaceState()) {
-      case CurrentRaceState.PreRace:
-        tmNextState = serverGame.getRaceScheduledStartTime();
-        msUntil = Math.max(0, tmNextState - tmNow);
-        break;
+
+    if(serverGame) {
+      switch(serverGame.getLastRaceState()) {
+        case CurrentRaceState.PreRace:
+          tmNextState = serverGame.getRaceScheduledStartTime();
+          msUntil = Math.max(0, tmNextState - tmNow);
+          break;
+      }
+      this.state = serverGame.getLastRaceState();
+      this.msUntilNextState = msUntil;
+      this.tmOfNextState = tmNextState;
+    } else {
+      this.state = CurrentRaceState.PreRace;
+      this.msUntilNextState = 0;
+      this.tmOfNextState = 0x7fffffff;
     }
 
-    this.state = serverGame.getLastRaceState();
-    this.msUntilNextState = msUntil;
-    this.tmOfNextState = tmNextState;
   }
   state:CurrentRaceState;
   msUntilNextState:number;
