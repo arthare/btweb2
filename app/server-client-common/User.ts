@@ -1,6 +1,6 @@
 import { CadenceRecipient, PowerRecipient, HrmRecipient, SlopeSource } from "../pojs/WebBluetoothDevice";
 import { RideMap } from "./RideMap";
-import { assert2 } from "./Utils";
+import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
 import { S2CPositionUpdateUser } from "./communication";
 
@@ -243,7 +243,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
-      distance: this._position.toFixed(0) + 'm',
+      distance: formatDisplayDistance(this._position),
       speed: (this._speed*3.6).toFixed(1) + 'km/h',
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',

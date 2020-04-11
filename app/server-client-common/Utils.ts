@@ -21,3 +21,11 @@ export function formatSecondsHms(seconds:number) {
     return `${h}h ${m}m ${seconds.toFixed(1)}s`;
   }
 }
+
+export function formatDisplayDistance(meters:number):string {
+  if(meters < 500) {
+    return meters.toFixed(0) + 'm';
+  } else {
+    return (meters/1000).toFixed(2) + 'km';
+  }
+}
