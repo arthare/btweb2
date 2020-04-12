@@ -10,6 +10,8 @@ import { UserTypeFlags, UserDisplay } from 'bt-web2/server-client-common/User';
 import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
 
+var noSleep:any;
+
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
@@ -45,6 +47,7 @@ export default class Ride extends Controller.extend({
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {
       this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
+      noSleep = new NoSleep();
       return this._raceState;
     }, (failure: any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);

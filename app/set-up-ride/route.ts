@@ -32,17 +32,21 @@ export function apiPost(endPoint:string, data?:any):Promise<any> {
   })
 }
 
+export function refreshRaceList() {
+  return apiGet('race-list').then((result:ServerHttpGameList) => {
+    result.races = result.races.sort((a, b) => {
+      return a.tmScheduledStart < b.tmScheduledStart ? -1 : 1;
+    })
+    return result;
+  })
+}
+
 export default class SetUpRide extends Route.extend({
   // anything which *must* be merged to prototype here
 }) {
   // normal class body definition here
   model() {
-    return apiGet('race-list').then((result:ServerHttpGameList) => {
-      result.races = result.races.sort((a, b) => {
-        return a.tmScheduledStart < b.tmScheduledStart ? -1 : 1;
-      })
-      return result;
-    })
+    return refreshRaceList();
   }
 
   setupController(controller:any, model:any) {

@@ -7,6 +7,7 @@ import { DecorationState } from './DecorationState';
 import { DecorationFactory, ThemeConfig, Layer } from './DecorationFactory';
 import Ember from 'ember';
 import Connection from 'bt-web2/services/connection';
+import ENV from 'bt-web2/config/environment';
 
 export const local_color = 'white';
 export const human_color = 'lightpink';
@@ -40,7 +41,7 @@ function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:
       paintState.defaultAiImage = imgAi;
       paintState.loadingAi = false;
     }
-    imgAi.src = "/assets/ai.png";
+    imgAi.src = ENV.rootURL + "/assets/ai.png";
   }
 
   let needToLoad = users.find((user) => user.getImage() && !paintState.userPaint.get(user.getId())?.image);
