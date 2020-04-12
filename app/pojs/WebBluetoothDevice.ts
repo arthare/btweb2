@@ -132,7 +132,7 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
 
   _tmLastSlopeUpdate:number = 0;
   updateSlope(tmNow:number):void {
-    // this is not a trainer, but we don't want to force all the powermeters and hrms to implement this method.
+
     if(!this._slopeSource) {
       return;
     }

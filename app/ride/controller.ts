@@ -74,6 +74,7 @@ export default class Ride extends Controller.extend({
     if (!raceState) {
       throw new Error("Failed to find race state");
     }
+
     raceState.tick(tmNow);
 
     {
