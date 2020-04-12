@@ -1,4 +1,4 @@
 {
-  "privateKeyPath": "/etc/letsencrypt/live/staczero.com/privkey.pem",
-  "fullChain": "/etc/letsencrypt/live/staczero.com/fullchain.pem"
+  "privateKeyPath": "/etc/letsencrypt/live/tourjs.ca/privkey.pem",
+  "fullChain": "/etc/letsencrypt/live/tourjs.ca/fullchain.pem"
 }

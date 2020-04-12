@@ -1,2 +1,4 @@
 ember build --environment=production
-scp -r dist/* root@staczero.com:/var/www/tourjs/
+
+SIGNIN=art@172.105.28.136
+scp -r dist/* $SIGNIN:/var/www

@@ -25,7 +25,11 @@ export function formatSecondsHms(seconds:number) {
 export function formatDisplayDistance(meters:number):string {
   if(meters < 500) {
     return meters.toFixed(0) + 'm';
-  } else {
+  } else if(meters < 10000) {
     return (meters/1000).toFixed(2) + 'km';
+  } else if(meters < 100000) {
+    return (meters/1000).toFixed(1) + 'km';
+  } else {
+    return (meters/1000).toFixed(0) + 'km';
   }
 }

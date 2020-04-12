@@ -11,7 +11,7 @@ import { assert2 } from '../app/server-client-common/Utils';
 let app = <core.Express>express();
 
 function setHeaders(req:core.Request, res:core.Response) {
-  res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || req.headers['Host'] || 'staczero.com');
+  res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || req.headers['Host'] || 'tourjs.ca');
   res.setHeader('Access-Control-Allow-Headers', '*');
 }
 
@@ -33,7 +33,7 @@ function postStartup(req:core.Request, res:core.Response):Promise<any> {
     
   return new Promise((resolve, reject) => {
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', handleCors(req, ["https://staczero.com", "https://www.staczero.com"]));
+      res.setHeader('Access-Control-Allow-Origin', handleCors(req, ["https://tourjs.ca", "https://www.tourjs.ca"]));
       res.setHeader('Access-Control-Allow-Headers', '*');
       var body = [];
       req.on('data', (chunk:any) => {
