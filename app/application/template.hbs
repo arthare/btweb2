@@ -1,4 +1,22 @@
 <div class="application__container">
   {{outlet}}
+
+  <div class="application__bluetooth-warning {{if bluetoothWarning 'device-gone'}}">
+    <div class="application__bluetooth-warning--text">
+      <i class="fas fa-exclamation-triangle yellow"></i>
+      <i class="fab fa-bluetooth blue"></i>
+      <i class="fas fa-arrow-right green"></i>
+    </div>
+    <div class="application__bluetooth-warning--buttons">
+      <button class="application__bluetooth-warning--button" {{action 'connectDevice'}}>
+        <i class="fas fa-bolt"></i>
+      </button>
+    </div>
+  </div>
+  <div class="application__user-status {{if localUser 'user-valid'}}">
+    {{localUser.name}}
+    {{localUser.lastPower}}
+    <i class="fas fa-bolt"></i>
+  </div>
 </div>
 

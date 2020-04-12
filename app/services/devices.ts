@@ -55,14 +55,33 @@ export default class Devices extends Service.extend({
       newUser.setImage(user.imageBase64);
     }
     this.users.push(newUser);
-    const device = user.device;
-    device.setCadenceRecipient(newUser);
-    device.setPowerRecipient(newUser);
-    device.setHrmRecipient(newUser);
-    device.setSlopeSource(newUser);
   }
+
+  setLocalUserDevice(device:ConnectedDeviceInterface) {
+    const user = this.getLocalUser();
+    if(!user) {
+      throw new Error("You can't set a device for a local user that doesn't exist");
+    }
+    device.setCadenceRecipient(user);
+    device.setPowerRecipient(user);
+    device.setHrmRecipient(user);
+    device.setSlopeSource(user);
+  }
+
   getLocalUser():User|undefined {
     return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
+  }
+
+  isLocalUserDeviceValid() {
+    const tmNow = new Date().getTime();
+
+    const user = this.getLocalUser();
+    if(user) {
+      if(user.isPowerValid(tmNow)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   endRace(tmNow:number) {

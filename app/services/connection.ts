@@ -144,7 +144,6 @@ export default class Connection extends Service.extend({
         }
         case BasicMessageType.S2CImageUpdate:
         {
-          debugger;
           const imageUpdate:S2CImageUpdate = bm.payload;
           const user = this._raceState.getUserProvider().getUser(imageUpdate.id);
           this._imageSources.set(imageUpdate.id, imageUpdate.imageBase64);

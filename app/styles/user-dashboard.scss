@@ -28,6 +28,11 @@
     font-weight: bold;
     text-align: right;
   }
+  &__group {
+    flex-direction: row;
+    flex: 1 1 0px;
+    text-align: center;
+  }
   
 }
 

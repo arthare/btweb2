@@ -1,6 +1,6 @@
 import { CadenceRecipient, PowerRecipient, HrmRecipient, SlopeSource } from "../pojs/WebBluetoothDevice";
 import { RideMap } from "./RideMap";
-import { assert2 } from "./Utils";
+import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
 import { S2CPositionUpdateUser } from "./communication";
 
@@ -24,12 +24,18 @@ export interface UserDisplay {
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
   private _lastPower:number = 0;
+  private _tmLastPower:number = 0;
   private _id:number = -1; // assigned by the server.  Positive when set
   private _tmFinish:number = -1;
   private _tmLastPacket:number = -1;
 
+  isPowerValid(tmNow:number):boolean {
+    return tmNow - this._tmLastPower < 2000;
+  }
+
   public notifyPower(tmNow:number, watts:number):void {
     this._lastPower = watts;
+    this._tmLastPower = tmNow;
   }
   public notifyCadence(tmNow:number, cadence:number):void {
 
@@ -99,6 +105,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._name = name;
     this._lastT = new Date().getTime() / 1000.0;
   }
+
+  setDistance(dist:number) {
+    this._position = dist;
+  }
+  setSpeed(speed:number) {
+    this._speed = speed;
+  }
+
   getLastSlopeInWholePercent(): number {
     return this._lastSlopeWholePercent;
   }
@@ -243,7 +257,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
-      distance: this._position.toFixed(0) + 'm',
+      distance: formatDisplayDistance(this._position),
       speed: (this._speed*3.6).toFixed(1) + 'km/h',
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',

@@ -22,6 +22,10 @@
     &:nth-child(2n) {
       background-color: rgb(240,240,240);
     }
+
+    &.has-humans {
+      background-color: lightgreen;
+    }
   }
   &__join-button {
     @include big-button();

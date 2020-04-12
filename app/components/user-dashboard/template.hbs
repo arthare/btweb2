@@ -1,31 +1,18 @@
 {{#if userDisplay}}
   <div class="user-dashboard__table">
-    <div class="user-dashboard__title">
-      Your Status
-    </div>
-    <div class="user-dashboard__tr">
-      <div class="user-dashboard__label">Name:</div>
-      <div class="user-dashboard__value">{{userDisplay.name}}</div>
-    </div>
     <div  class="user-dashboard__tr">
-      <div class="user-dashboard__label">Power:</div>
-      <div class="user-dashboard__value">{{userDisplay.lastPower}}</div>
-    </div>
-    <div class="user-dashboard__tr">
-      <div class="user-dashboard__label">Distance:</div>
-      <div class="user-dashboard__value">{{userDisplay.distance}}</div>
-    </div>
-    <div class="user-dashboard__tr">
-      <div class="user-dashboard__label">Speed:</div>
-      <div class="user-dashboard__value">{{userDisplay.speed}}</div>
-    </div>
-    <div class="user-dashboard__tr">
-      <div class="user-dashboard__label">Slope:</div>
-      <div class="user-dashboard__value">{{userDisplay.slope}}</div>
-    </div>
-    <div class="user-dashboard__tr">
-      <div class="user-dashboard__label">Draft Savings:</div>
-      <div class="user-dashboard__value">{{userDisplay.lastWattsSaved}}</div>
+      <div class="user-dashboard__group">
+        <span class="user-dashboard__label"><i class="fas fa-bolt"></i></span>
+        <span class="user-dashboard__value">{{userDisplay.lastPower}}</span>
+      </div>
+      <div class="user-dashboard__group">
+        <span class="user-dashboard__label"><i class="fas fa-tachometer-alt"></i></span>
+        <span class="user-dashboard__value">{{userDisplay.speed}}</span>
+      </div>
+      <div class="user-dashboard__group">
+        <span class="user-dashboard__label"><i class="fas fa-mountain"></i></span>
+        <span class="user-dashboard__value">{{userDisplay.slope}}</span>
+      </div>
     </div>
   </div>
 {{/if}}
