@@ -1,8 +1,12 @@
 tsc
-ssh root@staczero.com "mkdir -p /root/tourjs-api"
-scp -r dist/* root@staczero.com:/root/tourjs-api
-scp pm2.json root@staczero.com:/root/tourjs-api/pm2.json
-scp ssl-config.json root@staczero.com:/root/tourjs-api/ssl-config.json
-scp package.json root@staczero.com:/root/tourjs-api/package.json
-ssh root@staczero.com "cd /root/tourjs-api && npm install && pm2 restart pm2.json"
+
+SIGNIN=art@172.105.28.136
+APIHOSTDIR=/home/art/tourjs-api
+
+ssh $SIGNIN "mkdir -p $APIHOSTDIR"
+scp -r dist/* $SIGNIN:$APIHOSTDIR
+scp pm2.json $SIGNIN:$APIHOSTDIR/pm2.json
+scp ssl-config.json $SIGNIN:$APIHOSTDIR/ssl-config.json
+scp package.json $SIGNIN:$APIHOSTDIR/package.json
+ssh $SIGNIN "cd $APIHOSTDIR && npm install && pm2 restart pm2.json"
 echo "Should be deployed!"

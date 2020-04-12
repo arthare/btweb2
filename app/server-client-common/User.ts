@@ -20,6 +20,7 @@ export interface UserDisplay {
   elevation: string;
   classString: string;
   lastWattsSaved: string;
+  secondsDelta?:string;
 }
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
@@ -81,6 +82,10 @@ export interface DraftSavings {
   pctOfMax:number;
   fromDistance:number;
 }
+export interface DistanceHistoryElement {
+  tm:number;
+  distance:number;
+}
 
 export class User extends UserDataRecorder implements SlopeSource {
 
@@ -95,7 +100,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _speed:number = 0;
   protected _position:number = 0;
   private _lastDraftSaving:DraftSavings = {watts:0, pctOfMax:0, fromDistance:0};
-  
+  private _distanceHistory:DistanceHistoryElement[] = [];
   
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
@@ -111,6 +116,13 @@ export class User extends UserDataRecorder implements SlopeSource {
   }
   setSpeed(speed:number) {
     this._speed = speed;
+  }
+  setDistanceHistory(newHistory:DistanceHistoryElement[]) {
+    assert2(this._distanceHistory.length === 0); // this is intended to only be used if you're creating a "summary" user for the leaderboard
+    this._distanceHistory = newHistory;
+  }
+  getDistanceHistory():DistanceHistoryElement[] {
+    return this._distanceHistory;
   }
 
   getLastSlopeInWholePercent(): number {
@@ -218,9 +230,37 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._position += Math.min(map.getLength(), this._speed * dtSeconds);
     this._position = Math.min(map.getLength(), this._position);
 
+    const lastDistanceHistory = this._distanceHistory && this._distanceHistory[this._distanceHistory.length-1];
+    if(!lastDistanceHistory || 
+        this._position > lastDistanceHistory.distance && tmNow > lastDistanceHistory.tm + 1000) {
+      this._distanceHistory.push({
+        tm: tmNow,
+        distance: this._position,
+      });
+    }
+
     if(lastPosition < mapLength && this._position >= mapLength) {
       this.setFinishTime(tmNow);
     }
+  }
+
+  public getSecondsAgoToCross(tmNow:number, distance:number):number|null {
+    for(var x = 0;x < this._distanceHistory.length - 1; x++) {
+      const hist = this._distanceHistory[x];
+      const nextHist = this._distanceHistory[x+1];
+      if(hist.distance < distance && nextHist.distance > distance) {
+        // we found when we were near the queried spot
+        const offset = distance - hist.distance;
+        const span = nextHist.distance - hist.distance;
+        const pct = offset / span;
+        assert2(pct >= -0.001 && pct <= 1.001);
+        const tmAtThatDist = pct*nextHist.tm + (1-pct)*hist.tm;
+        if(tmAtThatDist < tmNow) {
+          return (tmNow - tmAtThatDist) / 1000.0;
+        }
+      }
+    }
+    return null;
   }
 
   public getLastWattsSaved():DraftSavings {

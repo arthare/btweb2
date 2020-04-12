@@ -1,6 +1,3 @@
-<div class="leader-board__title">
-  Leaderboard:
-</div>
 {{#each rankings as |ranking index|}}
   <div class="leader-board__rank {{ranking.classString}}">
     <span class="leader-board__rank-text">
@@ -8,6 +5,11 @@
     </span>
     <span class="leader-board__rank-name">
       {{ranking.name}}
+    </span>
+    <span class="leader-board__rank-delta">
+      {{#if ranking.secondsDelta}}
+        {{ranking.secondsDelta}}
+      {{/if}}
     </span>
     <span class="leader-board__rank-distance">
       {{ranking.distance}}

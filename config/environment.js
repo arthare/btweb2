@@ -47,9 +47,9 @@ module.exports = function(environment) {
 
   if (environment === 'production') {
     // here you can enable a production-specific feature
-    ENV.rootURL = '/tourjs';
-    ENV.apiRoot = 'https://www.staczero.com/tourjs-api';
-    ENV.gameServerHost = 'staczero.com';
+    ENV.rootURL = '/';
+    ENV.apiRoot = 'https://tourjs.ca/tourjs-api';
+    ENV.gameServerHost = 'tourjs.ca';
   }
 
   return ENV;

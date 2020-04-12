@@ -33,24 +33,33 @@
     &.ai {
       font-weight: lighter;
       font-style: italic;
-      color: rgb(160,180,160);
+      color: rgb(200,200,200);
     }
     &.human {
       color: rgb(255,200,200);
     }
 
     &-text {
-      flex: 0 0 32px;
+      flex: 0 0 36px;
+      white-space: nowrap;
     }
     &-name {
       flex: 1 1 0px;
     }
-
-    &-distance {
-      flex: 0 0 64px;
+    &-delta {
+      flex: 0 1 85px;
+      text-align: center;
       font-size: 22px;
       margin-top: -4px;
       margin-bottom: -8px;
+    }
+
+    &-distance {
+      flex: 0 0 75px;
+      font-size: 22px;
+      margin-top: -4px;
+      margin-bottom: -8px;
+      text-align: right;
     }
   }
 }
