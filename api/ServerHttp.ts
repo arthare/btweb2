@@ -102,7 +102,7 @@ export function setUpServerHttp(gameMap:Map<string, ServerGame>) {
 
       const kmStr = `${(postInput.lengthMeters / 1000).toFixed(1)}km`;
       const gameId = `${kmStr}: ${postInput.raceName} by ${postInput.hostName}`
-      const serverGame = new ServerGame(map, `${postInput.raceName} by ${postInput.hostName}`, 0);
+      const serverGame = new ServerGame(map, gameId, 0);
       serverGame.scheduleRaceStartTime(postInput.tmWhen);
       gameMap.set(gameId, serverGame);
 

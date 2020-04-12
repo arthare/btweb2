@@ -1,4 +1,5 @@
 import Controller from '@ember/controller';
+import { refreshRaceList } from './route';
 
 export default class SetUpRide extends Controller.extend({
   // anything which *must* be merged to prototype here
@@ -14,15 +15,26 @@ export default class SetUpRide extends Controller.extend({
     toggleRideWidget() {
       this.toggleProperty('settingUpRide');
     },
-    onRaceCreated() {
+    onRaceCreated(this:SetUpRide) {
+      this._refreshAllRaces();
       alert("Your ride has been created!");
       this.set('settingUpRide', false);
+    },
+    refreshAllRaces(this:SetUpRide):void {
+      this._refreshAllRaces();
     }
   },
 
   frame: 0,
 }) {
   // normal class body definition here
+
+  _refreshAllRaces():void {
+    refreshRaceList().then((model) => {
+      this.set('model', model);
+    });
+  }
+
 
   beginFrames() {
     

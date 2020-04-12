@@ -52,6 +52,7 @@ export class S2CRaceStateUpdate {
   constructor(tmNow:number, serverGame:ServerGame) {
     let msUntil = -1;
     let tmNextState = -1;
+    assert2(serverGame, " we need a serverGame!");
     switch(serverGame.getLastRaceState()) {
       case CurrentRaceState.PreRace:
         tmNextState = serverGame.getRaceScheduledStartTime();
