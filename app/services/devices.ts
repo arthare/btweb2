@@ -22,12 +22,14 @@ export default class Devices extends Service.extend({
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
     this.devices.push(device);
+    console.log("added a device to device man: ", this.devices);
   }
 
   clearUsers() {
     this.devices.forEach((dev) => {
       dev.disconnect();
     });
+    console.log("cleared out devices ", this.devices);
     this.devices = [];
     this.users = [];
   }
@@ -66,6 +68,7 @@ export default class Devices extends Service.extend({
     device.setPowerRecipient(user);
     device.setHrmRecipient(user);
     device.setSlopeSource(user);
+    this.devices.push(device);
   }
 
   getLocalUser():User|undefined {
@@ -119,6 +122,7 @@ export default class Devices extends Service.extend({
   }
   updateSlopes(tmNow:number) {
     this.devices.forEach((device) => {
+      console.log("updating slopes for ", device.name);
       device.updateSlope(tmNow);
     })
   }
