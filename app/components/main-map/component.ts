@@ -340,6 +340,16 @@ const defaultThemeConfig:ThemeConfig = {
               ],
       layer: Layer.NearRoadside,
       frequencyPerKm:20,
+    }, {
+      name: "Trees",
+      minDimensions: {x:4,y:4},
+      maxDimensions: {x:8,y:8},
+      minAltitude: 2.0,
+      maxAltitude: 2.0,
+      imageUrl: ['assets/tree1-by-art.png', 
+              ],
+      layer: Layer.NearRoadside,
+      frequencyPerKm:60,
     }
   ]
 }
