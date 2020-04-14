@@ -30,6 +30,12 @@ function compactUserList(users:User[]):CompactedUser[] {
   let compacted:CompactedUser[] = [];
   let lastUser = users[0];
   let ixStartOfGroup = 0;
+
+  const localUser = users.find((user) => user.getUserType() & UserTypeFlags.Local);
+  if(!localUser) {
+    return;
+  }
+
   for(var x = 0; x < users.length; x++) {
     const thisUser = users[x];
     if(lastUser.getUserType() & UserTypeFlags.Ai) {
@@ -38,9 +44,14 @@ function compactUserList(users:User[]):CompactedUser[] {
       } else {
         // finished a run of AIs
         const compactedUser = new User("Gr. " + lastUser.getName(), 80, 300, lastUser.getUserType());
-        compactedUser.setDistance(lastUser.getDistance());
-        compactedUser.setSpeed(lastUser.getSpeed());
-        compactedUser.setDistanceHistory(lastUser.getDistanceHistory());
+
+        const leadOfGroup = users[ixStartOfGroup];
+        const isBeatingLocal = leadOfGroup.getDistance() > localUser.getDistance();
+        const representativeRider = isBeatingLocal ? lastUser : leadOfGroup;
+
+        compactedUser.setDistance(representativeRider.getDistance());
+        compactedUser.setSpeed(representativeRider.getSpeed());
+        compactedUser.setDistanceHistory(representativeRider.getDistanceHistory());
         compacted.push({
           user: compactedUser,
           rank: `#${ixStartOfGroup+1}`
@@ -66,6 +77,22 @@ function compactUserList(users:User[]):CompactedUser[] {
     }
 
     lastUser = thisUser;
+  }
+
+  // if the last user was an AI, then they wouldn't have gotten inserted
+  if(lastUser.getUserType() & UserTypeFlags.Ai) {
+    const compactedUser = new User("Gr. " + lastUser.getName(), 80, 300, lastUser.getUserType());
+    const leadOfGroup = users[ixStartOfGroup];
+    const isBeatingLocal = leadOfGroup.getDistance() > localUser.getDistance();
+    const representativeRider = isBeatingLocal ? lastUser : leadOfGroup;
+
+    compactedUser.setDistance(representativeRider.getDistance());
+    compactedUser.setSpeed(representativeRider.getSpeed());
+    compactedUser.setDistanceHistory(representativeRider.getDistanceHistory());
+    compacted.push({
+      user: compactedUser,
+      rank: `#${ixStartOfGroup+1}`
+    });
   }
   return compacted;
 }
