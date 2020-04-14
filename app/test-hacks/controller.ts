@@ -17,7 +17,7 @@ class FakeUserProvider implements UserProvider {
     ];
 
     for(var x = 1;x < 50; x++) {
-      const aiUser = new User(`AI Remote ${x}`, 80, 300, UserTypeFlags.Ai | UserTypeFlags.Remote);
+      const aiUser = new User(`AI Remote ${x}`, 80, 300 + x*30, UserTypeFlags.Ai | UserTypeFlags.Remote);
       this.users.push(aiUser);
     }
     this.users.forEach((user, index) => {

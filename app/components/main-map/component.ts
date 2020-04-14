@@ -41,7 +41,7 @@ function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:
       paintState.defaultAiImage = imgAi;
       paintState.loadingAi = false;
     }
-    imgAi.src = ENV.rootURL + "/assets/ai.png";
+    imgAi.src = ENV.rootURL + "assets/ai.png";
   }
 
   let needToLoad = users.find((user) => user.getImage() && !paintState.userPaint.get(user.getId())?.image);
