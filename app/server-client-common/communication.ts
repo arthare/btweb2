@@ -113,8 +113,12 @@ export class ServerMapDescription {
     for(var x = 0;x < n; x++) {
       const sampleDistance = (x/n)*endLength;
       const elev = map.getElevationAtDistance(sampleDistance);
-      this.distances.push(sampleDistance);
-      this.elevations.push(elev);
+      if(isFinite(elev) && isFinite(sampleDistance)) {
+        this.distances.push(sampleDistance);
+        this.elevations.push(elev);
+      } else {
+        assert2(false, "Why are these elevations not finite?");
+      }
     }
   }
 
