@@ -32,6 +32,7 @@ declare global {
     localLocations: DebugLocation[];
     pending:DebugLocation;
     tick: (tmOfPend:number)=>void;
+    gifler: Function;
   }
 
 }

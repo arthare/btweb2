@@ -8,6 +8,7 @@ import { DecorationFactory, ThemeConfig, Layer } from './DecorationFactory';
 import Ember from 'ember';
 import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
+import { assert2 } from 'bt-web2/server-client-common/Utils';
 
 export const local_color = 'white';
 export const human_color = 'lightpink';
@@ -20,28 +21,52 @@ class DisplayUser {
     this.loadingImage = false;
   }
   public distance:number = 0;
-  public image:HTMLImageElement|null = null;
+  public image:HTMLImageElement[]|null = null;
   public loadingImage:boolean = false;
+  public crankPosition:number = 0;
 }
 
 class PaintFrameState {
   public userPaint:Map<number,DisplayUser> = new Map();
 
-  public defaultAiImage:HTMLImageElement|null = null;
+  public defaultAiImage:HTMLImageElement[]|null = null;
   public loadingAi = false;
 }
 
-function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:PaintFrameState) {
+function doPaintFrameStateUpdates(tmNow:number, dtSeconds:number, raceState:RaceState, paintState:PaintFrameState) {
   const users = raceState.getUserProvider().getUsers(tmNow);
 
   if(!paintState.defaultAiImage && !paintState.loadingAi) {
     paintState.loadingAi = true;
+
+
+    const aiSrc = ['assets/cyclist-spritesheet.webp'];
+    const whichOne = aiSrc[Math.floor(Math.random()*aiSrc.length) % aiSrc.length];
+    
     const imgAi = document.createElement('img');
     imgAi.onload = () => {
-      paintState.defaultAiImage = imgAi;
+
+      // now we have to divvy this up into 8 actual images
+      let subImages = [];
+      for(var x = 0;x < 8; x++) {
+        const myCanvas = document.createElement('canvas');
+        const myImage = document.createElement('img');
+        myCanvas.width = 111;
+        myCanvas.height = 117;
+        const ctx = myCanvas.getContext('2d');
+        if(ctx) {
+          ctx.drawImage(imgAi, 0, x*117, 111, 117, 0, 0, 111, 117);
+          myImage.src = myCanvas.toDataURL('png');
+          subImages.push(myImage);
+        }
+        
+
+      }
+
+      paintState.defaultAiImage = subImages;
       paintState.loadingAi = false;
     }
-    imgAi.src = ENV.rootURL + "assets/ai.png";
+    imgAi.src = ENV.rootURL + whichOne;
   }
 
   let needToLoad = users.find((user) => user.getImage() && !paintState.userPaint.get(user.getId())?.image);
@@ -49,6 +74,13 @@ function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:
   let anyUsersLoading = false;
   users.forEach((user) => {
     const paintUser = paintState.userPaint.get(user.getId()) || new DisplayUser(user);
+
+    const rpm = Math.random()*20 + 80;
+    const rps = rpm/60;
+    paintUser.crankPosition += rps*dtSeconds*5;
+    while(paintUser.crankPosition >= 1.0) {
+      paintUser.crankPosition -= 1.0;
+    }
 
     if(!paintUser.image && user.getImage()) {
       anyUsersNeedLoading = true;
@@ -71,7 +103,7 @@ function doPaintFrameStateUpdates(tmNow:number, raceState:RaceState, paintState:
         const img = document.createElement('img');
         img.onload = () => {
           paintUser.loadingImage = false;
-          paintUser.image = img;
+          paintUser.image = [img];
         }
         img.src = imageBase64;
       }
@@ -131,7 +163,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
   let localUserAngleRadians = -Math.atan(localUserSlope);
 
   // aim to show more distance when we're going up or down big hills so phone people still have situational awareness
-  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*250;
+  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*150;
 
   minDist = localUserDistance - distToShow/2;
   maxDist = localUserDistance + distToShow/2;
@@ -186,13 +218,14 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
 
 
   const drawAUser = (user:User) => {
-    const dist = paintState.userPaint.get(user.getId())?.distance || user.getDistance();
+    const displayUser:DisplayUser|undefined = paintState.userPaint.get(user.getId());
+    const dist = displayUser?.distance || user.getDistance();
     const elev = map.getElevationAtDistance(dist);
 
     const typeFlags = user.getUserType();
     const isLocal = typeFlags & UserTypeFlags.Local;
     const isHuman = !(typeFlags & UserTypeFlags.Ai);
-    let userImage = paintState.userPaint.get(user.getId())?.image;
+    let userImage = displayUser?.image;
     let fillColor = 'lightpink';
     let borderColor = 'black';
     let sz = 2;
@@ -223,8 +256,16 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       ctx.rotate(-angleDegrees);
       ctx.scale(1,-1);
 
-      if(userImage) {
-        ctx.drawImage(userImage, -sz / 2, -sz / 2, sz,sz);
+      if(displayUser && userImage) {
+
+        if(userImage.length === 1) {
+          ctx.drawImage(userImage[0], -sz / 2, -sz / 2, sz,sz);
+        } else {
+          assert2(displayUser.crankPosition >= 0 && displayUser.crankPosition < 1);
+          const ix = Math.floor(displayUser.crankPosition * userImage.length);
+          ctx.drawImage(userImage[ix], -sz / 2, -sz / 2, sz,sz);
+        }
+        
       } else {
         // no image yet - let's draw a filler
         ctx.fillStyle = fillColor;
@@ -346,8 +387,10 @@ const defaultThemeConfig:ThemeConfig = {
       maxDimensions: {x:8,y:8},
       minAltitude: 2.0,
       maxAltitude: 2.0,
-      imageUrl: ['assets/tree1-by-art.png', 
-              ],
+      imageUrl: [
+        'assets/tree1-by-art.webp', 
+        'assets/tree2-by-art.webp', 
+      ],
       layer: Layer.NearRoadside,
       frequencyPerKm:60,
     }
@@ -396,7 +439,7 @@ export default class MainMap extends Component.extend({
         const tmNow = new Date().getTime();
         raceState.tick(tmNow);
         if(frame % 5 == 0) {
-          doPaintFrameStateUpdates(tmNow, raceState, paintState);
+          doPaintFrameStateUpdates(tmNow, dt, raceState, paintState);
         }
         paintCanvasFrame(canvas, raceState, time, decorationState, dt, paintState);
 
