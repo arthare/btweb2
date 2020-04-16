@@ -63,7 +63,6 @@ export default class Application extends Controller.extend({
   _tick() {
     const hasLocalUser = !!this.devices.getLocalUser();
     const hasBluetoothDevice = this.devices.isLocalUserDeviceValid();
-    console.log("Do we have a bluetooth device? ", hasBluetoothDevice);
     if(hasLocalUser && !hasBluetoothDevice) {
       this.set('bluetoothWarning', true);
     } else {

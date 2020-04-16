@@ -1,13 +1,15 @@
-  You're pre-race.  
-  {{#if startsInSeconds}}
-    The race starts in {{startsInSeconds}} seconds.
-  {{/if}}
-  <h4>Who are you?</h4>
-  {{#each localRiders as |riderDisplay|}}
-      Name: {{riderDisplay.name}}<br />
-  {{/each}}
-
-  <h4>Who are they?</h4>
-  {{#each remoteRiders as |riderDisplay|}}
-      Name: {{riderDisplay.name}}<br />
-  {{/each}}
+{{#if startsInSeconds}}
+  <div class="display-pre-race__start">
+    Starts In: {{time-display startsInSeconds}}
+  </div>
+{{/if}}
+{{#each localRiders as |riderDisplay|}}
+  {{display-pre-race-rider display=riderDisplay}}
+{{/each}}
+{{#each nonLocalHumans as |riderDisplay|}}
+  {{display-pre-race-rider display=riderDisplay}}
+{{/each}}
+{{#each ais as |riderDisplay|}}
+  {{display-pre-race-rider display=riderDisplay}}
+{{/each}}
+<div class="bluetooth-warning-socket"></div>

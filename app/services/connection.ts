@@ -22,6 +22,7 @@ export default class Connection extends Service.extend({
   raceResults:S2CFinishUpdate|null = null;
   _lastTimeStamp = 0;
   _imageSources:Map<number,string> = new Map();
+  updateVersion = 0;
 
   _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
@@ -164,6 +165,7 @@ export default class Connection extends Service.extend({
           this.set('raceResults', bm.payload);
           break;
       }
+      this.incrementProperty('updateVersion');
     } else {
       debugger;
       this._ws?.close();

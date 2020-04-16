@@ -18,6 +18,7 @@ export default class Devices extends Service.extend({
   users:User[] = [];
   deviceDescription:string = "No Device Connected";
   workoutSaver:WorkoutFileSaver|null = null;
+  ridersVersion = 0;
   
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
@@ -32,6 +33,7 @@ export default class Devices extends Service.extend({
     console.log("cleared out devices ", this.devices);
     this.devices = [];
     this.users = [];
+    this.incrementProperty('ridersVersion');
   }
 
   addRemoteUser(pos:S2CPositionUpdateUser, image:string|null) {
@@ -43,13 +45,15 @@ export default class Devices extends Service.extend({
     newUser.setId(pos.id);
     newUser.absorbPositionUpdate(tmNow, pos);
     this.users.push(newUser);
+    this.incrementProperty('ridersVersion');
   }
   addUser(user:UserSetupParameters) {
     const newUser = new User(user.name, 80, user.handicap, UserTypeFlags.Local);
 
     const alreadyHaveLocal = this.getLocalUser();
     if(alreadyHaveLocal) {
-      this.users = this.users.filter((user) => user.getUserType() & UserTypeFlags.Local);
+      // get rid of the "local" user that we already have
+      this.users = this.users.filter((user) => !(user.getUserType() & UserTypeFlags.Local));
     }
 
     this.workoutSaver = new WorkoutFileSaver(newUser, new Date().getTime());
@@ -57,6 +61,7 @@ export default class Devices extends Service.extend({
       newUser.setImage(user.imageBase64);
     }
     this.users.push(newUser);
+    this.incrementProperty('ridersVersion');
   }
 
   setLocalUserDevice(device:ConnectedDeviceInterface) {
@@ -96,7 +101,6 @@ export default class Devices extends Service.extend({
 
       const lengthMeters = samples[samples.length - 1].distance - samples[0].distance;
 
-      debugger;
       var data = new Blob([pwx], {type: 'application/octet-stream'});
       var url = window.URL.createObjectURL(data);
       const linky = document.createElement('a');
@@ -122,7 +126,6 @@ export default class Devices extends Service.extend({
   }
   updateSlopes(tmNow:number) {
     this.devices.forEach((device) => {
-      console.log("updating slopes for ", device.name);
       device.updateSlope(tmNow);
     })
   }

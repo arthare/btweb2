@@ -21,6 +21,8 @@ export interface UserDisplay {
   classString: string;
   lastWattsSaved: string;
   secondsDelta?:string;
+  handicap:string;
+  user:User;
 }
 
 class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
@@ -303,6 +305,8 @@ export class User extends UserDataRecorder implements SlopeSource {
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',
       classString: classes.join(' '),
       lastWattsSaved: this.getLastWattsSaved().watts.toFixed(1) + 'W',
+      handicap: this.getHandicap().toFixed(0) + 'W',
+      user: this,
     }
   }
 
@@ -327,7 +331,6 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._position = update.distance;
     if(this._typeFlags & UserTypeFlags.Local) {
       // we're local, so we won't re-absorb the power from the server
-      console.log("Local user told position ", this._position, " and time ", tmNow);
     } else {
       // we're a remote or AI user, so we should try to be as similar to the server as possible
       this.notifyPower(new Date().getTime(), update.power);

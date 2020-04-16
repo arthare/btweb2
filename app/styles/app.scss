@@ -10,6 +10,8 @@
 @import './display-race';
 @import './mini-map-live.scss';
 @import './create-race-widget.scss';
+@import './display-pre-race-rider.scss';
+@import './display-pre-race.scss';
 
 * {
   font-family: sans-serif;
@@ -49,8 +51,8 @@ body {
   }
   &__bluetooth-warning {
     position: fixed;
-    top: 100vh;
-    height: 10vh;
+    top: 100%;
+    height: 10%;
     width: 100%;
     transition: top 0.25s;
     background-color: white;
@@ -79,9 +81,13 @@ body {
     }
 
     &.device-gone {
-      top: 90vh;
+      top: 90%;
     }
   }
+}
+
+.bluetooth-warning-socket {
+  min-height: 10vh;
 }
 
 i {

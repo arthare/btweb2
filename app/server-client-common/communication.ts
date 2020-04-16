@@ -191,7 +191,7 @@ export class ClientToServerUpdate {
 
 export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:number, elevations:number[]) {
   const pctRaw = meters / lengthMeters;
-  const n = elevations.length;
+  const n = elevations.length - 1;
   if(pctRaw < 0) {
     return elevations[0];
   } else if(pctRaw >= 1) {
@@ -199,6 +199,8 @@ export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:nu
   } else {
     const ixLeft = Math.floor(pctRaw * n);
     const ixRight = ixLeft + 1;
+    assert2(ixLeft >= 0 && ixLeft <=  elevations.length - 2);
+    assert2(ixRight >= 0 && ixRight <=  elevations.length - 1);
 
     const distLeft = (ixLeft / n)*lengthMeters;
     const distRight = (ixRight / n)*lengthMeters;
@@ -224,9 +226,15 @@ export class SimpleElevationMap extends RideMapPartial {
     super();
     this.elevations = elevations;
     this.lengthMeters = lengthMeters;
+
+    elevations.forEach((elev) => {
+      assert2(isFinite(elev));
+    })
   }
   getElevationAtDistance(meters: number): number {
-    return getElevationFromEvenSpacedSamples(meters, this.lengthMeters, this.elevations);
+    const ret = getElevationFromEvenSpacedSamples(meters, this.lengthMeters, this.elevations);
+    assert2(isFinite(ret));
+    return ret;
   }
   getLength(): number {
     return this.lengthMeters;

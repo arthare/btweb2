@@ -1,5 +1,5 @@
 {{#if connection.preRace}}
-  {{display-pre-race frame=frame localRiders=localRiders remoteRiders=remoteRiders}}
+  {{display-pre-race frame=frame localRiders=localRidersPreRace nonLocalHumans=nonLocalHumans ais=ais}}
 {{else if connection.racing}}
   {{#if _raceState}}
     {{display-race raceState=_raceState}}

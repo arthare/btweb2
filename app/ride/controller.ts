@@ -92,8 +92,8 @@ export default class Ride extends Controller.extend({
     this.incrementProperty('frame');
   }
 
-  @computed("frame")
-  get localRiders(): UserDisplay[] {
+  @computed("devices.ridersVersion", "connection.updateVersion")
+  get localRidersPreRace(): UserDisplay[] {
     if (!this._raceState) {
       return [];
     }
@@ -101,6 +101,32 @@ export default class Ride extends Controller.extend({
 
     return this.devices.getUsers(tmNow).filter((user) => {
       return user.getUserType() & UserTypeFlags.Local;
+    }).map((localUser) => {
+      return localUser.getDisplay(this._raceState);
+    })
+  }
+  @computed("devices.ridersVersion", "connection.updateVersion")
+  get nonLocalHumans(): UserDisplay[] {
+    if (!this._raceState) {
+      return [];
+    }
+    const tmNow = new Date().getTime();
+
+    return this.devices.getUsers(tmNow).filter((user) => {
+      return !(user.getUserType() & UserTypeFlags.Local) && !(user.getUserType() & UserTypeFlags.Ai);
+    }).map((localUser) => {
+      return localUser.getDisplay(this._raceState);
+    })
+  }
+  @computed("devices.ridersVersion", "connection.updateVersion")
+  get ais(): UserDisplay[] {
+    if (!this._raceState) {
+      return [];
+    }
+    const tmNow = new Date().getTime();
+
+    return this.devices.getUsers(tmNow).filter((user) => {
+      return !(user.getUserType() & UserTypeFlags.Local) && (user.getUserType() & UserTypeFlags.Ai);
     }).map((localUser) => {
       return localUser.getDisplay(this._raceState);
     })
