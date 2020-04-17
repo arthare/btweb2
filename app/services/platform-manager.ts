@@ -91,12 +91,11 @@ class StravaMapInterpreter extends RideMapPartial {
           return pct*elevNext + (1-pct)*elevThis;
         }
       }
-      debugger;
+      assert2(false, "We shouln't get here - we should always find a distance");
       return 0;
     }
   }
   getLength(): number {
-    debugger;
     return this._distance[this._distance.length - 1];
   }
   
@@ -113,12 +112,7 @@ export default class PlatformManager extends Service.extend({
       const windowRef = window.open(url, "_blank");
       if(!windowRef) {
         return;
-      }
-      windowRef.onmessage = function() {
-        debugger;
-        console.log("onMessage! ", arguments);
-      }
-      
+      }      
 
       const interval = setInterval(() => {
 

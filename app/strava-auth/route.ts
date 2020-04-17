@@ -17,8 +17,6 @@ export default class StravaAuth extends Route.extend({
 
       if(key === "code") {
         document.cookie = `strava-auth-code=${value}`;
-
-        debugger;
         if(window.opener) {
           const msg = JSON.stringify({
             stravaAuthCode:value,
@@ -34,7 +32,7 @@ export default class StravaAuth extends Route.extend({
     if(debuggin) {
 
     } else {
-      //window.close();
+      window.close();
     }
   }
 }
