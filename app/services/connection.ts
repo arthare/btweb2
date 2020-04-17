@@ -181,7 +181,7 @@ export default class Connection extends Service.extend({
 
     const tmNow = new Date().getTime();
 
-    this.devices.endRace(tmNow);
+    this.devices.dumpPwx(tmNow);
     const user = this.devices.getLocalUser();
     if(user) {
       user.setId(-1);

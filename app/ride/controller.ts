@@ -9,6 +9,7 @@ import Devices from 'bt-web2/services/devices';
 import { UserTypeFlags, UserDisplay } from 'bt-web2/server-client-common/User';
 import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
+import { map } from 'rsvp';
 
 var noSleep:any;
 
@@ -17,6 +18,7 @@ export default class Ride extends Controller.extend({
   devices: <Devices><unknown>Ember.inject.service(),
   connection: <Connection><unknown>Ember.inject.service(),
   _raceState: <RaceState | null>null,
+  hasSentPwx: false,
 
   actions: {
     newRide() {
@@ -44,10 +46,12 @@ export default class Ride extends Controller.extend({
       throw new Error("User isn't valid");
     }
     const targetHost = ENV.gameServerHost;
+    
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {
       this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
       noSleep = new NoSleep();
+      this.set('hasSentPwx', false);
       return this._raceState;
     }, (failure: any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);
@@ -80,6 +84,11 @@ export default class Ride extends Controller.extend({
     {
       const user = raceState.getLocalUser();
       if (user) {
+        if(user.getDistance() >= raceState.getMap().getLength() && !this.get('hasSentPwx')) {
+          this.devices.dumpPwx(tmNow);
+          this.set('hasSentPwx', true);
+        }
+
         window.pending.lastPhysics = user.getDistance();
         window.tick(tmNow);
       }

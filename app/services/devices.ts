@@ -92,11 +92,11 @@ export default class Devices extends Service.extend({
     return false;
   }
 
-  endRace(tmNow:number) {
+  dumpPwx(tmNow:number) {
     const user = this.getLocalUser();
     if(this.workoutSaver && user) {
       const samples = this.workoutSaver.getWorkout();
-      console.log("we gotta save ", samples);
+      
       const pwx = samplesToPWX("Workout", user, this.get('deviceDescription'), samples);
 
       const lengthMeters = samples[samples.length - 1].distance - samples[0].distance;
@@ -110,9 +110,6 @@ export default class Devices extends Service.extend({
       document.body.appendChild(linky);
       linky.click();
       document.body.removeChild(linky);
-      
-
-      this.workoutSaver = null;
     }
   }
 
