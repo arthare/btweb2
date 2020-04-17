@@ -6,6 +6,8 @@ import { ScheduleRacePostRequest } from 'bt-web2/server-client-common/ServerHttp
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { apiPost } from 'bt-web2/set-up-ride/route';
+import PlatformManager, { StravaMapSummary } from 'bt-web2/services/platform-manager';
+import { writeToCharacteristic } from 'bt-web2/pojs/DeviceUtils';
 
 export default class CreateRideWidget extends Component.extend({
   // anything which *must* be merged to prototype here
@@ -14,12 +16,30 @@ export default class CreateRideWidget extends Component.extend({
   raceDate: new Date(new Date().getTime() + 5*3600*1000),
   raceTime: '12:00',
   classNames: ['create-race-widget__container'],
-
+  race:<RideMapElevationOnly><unknown>null,
+  _race:<RideMapElevationOnly|null>null,
   onRaceCreated:(req:ScheduleRacePostRequest)=>{},
 
   devices: <Devices><unknown>Ember.inject.service('devices'),
+  platformManager: <PlatformManager><unknown>Ember.inject.service('platform-manager'),
 
   actions: {
+    setUpStrava() {
+      // gotta redirect them to a strava link, then callback to a server, and blah blah
+      this.get('platformManager').getStravaMapList().then((mapList:StravaMapSummary[]) => {
+        const names = mapList.map((map, index) => index + ') ' + map.name);
+        const pick = prompt("Select a map \n" + names.join('\n'));
+        if(pick) {
+          const pickNumber = parseInt(pick);
+          if(isFinite(pickNumber)) {
+            return this.get('platformManager').getStravaMapDetails(mapList[pickNumber]).then((mapDetails:RideMapElevationOnly) => {
+              this.set('race', mapDetails);
+            });
+          }
+        }
+        debugger;
+      })
+    },
     createRace() {
       const race:RideMapElevationOnly = this.get('race');
 
@@ -75,8 +95,11 @@ export default class CreateRideWidget extends Component.extend({
     this.set('raceName', `${localUser.getName()}'s Race`);
   }
 
-  @computed("meters", "rideName")
+  @computed("meters", "rideName", "_race")
   get race():RideMapElevationOnly {
+    if(this.get('_race')) {
+      return this.get('_race');
+    }
     return new PureCosineMap(parseInt('' + this.get('meters')));
   }
 

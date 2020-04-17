@@ -3,6 +3,14 @@
   {{input class="create-race-widget__text" type="number" value=meters}}
 </div>
 <div class="create-race-widget__param">
+  <div class="create-race-widget__param--title">Pick Course</div>
+  {{#if stravaLink}}
+  {{else}}
+    
+    <button class="create-race-widget__button" {{action 'setUpStrava'}}>Pick From Strava</button>
+  {{/if}}
+</div>
+<div class="create-race-widget__param">
   <div class="create-race-widget__param--title">Name Of Your Ride</div>
   {{input class="create-race-widget__text" type="text" value=raceName}}
 </div>

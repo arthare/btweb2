@@ -38,6 +38,8 @@ export default class Application extends Route.extend({
         }
       }
 
+    } else if(params.to.name === 'strava-auth') {
+      // I'm going to allow this
     } else {
       // no name, no handicap?  user has to go sign up
       return this.transitionTo('set-up-user');
