@@ -99,7 +99,7 @@ export class RaceState {
     msg.ids.forEach((id, index) => {
       const user = this._userProvider.getUser(id);
       if(user) {
-        user.absorbNameUpdate(msg.names[index], msg.userTypes[index]);
+        user.absorbNameUpdate(msg.names[index], msg.userTypes[index], msg.userHandicaps[index]);
       }
     })
   }

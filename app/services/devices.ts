@@ -53,7 +53,7 @@ export default class Devices extends Service.extend({
     const alreadyHaveLocal = this.getLocalUser();
     if(alreadyHaveLocal) {
       // get rid of the "local" user that we already have
-      this.users = this.users.filter((user) => !(user.getUserType() & UserTypeFlags.Local));
+      this.users = this.users.filter((user) => user.getId() !== alreadyHaveLocal.getId());
     }
 
     this.workoutSaver = new WorkoutFileSaver(newUser, new Date().getTime());

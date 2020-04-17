@@ -10,6 +10,7 @@ import { UserTypeFlags, UserDisplay } from 'bt-web2/server-client-common/User';
 import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
 import { map } from 'rsvp';
+import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 
 var noSleep:any;
 
@@ -19,6 +20,8 @@ export default class Ride extends Controller.extend({
   connection: <Connection><unknown>Ember.inject.service(),
   _raceState: <RaceState | null>null,
   hasSentPwx: false,
+  _gameId: '',
+  _setup: (gameId:string)=>{},
 
   actions: {
     newRide() {
@@ -31,6 +34,11 @@ export default class Ride extends Controller.extend({
       this.devices.getLocalUser()?.setId(-1);
       this.transitionToRoute('set-up-ride');
     },
+    doneAddingUser(user:UserSetupParameters) {
+      console.log("done adding user", arguments);
+      this.devices.addUser(user);
+      this._setup(this.get('_gameId'));
+    }
   }
 }) {
   // normal class body definition here
@@ -38,13 +46,20 @@ export default class Ride extends Controller.extend({
   myTimeout: any = 0;
   frame: number = 0;
   _raceState: RaceState | null = null;
+  _userSignedIn: false = false;
 
   _setup(gameId: string): Promise<any> {
 
+    this.set('_gameId', gameId);
+
     const user = this.devices.getLocalUser();
     if (!user) {
-      throw new Error("User isn't valid");
+      // nuthin to do yet
+      this.set('_userSignedIn', false);
+      return;
     }
+    this.set('_userSignedIn', true);
+
     const targetHost = ENV.gameServerHost;
     
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {

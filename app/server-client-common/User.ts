@@ -320,8 +320,11 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
   }
 
-  absorbNameUpdate(name:string, type:number) {
+  absorbNameUpdate(name:string, type:number, handicap:number) {
     this._name = name;
+    if(isFinite(handicap)) {
+      this._handicap = handicap;
+    }
     if(!(this._typeFlags & UserTypeFlags.Local)) {
       this._typeFlags = type;
     }

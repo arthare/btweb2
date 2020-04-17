@@ -29,6 +29,7 @@ Router.map(function() {
   this.route('ride', {path:'/ride/:gameId'});
   this.route('set-up-join');
   this.route('test-hacks');
+  this.route('strava-auth');
 });
 
 export default Router;
