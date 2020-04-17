@@ -161,16 +161,19 @@ export class S2CNameUpdate {
     this.names = [];
     this.ids = [];
     this.userTypes = [];
+    this.userHandicaps = [];
     users.forEach((user) => {
       this.names.push(user.getName());
       this.ids.push(user.getId());
       this.userTypes.push(user.getUserType());
+      this.userHandicaps.push(user.getHandicap());
     })
   }
 
   names: string[];
   ids: number[];
   userTypes: number[];
+  userHandicaps: number[];
 }
 
 export class ClientToServerUpdate {

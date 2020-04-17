@@ -9,3 +9,9 @@
 {{else if connection.postRace}}
   {{display-post-race frame=frame results=connection.raceResults}}
 {{/if}}
+
+{{#unless _userSignedIn}}
+  <div class="new-user__container">
+    {{user-set-up-widget onDone=(action 'doneAddingUser')}}
+  </div>
+{{/unless}}
