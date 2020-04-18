@@ -56,6 +56,7 @@ function sendError(tmNow:number, serverGame:ServerGame, socket:WebSocket, errorM
 }
 
 function sendResponse(
+  user:ServerUser,
   tmNow:number, 
   ws:WebSocket, 
   type:BasicMessageType, 
@@ -242,7 +243,7 @@ function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsCo
     const response:S2CFinishUpdate = new S2CFinishUpdate(game.userProvider, game.getRaceStartTime());
     user.noteFinishUpdate(tmNow);
 
-    return sendResponse(tmNow, wsConnection, BasicMessageType.S2CFinishUpdate, game, response);
+    return sendResponse(user, tmNow, wsConnection, BasicMessageType.S2CFinishUpdate, game, response);
 
   } else if(tmSinceName >= 30000) {
 
@@ -250,7 +251,7 @@ function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsCo
     const response:S2CNameUpdate = new S2CNameUpdate(tmNow, game.userProvider);
     user.noteLastNameUpdate(tmNow);
 
-    return sendResponse(tmNow, wsConnection, BasicMessageType.S2CNameUpdate, game, response);
+    return sendResponse(user, tmNow, wsConnection, BasicMessageType.S2CNameUpdate, game, response);
   } else if(tmSinceImage >= 10000) {
     // time for an image!
     const users = game.raceState.getUserProvider().getUsers(tmNow);
@@ -263,14 +264,14 @@ function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsCo
 
       console.log("sending ", userWithoutImageSent.getName(), " image to ", user.getName());
       const response:S2CImageUpdate = new S2CImageUpdate(userWithoutImageSent);
-      return sendResponse(tmNow, wsConnection, BasicMessageType.S2CImageUpdate, game, response);
+      return sendResponse(user, tmNow, wsConnection, BasicMessageType.S2CImageUpdate, game, response);
     }
     
   } else if(!game.raceState.isAllRacersFinished(tmNow)) {
 
     const response:S2CPositionUpdate = buildClientPositionUpdate(tmNow, user, game.userProvider, 16);
 
-    return sendResponse(tmNow, wsConnection, BasicMessageType.S2CPositionUpdate, game, response);
+    return sendResponse(user, tmNow, wsConnection, BasicMessageType.S2CPositionUpdate, game, response);
   }
 }
 
@@ -333,8 +334,9 @@ wss.on('connection', (wsConnection) => {
 
         // lets see if this user is maybe already in this game
         let newId;
+        let selectedUser;
         if(payload.imageBase64) {
-          const existingUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
+          const existingUser = selectedUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
           if(existingUser) {
             newId = existingUser.getId();
             console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
@@ -354,7 +356,7 @@ wss.on('connection', (wsConnection) => {
           }
           
           newId = game.addUser(tmNow, payload);
-          const newUser = game.getUser(newId);
+          const newUser = selectedUser = game.getUser(newId);
           newUser.setDistance(distanceToAssign);
           newUser.setSpeed(speedToAssign);
         }
@@ -368,7 +370,10 @@ wss.on('connection', (wsConnection) => {
           yourAssignedId:newId,
           map: new ServerMapDescription(game.raceState.getMap()),
         }
-        return sendResponse(tmNow, wsConnection, BasicMessageType.ClientConnectionResponse, game, ret);
+        assert2(selectedUser);
+        if(selectedUser) {
+          return sendResponse(selectedUser, tmNow, wsConnection, BasicMessageType.ClientConnectionResponse, game, ret);
+        }
       }
       case BasicMessageType.ClientToServerUpdate:
       {

@@ -17,7 +17,9 @@ export default function setupContextWithTheseCoords(
   const spanHeight = bottom - top;
   const spanWidth = right - left;
 
-  const amountToRotateRadians = -3*Math.atan(localUserSlope);
+  const clampedSlope = Math.max(-0.1, Math.min(0.1, localUserSlope));
+
+  const amountToRotateRadians = -3*Math.atan(clampedSlope);
   const a = spanHeight * Math.sin(-Math.abs(amountToRotateRadians))
   const b = spanWidth * Math.cos(-Math.abs(amountToRotateRadians))
   const c = spanWidth * Math.sin(-Math.abs(amountToRotateRadians))
