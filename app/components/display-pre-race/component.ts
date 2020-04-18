@@ -6,6 +6,7 @@ export default class DisplayPreRace extends Component.extend({
   // anything which *must* be merged to prototype here
   connection: <Connection><unknown>Ember.inject.service(),
   frame: 0,
+  classNames: ['display-pre-race__container'],
 }) {
   // normal class body definition here
 

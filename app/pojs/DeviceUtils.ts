@@ -33,13 +33,24 @@ export function monitorCharacteristic(
   })
 }
 
+function msPromise(ms:number):Promise<any> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  })
+}
+
 let g_writeQueue = Promise.resolve();
-export function writeToCharacteristic(deviceServer:BluetoothRemoteGATTServer, serviceName:string, characteristicName:string, arrayBufferToWrite:DataView) {
+export function writeToCharacteristic(deviceServer:BluetoothRemoteGATTServer, serviceName:string, characteristicName:string, arrayBufferToWrite:DataView):Promise<any> {
   g_writeQueue = g_writeQueue.then(() => {
     return deviceServer.getPrimaryService(serviceName).then((service) => {
-      return service.getCharacteristic(characteristicName);
+      return msPromise(100).then(() => {
+        return service.getCharacteristic(characteristicName);
+      })
     }).then((characteristic) => {
-      return characteristic.writeValue(arrayBufferToWrite);
+      return msPromise(100).then(() => {
+        return characteristic.writeValue(arrayBufferToWrite);
+      })
     })
-  })
+  });
+  return g_writeQueue;
 }
