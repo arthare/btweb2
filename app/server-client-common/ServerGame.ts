@@ -86,7 +86,7 @@ export class ServerUserProvider implements UserProvider {
   users:ServerUser[];
 }
 export class ServerGame {
-  constructor(map:RideMap, gameId:string, cAis:number) {
+  constructor(map:RideMap, gameId:string, name:string, cAis:number) {
     this.userProvider = new ServerUserProvider();
     this.raceState = new RaceState(map, this.userProvider, gameId);
 
@@ -104,6 +104,15 @@ export class ServerGame {
     this._timeout = null;
     this._tmScheduledRaceStart = -1;
     this._tmRaceStart = -1;
+    this._name = name;
+    this._gameId = gameId;
+  }
+
+  public getDisplayName() {
+    return this._name;
+  }
+  public getGameId() {
+    return this._gameId;
   }
 
   public findUserByImage(tmNow:number, imageBase64:string, riderName:string, handicap:number):ServerUser|null {
@@ -244,6 +253,8 @@ export class ServerGame {
   }
   private _stopped:boolean = false;
   private _timeout:any;
+  private _name:string;
+  private _gameId:string;
   private _tmRaceStart:number; // first timestamp that we applied physics
   private _tmScheduledRaceStart:number; // timestamp that we plan on starting the race
   private _lastRaceStateMode:CurrentRaceState = CurrentRaceState.PreRace; // a summary of the race mode we're currently running

@@ -246,7 +246,8 @@ export class SimpleElevationMap extends RideMapPartial {
 
 export class ServerHttpGameListElement {
   constructor(tmNow:number, game:ServerGame) {
-    this.name = game.raceState.getGameId();
+    this.gameId = game.raceState.getGameId();
+    this.displayName = game.getDisplayName();
     this.status = game.getLastRaceState();
     this.tmScheduledStart = game.getRaceScheduledStartTime();
     this.tmActualStart = game.getRaceStartTime();
@@ -269,7 +270,8 @@ export class ServerHttpGameListElement {
       this.elevations.push(elev);
     }
   }
-  name: string;
+  gameId: string;
+  displayName: string;
   status: CurrentRaceState;
   tmScheduledStart: number;
   tmActualStart: number;

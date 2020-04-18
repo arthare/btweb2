@@ -3,7 +3,7 @@
     What:
   </span>
   <span class="pending-race__value">
-    {{race.name}}
+    {{race.displayName}}
   </span>
 </div>
 
@@ -44,4 +44,4 @@
 <div class="pending-race__row">
   {{mini-map race=raceElevations}}
 </div>
-<button class="pending-race__join-button" {{action joinRace race.name}}>Join</button>
+<button class="pending-race__join-button" {{action joinRace race.gameId}}>Join</button>

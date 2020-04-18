@@ -2,7 +2,7 @@ import { CadenceRecipient, PowerRecipient, HrmRecipient, SlopeSource } from "../
 import { RideMap } from "./RideMap";
 import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
-import { S2CPositionUpdateUser } from "./communication";
+import { S2CPositionUpdateUser, S2CPositionUpdate } from "./communication";
 
 export enum UserTypeFlags {
   Local = 1,
@@ -113,6 +113,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._lastT = new Date().getTime() / 1000.0;
   }
 
+  getPositionUpdate():S2CPositionUpdateUser {
+    return {
+      id:this.getId(),
+      distance:this.getDistance(),
+      speed:this.getSpeed(),
+      power:this.getLastPower(),
+    }
+  }
   setDistance(dist:number) {
     this._position = dist;
   }

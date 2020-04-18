@@ -12,8 +12,6 @@ import ENV from 'bt-web2/config/environment';
 import { map } from 'rsvp';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 
-var noSleep:any;
-
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
@@ -21,7 +19,6 @@ export default class Ride extends Controller.extend({
   _raceState: <RaceState | null>null,
   hasSentPwx: false,
   _gameId: '',
-  _setup: (gameId:string)=>{},
 
   actions: {
     newRide() {
@@ -37,7 +34,7 @@ export default class Ride extends Controller.extend({
     doneAddingUser(user:UserSetupParameters) {
       console.log("done adding user", arguments);
       this.devices.addUser(user);
-      this._setup(this.get('_gameId'));
+      (<any>this)._setup(this.get('_gameId'));
     }
   }
 }) {
@@ -56,7 +53,7 @@ export default class Ride extends Controller.extend({
     if (!user) {
       // nuthin to do yet
       this.set('_userSignedIn', false);
-      return;
+      return Promise.resolve();
     }
     this.set('_userSignedIn', true);
 
@@ -65,7 +62,6 @@ export default class Ride extends Controller.extend({
     return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {
       this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
-      noSleep = new NoSleep();
       this.set('hasSentPwx', false);
       return this._raceState;
     }, (failure: any) => {

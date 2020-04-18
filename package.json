@@ -73,6 +73,5 @@
     "node": "8.* || >= 10.*"
   },
   "dependencies": {
-    "nosleep": "^2.0.0"
   }
 }

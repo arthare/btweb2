@@ -85,8 +85,8 @@ class Rng {
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
 const map = makeSimpleMap(15000);
-const sg = new ServerGame(map, 'Will Start On Join', 10);
-races.set('Will Start On Join', sg);
+const sg = new ServerGame(map, 'Starting_Soon', 'Will Start On Join', 10);
+races.set(sg.getGameId(), sg);
 
 function hasRaceAtTime(tmWhen) {
   let found;
@@ -131,10 +131,11 @@ function populatePrescheduledRaces() {
       let date = new Date(x);
       console.log("making new race at ", date);
       const name = `${(map.getLength() / 1000).toFixed(1)}km on CosineMap. ${date.toISOString()}`;
-      const sg = new ServerGame(map, name, 10);
+      const gameId = name.replace(/\s/gi, '_');
+      const sg = new ServerGame(map, gameId, name, 10);
       sg.scheduleRaceStartTime(x);
       console.log("making prescheduled race at ", date.toLocaleTimeString());
-      races.set(name, sg);
+      races.set(gameId, sg);
     }
   }
 
@@ -174,27 +175,40 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
   if(!lastSentTo.has(centralUser.getId())) {
     lastSentTo.set(centralUser.getId(), new Rng());
   }
-  const lastSeed = lastSentTo.get(centralUser.getId()) || new Rng();
-  
-  const ret:S2CPositionUpdate = {
-    clients: [],
-  };
-
   const setPicked:Set<number> = new Set<number>();
+  const lastSeed = lastSentTo.get(centralUser.getId()) || new Rng();
+ 
+  // stage one: always send the central player's position
+  const ret:S2CPositionUpdate = {
+    clients: [centralUser.getPositionUpdate()],
+  };
+  setPicked.add(centralUser.getId());
+
+  // stage two: send the nClosest closest users
+  const nClosest = 6;
+  const sortedByDistance = users.sort((a:User, b:User) => {
+    const distA = Math.abs(a.getDistance() - centralUser.getDistance());
+    const distB = Math.abs(b.getDistance() - centralUser.getDistance());
+    return distA < distB ? -1 : 1;
+  });
+  assert2(sortedByDistance[0].getId() === centralUser.getId() || sortedByDistance[0].getDistance() === centralUser.getDistance()); // the central user is closest to themselves...
+  for(var x = 1;x < nClosest && x < sortedByDistance.length; x++) {
+    ret.clients.push(sortedByDistance[x].getPositionUpdate());
+    setPicked.add(sortedByDistance[x].getId());
+  }
+
+  // stage 3: send a random sampling of who is left, weighted by distance
   for(var x = 0;x < n; x++) {
-    const r = lastSeed.next(users.length);
+    const r = Math.floor(Math.pow(Math.random(),2) * sortedByDistance.length);
+    assert2(r >= 0 && r < sortedByDistance.length);
     const u:User = users[r];
+
     if(setPicked.has(u.getId())) {
       continue;
     } else {
       setPicked.add(u.getId());
     }
-    ret.clients.push({
-      id:u.getId(),
-      distance:u.getDistance(),
-      speed:u.getSpeed(),
-      power:u.getLastPower(),
-    })
+    ret.clients.push(u.getPositionUpdate());
   }
   return ret;
 }

@@ -14,7 +14,6 @@ export default class Application extends Route.extend({
     document.addEventListener('click', function enableNoSleep() {
       document.removeEventListener('click', enableNoSleep, false);
       noSleep.enable();
-      console.log("nosleeped");
     }, false);
 
     console.log(params);
