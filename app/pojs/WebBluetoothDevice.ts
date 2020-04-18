@@ -133,9 +133,6 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
   _tmLastSlopeUpdate:number = 0;
   updateSlope(tmNow:number):void {
 
-    if(!this._slopeSource) {
-      return;
-    }
 
     const dtMs = tmNow - this._tmLastSlopeUpdate;
     if(dtMs < 500) {
@@ -143,8 +140,15 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     }
     this._tmLastSlopeUpdate = tmNow;
 
+    if(!this._slopeSource) {
+      console.log("Not updating FTMS device because no slope source");
+      return;
+    }
+
+
     const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
-    const charOut = new DataView(new ArrayBuffer(20));
+    console.log("updating FTMS device with slope " + slopeInWholePercent.toFixed(1) + '%');
+    const charOut = new DataView(new ArrayBuffer(7));
     charOut.setUint8(0, 0x11); // setIndoorBikesimParams
 
     // the actual object looks like:
@@ -160,7 +164,12 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     charOut.setUint8(5, 33);
     charOut.setUint8(6, 0);
 
-    writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut);
+    writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut).then(() => {
+      console.log("sent FTMS command to " + this._gattDevice.device.name);
+    }, (failure) => {
+      console.log("we failed to write to the FTMS device ", failure);
+      
+    });
   }
   
   hasPower(): boolean {
@@ -174,6 +183,7 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
   }
   _decodeFtmsControlPoint(dataView:DataView):any {
     // we're mainly just looking for the "control not permitted" response so we can re-request control
+    console.log("decoding ftms control point");
     if(dataView.getUint8(0) === 0x80) {
       // this is a response
       if(dataView.getUint8(2) === 0x5) {

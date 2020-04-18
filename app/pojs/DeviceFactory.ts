@@ -53,8 +53,8 @@ class TestDeviceFactory implements DeviceFactory {
       const filters = {
         filters: [
           {services: ['cycling_power']},
-          {services: ['fitness_machine']},
-          {services: [serviceUuids.kickrService]},
+          {services: ['fitness_machine', 'cycling_power']},
+          {services: [serviceUuids.kickrService, 'cycling_power']},
         ]
       }
       return navigator.bluetooth.requestDevice(filters).then((device) => {
