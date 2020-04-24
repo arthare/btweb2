@@ -8,6 +8,7 @@ import Devices from './devices';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { computed } from '@ember/object';
 import ENV from 'bt-web2/config/environment';
+import { USERSETUP_KEY_HANDICAP } from 'bt-web2/components/user-set-up-widget/component';
 
 export default class Connection extends Service.extend({
   // anything which *must* be merged to prototype here
@@ -116,7 +117,25 @@ export default class Connection extends Service.extend({
     if(this._raceState) {
       switch(bm.type) {
         case BasicMessageType.S2CNameUpdate:
-          this._raceState.absorbNameUpdate(bm.payload);
+
+          const update:S2CNameUpdate = <S2CNameUpdate>bm.payload;
+          const localUser = this.devices.getLocalUser();
+          if(localUser) {
+            update.ids.forEach((id, index) => {
+              const newHandicap = update.userHandicaps[index];
+              if(id === localUser.getId() && 
+                 isFinite(newHandicap) && 
+                 newHandicap > localUser.getHandicap()) {
+                // they've updated our user's handicap!  good for them for getting a PB!
+                // let's store their new handicap so they don't have to remember to update it...
+                console.log("the server has updated our user's handicap to ", newHandicap.toFixed(1));
+                localStorage.setItem(USERSETUP_KEY_HANDICAP, newHandicap.toFixed(1));
+              }
+            })
+
+          }
+
+          this._raceState.absorbNameUpdate(tmNow, bm.payload);
           break;
         case BasicMessageType.S2CPositionUpdate:
         {

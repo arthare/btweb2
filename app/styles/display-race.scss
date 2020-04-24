@@ -32,6 +32,21 @@
     height: 100vh;
     overflow: hidden;
   }
+  &__handicap-update-container {
+    position: fixed;
+    top: 100vh;
+    transition: top 0.5s;
+    height: 5vh;
+    width: 100vw;
+    text-align: center;
+    padding: 4px;
+    font-size: 2vh;
+    background-color: white;
+
+    &.show{
+      top: 95vh;
+    }
+  }
 
 }
 

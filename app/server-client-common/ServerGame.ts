@@ -5,6 +5,7 @@ import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
 import fs from 'fs';
+import { SpanAverage } from "./SpanAverage";
 
 export class ServerUser extends User {
   _tmLastNameSent:number;
@@ -12,12 +13,19 @@ export class ServerUser extends User {
   _tmLastImageUpdate:number;
   _usersIveBeenSentImagesFor:Set<number> = new Set();
 
+  _spanAverages:Map<number,SpanAverage> = new Map<number, SpanAverage>();
+
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super(name, massKg, handicap, typeFlags);
 
     this._tmLastFinishUpdate = -1;
     this._tmLastNameSent = -1;
     this._tmLastImageUpdate = -1;
+
+    const minutesForSpans = [5,10,20,30,45,60];
+    minutesForSpans.forEach((minutes) => {
+      this._spanAverages.set(minutes, new SpanAverage(minutes*60));
+    })
   }
 
   hasBeenSentImageFor(userId:number) {
@@ -46,6 +54,86 @@ export class ServerUser extends User {
   }
   public setPosition(where:number) {
     this._position = where;
+  }
+
+  
+  public notifyPower(tmNow:number, watts:number):void {
+    super.notifyPower(tmNow, watts);
+
+    if(!(this.getUserType() & UserTypeFlags.Ai)) {
+      // we're a human
+      this._spanAverages.forEach((span, minutes) => {
+        span.add(tmNow, watts);
+      });
+  
+      const span5:SpanAverage|undefined = this._spanAverages.get(5);
+      const span10:SpanAverage|undefined = this._spanAverages.get(10);
+      const span20:SpanAverage|undefined = this._spanAverages.get(20);
+
+      // for posterity, the old TdG conversion ratios from less-than-hour rides to hour rides were:
+      //const static float flRatios[] = 
+      //{
+      //  0,
+      //  0,
+      //  0, // 10s
+      //  0, // 30s
+      //  0, // 60s
+      //  0.776f, // 2min
+      //  0.835f, // 5min
+      //  0.879f, // 10min
+      //  0.912f, // 20min
+      //  0.938f, // 30min
+      //  0.968f, // 45min
+      //  1, // 60min
+      //};
+      // I think I'll just use 5/10/20.  The 2min one ends up estimating quite high
+
+
+      let estSum = 0;
+      let estCount = 0;
+      if(span5 && span5.isReady()) {
+        const avg = span5.getAverage();
+        if(avg <= 0) {
+          // if we've been sitting still for 5 minutes, then just reset the longer ones.
+          // why?
+          // 1) since we use the average of 3 estimates, someone could significantly nerf the re-handicapper by filling their 10min/20min with zeros
+          // 2) so if we reset 10min/20min counts, then when they start riding they'll be handicapped by the fairly-accurate 5min, and 10/20 will come into
+          //    play with all-nonzero data, rather than showing up mostly-zeroed
+          // other solutions considered:
+          // 1) Solution: don't put zeros into the spanaverages
+          //    Problem: that's unfair to someone that does 2min hard, 1min stopped, then 3min hard again - it'd look like they did 5min flat-out, when they actually had a rest
+          if(span10) {
+            span10.reset(10*60);
+          }
+          if(span20) {
+            span20.reset(20*60);
+          }
+        }
+        estSum += avg*0.835;
+        estCount++;
+      }
+      if(span10 && span10.isReady()) {
+        const avg = span10.getAverage();
+
+        estSum += avg*0.879;
+        estCount++;
+      }
+      if(span20 && span20.isReady()) {
+        const avg = span20.getAverage();
+
+        estSum += avg*0.912;
+        estCount++;
+      }
+
+      if(estCount > 0) {
+        const estFTP = estSum / estCount;
+        if(estFTP >= this.getHandicap()*1.02) {
+          console.log("revising " + this.getName() + "'s FTP to " + estFTP.toFixed(1));
+          this.setHandicap(estFTP);
+        }
+      }
+
+    }
   }
 }
 

@@ -3,6 +3,7 @@ import { RideMap } from "./RideMap";
 import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
 import { S2CPositionUpdateUser, S2CPositionUpdate } from "./communication";
+import { USERSETUP_KEY_HANDICAP } from "bt-web2/components/user-set-up-widget/component";
 
 export enum UserTypeFlags {
   Local = 1,
@@ -103,7 +104,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   protected _position:number = 0;
   private _lastDraftSaving:DraftSavings = {watts:0, pctOfMax:0, fromDistance:0};
   private _distanceHistory:DistanceHistoryElement[] = [];
-  
+  private _tmLastHandicapRevision:number = 0;
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
     this._massKg = massKg;
@@ -111,6 +112,11 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._typeFlags = typeFlags;
     this._name = name;
     this._lastT = new Date().getTime() / 1000.0;
+  }
+
+  protected setHandicap(watts:number) {
+    assert2(watts >= this._handicap, "you should only increase handicaps, not tank them");
+    this._handicap = watts;
   }
 
   getPositionUpdate():S2CPositionUpdateUser {
@@ -159,6 +165,9 @@ export class User extends UserDataRecorder implements SlopeSource {
 
   getHandicap() {
     return this._handicap;
+  }
+  getLastHandicapChangeTime():number {
+    return this._tmLastHandicapRevision;
   }
 
 
@@ -328,9 +337,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
   }
 
-  absorbNameUpdate(name:string, type:number, handicap:number) {
+  absorbNameUpdate(tmNow:number, name:string, type:number, handicap:number) {
     this._name = name;
     if(isFinite(handicap)) {
+      if(handicap > this._handicap) {
+        // remember the last time they bumped up our handicap - we'll put a notification in the UI
+        // so someone can see if they got re-handicapped
+        this._tmLastHandicapRevision = tmNow;
+      }
       this._handicap = handicap;
     }
     if(!(this._typeFlags & UserTypeFlags.Local)) {

@@ -13,6 +13,10 @@
       <div class="display-race__mini-map-container">
         {{mini-map-live raceState=raceState}}
       </div>
+      <div class="display-race__handicap-update-container {{if recentHandicapChange 'show'}}">
+        Handicap revised to {{recentHandicapChange}}<br>
+        Congratulations!
+      </div>
     </div>
   </div>
 </div>

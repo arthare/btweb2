@@ -95,11 +95,11 @@ export class RaceState {
 
     })
   }
-  absorbNameUpdate(msg:S2CNameUpdate) {
+  absorbNameUpdate(tmNow:number, msg:S2CNameUpdate) {
     msg.ids.forEach((id, index) => {
       const user = this._userProvider.getUser(id);
       if(user) {
-        user.absorbNameUpdate(msg.names[index], msg.userTypes[index], msg.userHandicaps[index]);
+        user.absorbNameUpdate(tmNow, msg.names[index], msg.userTypes[index], msg.userHandicaps[index]);
       }
     })
   }

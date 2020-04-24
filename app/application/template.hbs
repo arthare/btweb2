@@ -14,8 +14,8 @@
     </div>
   </div>
   <div class="application__user-status {{if localUser 'user-valid'}}">
-    {{localUser.name}}
-    {{localUser.lastPower}}
-    <i class="fas fa-bolt"></i>
+    {{localUser.name}}<br />
+    <i class="fas fa-bolt"></i>{{localUser.lastPower}}<br />
+    Handicap {{localUser.handicap}} {{#link-to 'set-up-user'}}Change{{/link-to}}
   </div>
 </div>
