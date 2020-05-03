@@ -93,9 +93,15 @@ class PluginDevice extends PowerDataDistributor {
       return; // let's not queue up a bunch of slope-sends
     }
     if(!this._descriptor.supportsSmartTrainer) {
+      // we don't support a smart trainer!
       return;
     }
     if(!this._slopeSource) {
+      // we don't have a slope source!
+      return;
+    }
+    if(this._queryTimeout === null) {
+      // we've been shut down/disconnected
       return;
     }
 

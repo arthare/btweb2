@@ -9,12 +9,7 @@ export default function startPlugin(serverUrl) {
   //    when the user in the browser goes to connect
   // 2) Once you're sure you've got a solid connection, then call signUpWithPluginHost to register with the plugin host
   // 3) Once you're signed up, just send new power data whenever it is available and the plugin host will get it to the browser
-  const signUp:PluginDescriptor = {
-    pluginId: '' + Math.random()*1000000,
-    humanName: "Fake Plugin For Testing",
-    pluginType: PluginType.Fake,
-    supportsSmartTrainer: true,
-  }
+  const signUp:PluginDescriptor = new PluginDescriptor("Fake Plugin For Testing", PluginType.Fake, true);
 
   return signUpWithPluginHost(serverUrl, signUp).then((success) => {
     console.log("Plugin: Signed up with server");

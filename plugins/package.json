@@ -11,6 +11,8 @@
   "dependencies": {
     "@types/express": "^4.17.6",
     "@types/node": "^13.13.4",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.0",
+    "express": "^4.17.1",
+    "waterrower": "^0.8.4"
   }
 }

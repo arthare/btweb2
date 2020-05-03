@@ -33,7 +33,7 @@ class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient
   private _tmLastPacket:number = -1;
 
   isPowerValid(tmNow:number):boolean {
-    return tmNow - this._tmLastPower < 2000;
+    return tmNow - this._tmLastPower < 5000;
   }
 
   public notifyPower(tmNow:number, watts:number):void {
