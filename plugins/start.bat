@@ -1,0 +1,1 @@
+node dist/plugins/index.js

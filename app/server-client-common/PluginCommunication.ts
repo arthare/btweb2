@@ -13,8 +13,8 @@ export class PluginDescriptor {
   pluginType: PluginType;
   supportsSmartTrainer: boolean;
 
-  constructor(pluginId:string, humanName:string, pluginType:PluginType, supportsSmartTrainer:boolean) {
-    this.pluginId = pluginId;
+  constructor(humanName:string, pluginType:PluginType, supportsSmartTrainer:boolean) {
+    this.pluginId = '' + Math.random() * 1000000;
     this.humanName = humanName;
     this.pluginType = pluginType;
     this.supportsSmartTrainer = supportsSmartTrainer;
