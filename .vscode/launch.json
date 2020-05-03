@@ -22,6 +22,24 @@
             "group": "build",
         },
         "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
-    }, 
+    }, {
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/plugins/",
+        "name": "Bt-web2 Plugin Server",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "program": "${workspaceFolder}/plugins/index.ts",
+        "preLaunchTask":{
+            "type": "typescript",
+            "tsconfig": "plugins/tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": "build",
+        },
+        "outFiles": ["${workspaceFolder}/plugins/dist/**/*.js"]
+    },
   ]
 }

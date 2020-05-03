@@ -10,7 +10,7 @@ import { assert2 } from '../app/server-client-common/Utils';
 
 let app = <core.Express>express();
 
-function setHeaders(req:core.Request, res:core.Response) {
+export function setCorsHeaders(req:core.Request, res:core.Response) {
   res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || req.headers['Host'] || 'tourjs.ca');
   res.setHeader('Access-Control-Allow-Headers', '*');
 }
@@ -29,7 +29,7 @@ function handleCors(req:core.Request, accessControlAllowOrigin:Array<string>):st
 
   return '';
 }
-function postStartup(req:core.Request, res:core.Response):Promise<any> {
+export function postStartup(req:core.Request, res:core.Response):Promise<any> {
     
   return new Promise((resolve, reject) => {
       res.setHeader('Content-Type', 'application/json');
@@ -51,13 +51,13 @@ function postStartup(req:core.Request, res:core.Response):Promise<any> {
 export function setUpServerHttp(gameMap:Map<string, ServerGame>) {
 
   app.options('*', (req, res:any) => {
-    setHeaders(req, res);
+    setCorsHeaders(req, res);
     
     res.end();
 })
 
   app.get('/race-list', (req, res) => {
-    setHeaders(req, res);
+    setCorsHeaders(req, res);
     const ret:ServerHttpGameList = {
       races: [],
     }
@@ -95,7 +95,7 @@ export function setUpServerHttp(gameMap:Map<string, ServerGame>) {
   
   app.post('/create-race', (req, res) => {
     return postStartup(req, res).then((postInput:ScheduleRacePostRequest) => {
-      setHeaders(req, res);
+      setCorsHeaders(req, res);
 
       const mapDescription = new ServerMapDescription(new SimpleElevationMap(postInput.elevations, postInput.lengthMeters));
       const map = new RideMapHandicap(mapDescription);

@@ -8,7 +8,7 @@ import { computed } from '@ember/object';
 import Connection from 'bt-web2/services/connection';
 
 
-class FakeDevice extends PowerDataDistributor {
+export class FakeDevice extends PowerDataDistributor {
   constructor() {
     super();
     setInterval(() => {
@@ -56,6 +56,12 @@ export default class Application extends Controller.extend({
         });
       }
     },
+
+    connectPlugin() {
+      getDeviceFactory().findPowermeter(true).then((device:ConnectedDeviceInterface) => {
+        this.devices.setLocalUserDevice(device);
+      })
+    }
   }
 }) {
   // normal class body definition here
@@ -69,6 +75,14 @@ export default class Application extends Controller.extend({
       this.set('bluetoothWarning', false);
     }
     this.incrementProperty('frame');
+
+    fetch('http://localhost:63939/device-list').then(() => {
+      this.set('hasPlugins', true);
+    }, (failure) => {
+      this.set('hasPlugins', false);
+    })
+
+
     setTimeout(() => this._tick(), 2000);
   }
 

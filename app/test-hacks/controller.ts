@@ -42,6 +42,7 @@ export default class TestHacks extends Controller.extend({
   // anything which *must* be merged to prototype here
   raceState: <RaceState|null>null,
   userProvider: <FakeUserProvider|null>null,
+  devices: <Devices><unknown>Ember.inject.service('devices'),
   frame: 0,
 }) {
   // normal class body definition here
@@ -61,6 +62,7 @@ export default class TestHacks extends Controller.extend({
         })
 
         setTimeout(fnUpdatePowers, 200);
+        this.devices.tick(tmNow);
       }
     }
     setTimeout(fnUpdatePowers);

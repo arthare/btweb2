@@ -3,7 +3,6 @@ import { RideMap } from "./RideMap";
 import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
 import { S2CPositionUpdateUser, S2CPositionUpdate } from "./communication";
-import { USERSETUP_KEY_HANDICAP } from "bt-web2/components/user-set-up-widget/component";
 
 export enum UserTypeFlags {
   Local = 1,
