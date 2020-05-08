@@ -173,20 +173,112 @@ export class ServerUserProvider implements UserProvider {
 
   users:ServerUser[];
 }
+
+interface AIBrain {
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number;
+  getName(handicap:number):string;
+}
+class AIBoringBrain implements AIBrain {
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
+    const spread = handicap * 0.15;
+    return Math.max(0, handicap + Math.random()*spread*2 - spread);
+  }
+  getName(handicap:number):string {
+    return `Boring ${(handicap/3).toFixed(0)}%`;
+  }
+}
+class AISineBrain implements AIBrain {
+  private _period:number;
+  private _magnitude:number; // as a fraction of our handicap
+  constructor() {
+    this._period = Math.random()*30 + 30;
+    this._magnitude = Math.random()*0.2;
+  }
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
+    const mod = handicap * this._magnitude * Math.sin(timeSeconds * 2 * Math.PI / this._period);
+    return Math.max(0, handicap + mod);
+  }
+  getName(handicap:number):string {
+    return `Sine ${(handicap/3).toFixed(0)}%`;
+  }
+}
+class AIHillBrain implements AIBrain {
+  private _period:number;
+  private _magnitude:number; // as a fraction of our handicap
+  constructor() {
+    this._period = Math.random()*30 + 30;
+    this._magnitude = Math.random()*0.2;
+  }
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
+    const modSlope = slopeWholePercent / 100.0 + 1.0;
+    return Math.max(0, handicap * modSlope);
+  }
+  getName(handicap:number):string {
+    return `Hill ${(handicap/3).toFixed(0)}%`;
+  }
+}
+class DumbSavey implements AIBrain {
+  private _fractionOfLengthToSave = 0.95;
+  private _fractionToSaveAt = 0.98;
+  constructor() {
+    this._fractionOfLengthToSave = 0.9 + Math.random() * 0.075;
+    this._fractionToSaveAt = 0.95 + Math.random() * 0.04;
+  }
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
+
+    const myPctOfMap = dist / mapLength;
+    if(myPctOfMap < this._fractionOfLengthToSave) {
+      return handicap * this._fractionToSaveAt;
+    } else {
+      const fractionOfLengthToChargeAt = 1 - this._fractionOfLengthToSave;
+      const chargeEffort = (1 - (this._fractionOfLengthToSave*this._fractionToSaveAt)) / fractionOfLengthToChargeAt;
+      return chargeEffort * handicap;
+    }
+  }
+  getName(handicap:number):string {
+    return `Savey ${(handicap/3).toFixed(0)}%`;
+  }
+}
+
+function getNextAIBrain():AIBrain {
+  const nAis = 4;
+  const val = Math.floor(Math.random() * nAis);
+  switch(val) {
+    default:
+    case 0:
+      return new AIBoringBrain();
+    case 1:
+      return new AISineBrain();
+    case 2:
+      return new AIHillBrain();
+    case 3:
+      return new DumbSavey();
+  }
+}
+
 export class ServerGame {
+
   constructor(map:RideMap, gameId:string, name:string, cAis:number) {
     this.userProvider = new ServerUserProvider();
     this.raceState = new RaceState(map, this.userProvider, gameId);
+    this._aiBrains = new Map();
+    this._tmLastAiUpdate = new Date().getTime();
+    const expectedTimeHours = map.getLength() / 40000;
+    const aiStrengthBoost = 0.89 * Math.pow(expectedTimeHours, -0.155831);
 
     for(var x = 0;x < cAis; x++) {
       const aiStrength = Math.random()*75 + 225;
-      this.userProvider.addUser({
-        riderName:`AI ${x} (${aiStrength.toFixed(0)}W)`,
+      const aiBrain = getNextAIBrain();
+
+      const aiId = this.userProvider.addUser({
+        riderName:aiBrain.getName(aiStrength),
         accountId:"-1",
-        riderHandicap: aiStrength,
+        riderHandicap: aiStrength*aiStrengthBoost,
         gameId:gameId,
         imageBase64: null,
-      }, UserTypeFlags.Ai)
+      }, UserTypeFlags.Ai);
+
+      this._aiBrains.set(aiId, aiBrain);
     }
 
     this._timeout = null;
@@ -221,6 +313,7 @@ export class ServerGame {
 
   private start(tmNow:number) {
     this._tmRaceStart = tmNow;
+    this._tmLastAiUpdate = tmNow;
     this._scheduleTick();
   }
   public stop() {
@@ -268,13 +361,27 @@ export class ServerGame {
 
     let thisRaceState:CurrentRaceState|null = null;
 
-    this.userProvider.getUsers(tmNow).forEach((user:User) => {
-      if(user.getUserType() & UserTypeFlags.Ai) {
-        const spread = 50;
-        const pct = user.getHandicap() / 300;
-        user.notifyPower(tmNow, pct*user.getHandicap() + Math.random()*spread - spread/2);
-      }
-    })
+
+    // update AI powers
+    if(tmNow - this._tmLastAiUpdate > 250) {
+      this.userProvider.getUsers(tmNow).forEach((user:User) => {
+        if(user.getUserType() & UserTypeFlags.Ai) {
+          const spread = 50;
+          const pct = user.getHandicap() / 300;
+          let power = pct*user.getHandicap() + Math.random()*spread - spread/2;
+  
+          // let's see if this user has a brain...
+          const aiBrain = this._aiBrains.get(user.getId());
+          if(aiBrain) {
+            const map = this.raceState.getMap();
+            const dist = user.getDistance();
+            power = aiBrain.getPower(tmNow / 1000.0, user.getHandicap(), dist, map.getLength(), map.getSlopeAtDistance(dist)*100);
+          }
+          user.notifyPower(tmNow, Math.max(0, power));
+        }
+      })
+      this._tmLastAiUpdate = tmNow;
+    }
 
     if(tmNow < this._tmScheduledRaceStart) {
       // not ready for race start yet, so don't run the physics
@@ -346,6 +453,8 @@ export class ServerGame {
   private _tmRaceStart:number; // first timestamp that we applied physics
   private _tmScheduledRaceStart:number; // timestamp that we plan on starting the race
   private _lastRaceStateMode:CurrentRaceState = CurrentRaceState.PreRace; // a summary of the race mode we're currently running
+  private _tmLastAiUpdate:number;
   raceState:RaceState;
   userProvider:ServerUserProvider;
+  private _aiBrains:Map<number, AIBrain>;
 }

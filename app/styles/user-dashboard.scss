@@ -36,7 +36,7 @@
   
 }
 
-@media screen and (max-width: 640px) {
+@media screen and (max-width: 640px) and (orientation:portrait) {
   .user-dashboard {
     &__container {
       max-width: 100vw;
@@ -50,6 +50,13 @@
     }
     &__value {
       font-size: 14px;
+    }
+  }
+}
+@media screen and (orientation:landscape) {
+  .user-dashboard {
+    &__label {
+      flex: 1 1 0px;
     }
   }
 }

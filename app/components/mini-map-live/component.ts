@@ -26,8 +26,11 @@ export default class MiniMapLive extends Component.extend({
     if(!canvas) {
       throw new Error("canvas not found");
     }
-    canvas.width = this.element.clientWidth;
-    canvas.height = this.element.clientHeight;
+
+    const w = this.element.clientWidth;
+    const h = this.element.clientHeight;
+    canvas.width = w;
+    canvas.height = h;
 
     const elevations:number[] = [];
     const raceState = this.get('raceState');

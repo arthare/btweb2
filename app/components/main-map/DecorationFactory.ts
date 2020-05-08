@@ -91,6 +91,7 @@ export interface ThemeConfig {
 
 function flipImage(img:HTMLImageElement):HTMLImageElement {
   const canvas = document.createElement('canvas');
+
   canvas.width  = img.width  ;
   canvas.height = img.height ;
   var newCtx = canvas.getContext('2d') ;

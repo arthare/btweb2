@@ -7,11 +7,15 @@
         {{leader-board raceState=raceState frame=frame}}
       </div>
       <div class="display-race__controls-gap"></div>
-      <div class="display-race__status-container">
-        {{user-dashboard raceState=raceState frame=frame}}
-      </div>
-      <div class="display-race__mini-map-container">
-        {{mini-map-live raceState=raceState}}
+      <div class="display-race__status-and-map">
+        
+        <div class="display-race__status-container">
+          {{user-dashboard raceState=raceState frame=frame}}
+        </div>
+        <div class="display-race__mini-map-container">
+          {{mini-map-live raceState=raceState}}
+        </div>
+        
       </div>
       <div class="display-race__handicap-update-container {{if recentHandicapChange 'show'}}">
         Handicap revised to {{recentHandicapChange}}<br>

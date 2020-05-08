@@ -280,10 +280,26 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
         const before2 = ctx.getTransform();
         ctx.font = `${sz}px Arial`;
 
-        ctx.strokeStyle = 'black';
+        let xShift = 0;
+        let yShift = 0;
+        
+        let outlineColor = 'black';
+        const handicapRatio = user.getLastPower() / user.getHandicap();
+        if(handicapRatio > 1.3) {
+          outlineColor = 'red';
+        } else if(handicapRatio < 0.5) {
+          outlineColor = 'green';
+        }
+
+        if(handicapRatio > 1.6) {
+          xShift = Math.random() * 0.6;
+          yShift = Math.random() * 0.6;
+        }
+
+        ctx.strokeStyle = outlineColor;
         ctx.fillStyle = fillColor;
         ctx.lineWidth = 0.3;
-        ctx.translate(0, -sz/2);
+        ctx.translate(0 + xShift, -sz/2 + yShift);
         ctx.rotate(-Math.PI/3);
         ctx.strokeText(nameToDraw, 0, 0);
         ctx.fillText(nameToDraw, 0, 0);
@@ -303,7 +319,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           const myDist = user.getDistance();
           const deltaAhead = draftStats.fromDistance - myDist;
           const pct = draftStats.pctOfMax;
-          const wattsSaved = draftStats.watts;
+          const wattsSaved = draftStats.watts * (user.getHandicap() / 300);
   
           ctx.lineWidth = 0.8 * pct;
           ctx.strokeStyle = `rgba(255,255,255,${pct})`;
@@ -408,8 +424,6 @@ export default class MainMap extends Component.extend({
   // normal class body definition here
   didInsertElement() {
     const canvas:HTMLCanvasElement = <HTMLCanvasElement>this.element;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
     if(!canvas.parentElement) {
       return;
     }

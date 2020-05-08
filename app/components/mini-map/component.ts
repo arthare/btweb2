@@ -110,11 +110,13 @@ export default class MiniMap extends Component.extend({
       throw new Error("you gotta provide your minimap a race!");
     }
     const canvas = document.createElement('canvas');
-    canvas.width = this.element.clientWidth;
-    canvas.height = this.element.clientHeight;
 
     const w = this.element.clientWidth;
     const h = this.element.clientHeight;
+
+    canvas.width = w;
+    canvas.height = h;
+
 
     const elevations = [];
     const len = race.getLength();
