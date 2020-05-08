@@ -50,7 +50,7 @@
 
 }
 
-@media screen and (max-width:640px) {
+@media screen and (max-width:639px) and (orientation: portrait) {
   .display-race {
     &__controls-container {
       position: absolute;
@@ -80,4 +80,41 @@
       width: 100vw;
     }
   }
+}
+@media screen and (orientation:landscape) {
+  .display-race {
+    &__controls-container {
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: auto;
+    }
+    &__status-and-map {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0px;
+    }
+    &__controls-gap {
+      background-color: transparent;
+      flex: 0 0 0px;
+    }
+    &__rankings-container {
+      flex: 0 0 auto;
+      width: auto;
+      height: auto;
+    }
+    &__mini-map-container {
+      flex: 1 1 0px;
+      width: auto;
+      max-height: 100px;
+    }
+    &__status-container {
+      flex: 0 0 auto;
+      width: auto;
+    }
+  }
+
 }

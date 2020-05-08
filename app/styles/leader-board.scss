@@ -64,13 +64,22 @@
   }
 }
 
-@media screen and (max-width:640px) {
+@media screen and (max-width:640px) and (orientation:portrait) {
   .leader-board {
     &__container {
       min-width: 100vw;
     }
     &__rank {
       padding: 2px;
+    }
+  }
+}
+@media screen and (max-width:640px) and (orientation:landscape) {
+  .leader-board {
+    &__container {
+    }
+    &__rank {
+      padding: 0px;
     }
   }
 }
