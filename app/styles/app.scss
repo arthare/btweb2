@@ -51,6 +51,27 @@ body {
       top: 92.5vh;
     }
   }
+  &__device-write {
+    position: fixed;
+    right: -2vw;
+    bottom: -3vh;
+    width: 8vw;
+    height: 8vh;
+    background-color: transparent;
+    transition: opacity 0.25s;
+    transform: rotate(45deg);
+    border: 1px solid rgba(255,255,255,0.3);
+    opacity: 0;
+
+    &.good {
+      background-color: rgba(128,192,128,1);
+      opacity: 0.3;
+      
+    }
+    &.bad {
+      background-color: red;
+    }
+  }
   &__bluetooth-warning {
     position: fixed;
     top: 100%;

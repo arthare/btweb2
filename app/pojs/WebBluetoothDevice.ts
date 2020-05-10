@@ -23,6 +23,9 @@ export interface SlopeSource {
 
 export interface ConnectedDeviceInterface {
   disconnect():Promise<void>;
+  userWantsToKeep():boolean; // if you get disconnected, then the user doesn't want to keep you
+
+  getDeviceId():string; // return the same device ID for the same physical device
   getState():BTDeviceState;
   name():string;
   getDeviceTypeDescription():string;
@@ -31,7 +34,12 @@ export interface ConnectedDeviceInterface {
   setCadenceRecipient(who:CadenceRecipient):void;
   setHrmRecipient(who:HrmRecipient):void;
   setSlopeSource(who:SlopeSource):void;
-  updateSlope(tmNow:number):void; // tell your device to update its slope
+
+  // tell your device to update its slope.
+  // resolve(true) -> device successfully updated
+  // resolve(false) -> device not updated for rate-limiting reasons or other benign issues
+  // reject -> device not updated because something is messed up
+  updateSlope(tmNow:number):Promise<boolean>; 
 }
 
 export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
@@ -39,12 +47,20 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   private _cadenceOutput:CadenceRecipient[] = [];
   private _hrmOutput:HrmRecipient[] = [];
   protected _slopeSource:SlopeSource|null = null;
+  private _userWantsToKeep:boolean = true;
 
   abstract getDeviceTypeDescription():string;
-  abstract disconnect():Promise<void>;
+  disconnect():Promise<void> {
+    this._userWantsToKeep = false;
+    return Promise.resolve();
+  }
+  userWantsToKeep():boolean {
+    return this._userWantsToKeep;
+  }
+  abstract getDeviceId():string;
   abstract getState():BTDeviceState;
   abstract name():string;
-  abstract updateSlope(tmNow:number):void;
+  abstract updateSlope(tmNow:number):Promise<boolean>;
 
   public setPowerRecipient(who: PowerRecipient): void {
     this._powerOutput.push(who);
@@ -86,8 +102,13 @@ abstract class BluetoothDeviceShared extends PowerDataDistributor {
     this._state = BTDeviceState.Disconnected;
   }
   disconnect(): Promise<void> {
-    this._gattDevice.disconnect();
-    return Promise.resolve();
+    return super.disconnect().then(() => {
+      this._gattDevice.disconnect();
+      return Promise.resolve();
+    })
+  }
+  getDeviceId():string {
+    return this._gattDevice.device.id;
   }
   getState(): BTDeviceState {
     return this._state;
@@ -131,18 +152,18 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
   }
 
   _tmLastSlopeUpdate:number = 0;
-  updateSlope(tmNow:number):void {
+  updateSlope(tmNow:number):Promise<boolean> {
 
 
     const dtMs = tmNow - this._tmLastSlopeUpdate;
     if(dtMs < 500) {
-      return; // don't update the ftms device too often
+      return Promise.resolve(false); // don't update the ftms device too often
     }
     this._tmLastSlopeUpdate = tmNow;
 
     if(!this._slopeSource) {
       console.log("Not updating FTMS device because no slope source");
-      return;
+      return Promise.resolve(false);
     }
 
 
@@ -164,11 +185,11 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     charOut.setUint8(5, 33);
     charOut.setUint8(6, 0);
 
-    writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut).then(() => {
+    return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut).then(() => {
       console.log("sent FTMS command to " + this._gattDevice.device.name);
-    }, (failure) => {
-      console.log("we failed to write to the FTMS device ", failure);
-      
+      return true;
+    }).catch((failure) => {
+      throw failure;
     });
   }
   
@@ -190,7 +211,9 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
         // this says "control not permitted"
         const dvTakeControl:DataView = new DataView(new ArrayBuffer(1));
         dvTakeControl.setUint8(0, 0);
-        return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', dvTakeControl);
+        return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', dvTakeControl).catch(() => {
+          // oh well, try again I guess?
+        });
       }
     }
   }
@@ -261,8 +284,9 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
 
 
 export class BluetoothCpsDevice extends BluetoothDeviceShared {
-  updateSlope(tmNow: number): void {
+  updateSlope(tmNow: number):Promise<boolean> {
     // powermeters don't have slope adjustment, dummy!
+    return Promise.resolve(false);
   }
   getDeviceTypeDescription():string {
     return "Bluetooth Powermeter";
@@ -316,19 +340,19 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
   }
 
   _tmLastSlopeUpdate:number = 0;
-  updateSlope(tmNow:number):void {
+  updateSlope(tmNow:number):Promise<boolean> {
    // we're a kickr!  despite launching as the "open source" trainer, our protocol does
    // not appear to be public.  Therefore, I'm going to send hills as resistance levels
    // since I can't figure out how to reliably do the sim-mode commands.
 
     // this is not a trainer, but we don't want to force all the powermeters and hrms to implement this method.
     if(!this._slopeSource) {
-      return;
+      return Promise.resolve(false);
     }
 
     const dtMs = tmNow - this._tmLastSlopeUpdate;
     if(dtMs < 500) {
-      return; // don't update the ftms device too often
+      return Promise.resolve(false); // don't update the ftms device too often
     }
 
     // from goobering around with nRF connect and trainerroad's "set resistance strength"
@@ -357,7 +381,11 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     charOut.setUint8(1, uint16 & 0xff);
     charOut.setUint8(2, (uint16>>8) & 0xff);
 
-    writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut);
+    return writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut).then(() => {
+      return true;
+    }).catch((failure) => {
+      throw failure;
+    });
 
   }
   

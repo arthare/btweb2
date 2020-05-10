@@ -1,6 +1,7 @@
 <div class="application__container">
   {{outlet}}
 
+  <div class="application__device-write" {{action 'connectDevice'}}></div>
   <div class="application__bluetooth-warning {{if bluetoothWarning 'device-gone'}}">
     <div class="application__bluetooth-warning--text">
       <i class="fas fa-exclamation-triangle yellow"></i>
