@@ -20,7 +20,15 @@
   </div>
   <div class="application__user-status {{if localUser 'user-valid'}}">
     {{localUser.name}}<br />
-    <i class="fas fa-bolt"></i>{{localUser.lastPower}}<br />
-    Handicap {{localUser.handicap}} {{#link-to 'set-up-user'}}Change{{/link-to}}
+    <i class="fas fa-bolt"></i>{{localUser.lastPower}} 
+    <a href='#' {{action 'connectDevice'}}>BLE</a> 
+    {{#if hasPlugins}}
+      <a href='#' {{action 'connectPlugin'}}>Plugin</a>
+    {{/if}}
+    <br />
+
+
+    Handicap {{localUser.handicap}} 
+    {{#link-to 'set-up-user'}}Change{{/link-to}}
   </div>
 </div>

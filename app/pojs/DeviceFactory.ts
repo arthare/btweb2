@@ -1,5 +1,5 @@
 import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice } from "./WebBluetoothDevice";
-import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids } from "./DeviceUtils";
+import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect } from "./DeviceUtils";
 import { FakeDevice } from "bt-web2/application/controller";
 import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate, PluginMode } from "bt-web2/server-client-common/PluginCommunication";
 
@@ -176,6 +176,7 @@ class TestDeviceFactory implements DeviceFactory {
             throw new Error("No device gatt?");
           }
         }).then((gattServer) => {
+          deviceUtilsNotifyConnect();
           return gattServer.getPrimaryServices().then((services) => {
             const ftms = getFtms(services);
             const cps = getCps(services);

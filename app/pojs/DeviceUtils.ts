@@ -40,13 +40,33 @@ function msPromise(ms:number):Promise<any> {
 }
 
 let g_writeQueue = Promise.resolve();
+let g_cachedFtms:Map<string, BluetoothRemoteGATTCharacteristic> = new Map();
+
+export function deviceUtilsNotifyConnect() {
+  g_writeQueue = Promise.resolve();
+  g_cachedFtms = new Map();
+}
+
 export function writeToCharacteristic(deviceServer:BluetoothRemoteGATTServer, serviceName:string, characteristicName:string, arrayBufferToWrite:DataView):Promise<any> {
   g_writeQueue = g_writeQueue.then(() => {
+    if(serviceName === 'fitness_machine') {
+      if(g_cachedFtms.has(characteristicName)) {
+        const char = g_cachedFtms.get(characteristicName);
+        if(char) {
+          return char.writeValue(arrayBufferToWrite);
+        }
+      }
+    }
+
+
     return deviceServer.getPrimaryService(serviceName).then((service) => {
       return msPromise(100).then(() => {
         return service.getCharacteristic(characteristicName);
       })
     }).then((characteristic) => {
+      if(serviceName === 'fitness_machine') {
+        g_cachedFtms.set(characteristicName, characteristic);
+      }
       return msPromise(100).then(() => {
         return characteristic.writeValue(arrayBufferToWrite);
       })

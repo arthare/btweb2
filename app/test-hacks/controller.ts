@@ -1,16 +1,18 @@
 import Controller from '@ember/controller';
-import { PureCosineMap } from 'bt-web2/server-client-common/RideMap';
+import { PureCosineMap, IntoAHillMap } from 'bt-web2/server-client-common/RideMap';
 import { RaceState, UserProvider } from 'bt-web2/server-client-common/RaceState';
 import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
 import { ServerMapDescription } from 'bt-web2/server-client-common/communication';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
+import Devices from 'bt-web2/services/devices';
+import Ember from 'ember';
 
 class FakeUserProvider implements UserProvider {
   users: User[];
 
-  constructor() {
+  constructor(localUserOverride?:User) {
     this.users = [
-      new User("Local User", 80, 600, UserTypeFlags.Local),
+      localUserOverride ? localUserOverride : new User("Local User", 80, 600, UserTypeFlags.Local),
       new User("Human Remote", 80, 280, UserTypeFlags.Remote),
       new User("Slow Fella", 80, 900, UserTypeFlags.Remote),
       new User("Fast Fella", 80, 30, UserTypeFlags.Remote),
@@ -47,10 +49,10 @@ export default class TestHacks extends Controller.extend({
 }) {
   // normal class body definition here
   controllerInit() {
-    const baseMap = new PureCosineMap(5000);
+    const baseMap = new IntoAHillMap(5000);
     const fullMap = new RideMapHandicap(new ServerMapDescription(baseMap));
     
-    const userProvider = new FakeUserProvider();
+    const userProvider = new FakeUserProvider(this.devices.getLocalUser());
     this.set('raceState', new RaceState(fullMap, userProvider, "Test Game"));
 
 
@@ -58,7 +60,14 @@ export default class TestHacks extends Controller.extend({
       if(!this.isDestroyed) {
         const tmNow = new Date().getTime();
         userProvider.getUsers(tmNow).forEach((user, index) => {
-          user.notifyPower(tmNow, Math.random()*50 + 200 + index*2);
+          if(user.getUserType() & UserTypeFlags.Local) {
+            // this is a local guy.  we'll send fake power if there's not a device connected
+            if(this.devices.devices.length > 0) {
+              // there's already a device for this guy
+            } else {
+              user.notifyPower(tmNow, Math.random()*50 + 200 + index*2);
+            }
+          }
         })
 
         setTimeout(fnUpdatePowers, 200);

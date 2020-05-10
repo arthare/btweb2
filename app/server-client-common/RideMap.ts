@@ -16,6 +16,24 @@ export abstract class RideMapPartial implements RideMapElevationOnly {
 }
 
 
+export class IntoAHillMap extends RideMapPartial {
+  _length:number;
+  constructor(length:number) {
+    super();
+    this._length = length;
+  }
+  getElevationAtDistance(meters: number): number {
+    if(meters < 50) {
+      return Math.pow(meters, 2) / 2000;
+    } else {
+      return (meters - 50)*0.05 + 1.25;
+    }
+  }
+  getLength(): number {
+    return this._length;
+  }
+}
+
 export class PureCosineMap extends RideMapPartial {
   _length:number;
   constructor(length:number) {

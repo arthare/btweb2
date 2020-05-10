@@ -104,6 +104,11 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _lastDraftSaving:DraftSavings = {watts:0, pctOfMax:0, fromDistance:0};
   private _distanceHistory:DistanceHistoryElement[] = [];
   private _tmLastHandicapRevision:number = 0;
+
+  private _pendingDraftees:any = {};
+  private _lastDraftees:any = {};
+  private _tmDrafteeCycle:number = 0;
+
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
     this._massKg = massKg;
@@ -194,6 +199,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     const draftingFar = 10;
     let closestRider:User|null = null;
     let closestRiderDist:number = 1e30;
+
     otherUsers.forEach((user) => {
       const userAhead = user.getDistance() - this.getDistance();
       if(userAhead >= draftingClose && userAhead <= draftingFar) {
@@ -206,11 +212,20 @@ export class User extends UserDataRecorder implements SlopeSource {
     if(closestRider) {
       // there was a draftable rider
       assert2(closestRiderDist >= draftingClose && closestRiderDist <= draftingFar);
-      const pctClose = 0.67;
+      // if there's 10 guys clustered behind a single rider, they're not going to get
+      // as much benefit as a well-managed paceline
+      closestRider.notifyDrafteeThisCycle(tmNow, this.getId());
+      const cRidersDraftingLastCycle = Math.max(1, closestRider.getDrafteeCount(tmNow));
+
+      let bestPossibleReduction = 0.33 / cRidersDraftingLastCycle;
+      const pctClose = 1 - bestPossibleReduction;
       const pctFar = 1.0;
       const myPct = (closestRiderDist - draftingClose) / (draftingFar - draftingClose);
       // myPct will be 1.0 when we're really far, 0.0 when we're really close
-      const myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
+      let myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
+
+
+
       const newtonsSaved = (1-myPctReduction)*aeroForce;
       aeroForce *= myPctReduction;
 
@@ -260,6 +275,19 @@ export class User extends UserDataRecorder implements SlopeSource {
     if(lastPosition < mapLength && this._position >= mapLength) {
       this.setFinishTime(tmNow);
     }
+  }
+
+  public notifyDrafteeThisCycle(tmNow:number, id:number) {
+    if(tmNow > this._tmDrafteeCycle) {
+      // time for a new draftee cycle!
+      this._lastDraftees = this._pendingDraftees;
+      this._pendingDraftees = {};
+      this._tmDrafteeCycle = tmNow;
+    }
+    this._pendingDraftees[id] = true;
+  }
+  public getDrafteeCount(tmNow:number):number {
+    return Object.keys(this._lastDraftees).length;
   }
 
   public getSecondsAgoToCross(tmNow:number, distance:number):number|null {

@@ -133,7 +133,14 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
 
 
   const smoothMix = 0.33;
+
+  let cHumans = 0;
   users.forEach((user) => {
+
+    if(!(user.getUserType() & UserTypeFlags.Ai)) {
+      cHumans++;
+    }
+
     if(paintState.userPaint.has(user.getId())) {
       const actualPos = user.getDistance();
       const displayUser = paintState.userPaint.get(user.getId()) || new DisplayUser(user);
@@ -246,6 +253,12 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       fillColor = ai_color;
       borderColor = 'transparent';
       userImage = paintState.defaultAiImage;
+
+      if(cHumans === 1) {
+        // if there's nobody around, then let's draw this AIs name
+        nameToDraw = user.getName();
+        fillColor = 'blue';
+      }
     }
     
     { // actually doing the user draw
