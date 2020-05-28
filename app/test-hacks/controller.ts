@@ -49,7 +49,7 @@ export default class TestHacks extends Controller.extend({
 }) {
   // normal class body definition here
   controllerInit() {
-    const baseMap = new IntoAHillMap(5000);
+    const baseMap = new PureCosineMap(5000);
     const fullMap = new RideMapHandicap(new ServerMapDescription(baseMap));
     
     const userProvider = new FakeUserProvider(this.devices.getLocalUser());

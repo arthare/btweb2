@@ -343,17 +343,23 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     const charOut = new DataView(new ArrayBuffer(3));
     charOut.setUint8(0, 0x40);
 
-    const minSlope = -20;
-    const maxSlope = 40; // if we ever peg the kickr at max slope, you basically can't turn the pedals
+    const minSlope = -10;
+    const maxSlope = 10; // if we ever peg the kickr at max slope, you basically can't turn the pedals
     const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
-    let slopeClamped = Math.max(slopeInWholePercent, minSlope);
-    slopeClamped = Math.min(slopeClamped, maxSlope);
 
-    const span = (maxSlope - minSlope);
     const offset = slopeInWholePercent - minSlope;
-    const pct = offset / span;
-    assert2(pct >= 0 && pct <= 1);
-    const uint16 = (1-pct) * 16383;
+    const span = maxSlope - minSlope;
+    const pctUphill = offset / span;
+
+    let pctUphillClamped = Math.max(0, pctUphill);
+    pctUphillClamped = Math.min(1, pctUphill);
+
+    const resistanceAtDownhill = 0x5f5b;
+    const resistanceAtUphill = 0x185b;
+
+    assert2(pctUphillClamped >= 0 && pctUphillClamped <= 1);
+    const uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;
+    console.log("sending ", uint16, pctUphillClamped);
     charOut.setUint8(1, uint16 & 0xff);
     charOut.setUint8(2, (uint16>>8) & 0xff);
 
