@@ -43,6 +43,16 @@ export default class Application extends Controller.extend({
   canDoBluetooth: false,
   frame: 0,
   
+  observeGoodUpdates: Ember.observer('devices.goodUpdates', function(this:Application) {
+    const deviceWrite = document.querySelector('.application__device-write');
+    if(deviceWrite) {
+      deviceWrite.classList.add('good');
+      setTimeout(() => {
+        deviceWrite.classList.remove('good');
+      }, 250);
+    }
+  }),
+
   actions: {
     connectDevice() {
       const canDoBluetooth = this.get('canDoBluetooth');

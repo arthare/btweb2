@@ -58,6 +58,9 @@ class PluginDevice extends PowerDataDistributor {
     this._doQuery(true);
   }
 
+  public getDeviceId():string {
+    return "PluginDevice " + this._descriptor.pluginId;
+  }
   private _doQuery(startup:boolean):Promise<any> {
     if(startup || this._queryTimeout !== null) {
 

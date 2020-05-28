@@ -19,6 +19,9 @@ export default class Devices extends Service.extend({
   deviceDescription:string = "No Device Connected";
   workoutSaver:WorkoutFileSaver|null = null;
   ridersVersion = 0;
+
+  goodUpdates = 0;
+  badUpdates = 0;
   
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
@@ -73,6 +76,19 @@ export default class Devices extends Service.extend({
     device.setPowerRecipient(user);
     device.setHrmRecipient(user);
     device.setSlopeSource(user);
+
+    // get rid of all the old devices
+    this.devices = this.devices.filter((oldDevice) => {
+      if(oldDevice.getDeviceId() !== device.getDeviceId()) {
+        console.log("disconnecting " + oldDevice.name() + " because new device is a physically separate device");
+        oldDevice.disconnect();
+        return false;
+      } else {
+        // exact same device.  don't send a physical disconnect because that'll kill the new device too.  but we don't want this device around anymore either
+        return false;
+      }
+    })
+
     this.devices.push(device);
   }
 
@@ -122,8 +138,21 @@ export default class Devices extends Service.extend({
     });
   }
   updateSlopes(tmNow:number) {
+    this.devices = this.devices.filter((device:ConnectedDeviceInterface) => {
+      return device.userWantsToKeep();
+    });
+
     this.devices.forEach((device) => {
-      device.updateSlope(tmNow);
+      device.updateSlope(tmNow).then((good:boolean) => {
+        if(good) {
+          this.incrementProperty('goodUpdates');
+        } else {
+          // benign "failure", such as the device doing rate-limiting or just doesn't support slope changes
+        }
+        
+      }, (failure) => {
+        this.incrementProperty('badUpdates');
+      });
     })
   }
   getUser(id:number):User|null {

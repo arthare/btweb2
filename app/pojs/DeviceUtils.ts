@@ -48,7 +48,10 @@ export function deviceUtilsNotifyConnect() {
 }
 
 export function writeToCharacteristic(deviceServer:BluetoothRemoteGATTServer, serviceName:string, characteristicName:string, arrayBufferToWrite:DataView):Promise<any> {
-  g_writeQueue = g_writeQueue.then(() => {
+  g_writeQueue = g_writeQueue.catch((failure) => {
+    // the previous 
+    console.log("The previous write-queue operation failed and the caller didn't clean it up >:(", failure);
+  }).then(() => {
     if(serviceName === 'fitness_machine') {
       if(g_cachedFtms.has(characteristicName)) {
         const char = g_cachedFtms.get(characteristicName);
