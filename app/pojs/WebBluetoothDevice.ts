@@ -378,8 +378,8 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     let pctUphillClamped = Math.max(0, pctUphill);
     pctUphillClamped = Math.min(1, pctUphill);
 
-    const resistanceAtDownhill = 0x5f5b;
-    const resistanceAtUphill = 0x185b;
+    const resistanceAtDownhill = 0x485b;
+    const resistanceAtUphill = 0x105b;
 
     assert2(pctUphillClamped >= 0 && pctUphillClamped <= 1);
     const uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;
