@@ -29,6 +29,10 @@ $sea2: #74a5fD;
   &__container {
     position: relative;
     z-index: 0;
+    font-size: 12px;
+    text-align: left;
+    line-height: 12px;
+    color: rgba(0,0,0,0.3);
 
     flex: 1 1 0px;
     margin: 0;

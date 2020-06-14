@@ -18,8 +18,11 @@ export class FakeDevice extends PowerDataDistributor {
   getDeviceTypeDescription():string {
     return "Fake Device";
   }
-  updateSlope(tmNow: number): void {
-    
+  updateSlope(tmNow: number): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+  updateResistance(tmNow: number): Promise<boolean> {
+    return Promise.resolve(false);
   }
   disconnect(): Promise<void> {
     return Promise.resolve();

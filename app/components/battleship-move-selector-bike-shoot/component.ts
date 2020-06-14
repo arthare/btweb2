@@ -12,11 +12,12 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
   onSelectShoot: <(ixCol:number, ixRow:number)=>void><unknown>null,
   ixCol: -1,
   ixRow: -1,
+  game: <BattleshipGameMap><unknown>null,
 
   actions: {
     onSelectRow(action:SelectableAction) {
       if(typeof action.assign.ixRow === 'number') {
-        this.set('ixRow', action.assign.ixCol);
+        this.set('ixRow', action.assign.ixRow);
         this.onSelectShoot(this.get('ixCol'), this.get('ixRow'));
       } else {
         this.onSelectShoot(-1, -1);
@@ -41,7 +42,7 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
 
     const game:BattleshipGameMap = this.get('game');
     const n = game.nGrid;
-    const secondsPerStep = this.get('msTempo') / 1000;
+    const secondsPerStep = (this.get('msTempo') / 1000) / 2;
 
     const tssPerSecondAtFtp = 100 / 3600;
     const tssPerPercentFtp = secondsPerStep*tssPerSecondAtFtp / 100;
@@ -57,13 +58,13 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
     
     const stepPerRow = (150 - 100) / n;
     for(var x = 0;x < n; x++) {
-      const char = String.fromCharCode('A'.charCodeAt(0) + x);
+      const char = '' + (x+1);
       ret.push({
-        assign: {ixRows: x},
+        assign: {ixRow: x},
         words: char,
         mode: SelectableActionMode.TotalTss,
-        minValue: 100 + stepPerRow*x,
-        maxValue: 100 + stepPerRow*(x+1),
+        minValue: tssPerPercentFtp*(100 + stepPerRow*x),
+        maxValue: tssPerPercentFtp*(100 + stepPerRow*(x+1)),
         cls: 'row-' + char,
       })
     }
@@ -76,7 +77,7 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
 
     const game:BattleshipGameMap = this.get('game');
     const n = game.nGrid;
-    const secondsPerStep = this.get('msTempo') / 1000;
+    const secondsPerStep = (this.get('msTempo') / 1000) / 2;
 
     const tssPerSecondAtFtp = 100 / 3600;
     const tssPerPercentFtp = secondsPerStep*tssPerSecondAtFtp / 100;
@@ -93,13 +94,13 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
     const stepPerCol = (150 - 100) / n;
 
     for(var x = 0;x < n; x++) {
-      const char = '' + (x+1);
+      const char = String.fromCharCode('A'.charCodeAt(0) + x);
       ret.push({
-        assign: {ixRows: x},
+        assign: {ixCol: x},
         words: char,
         mode: SelectableActionMode.TotalTss,
-        minValue: 100 + stepPerCol*x,
-        maxValue: 100 + stepPerCol*(x+1),
+        minValue: tssPerPercentFtp*(100 + stepPerCol*x),
+        maxValue: tssPerPercentFtp*(100 + stepPerCol*(x+1)),
         cls: 'col-' + char,
       })
     }

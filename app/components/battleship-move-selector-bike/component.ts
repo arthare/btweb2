@@ -24,6 +24,7 @@ export interface SelectableAction {
   cls:string;
 }
 
+const defaultTempoMs = 20000;
 
 export default class BattleshipMoveSelectorMouse extends Component.extend({
   // anything which *must* be merged to prototype here
@@ -95,8 +96,8 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
   isNW: false,
   pendingTurnType: <BattleshipGameTurnType>BattleshipGameTurnType.PASS,
   pendingTurnParams: <BattleshipGameParamsMove|BattleshipGameParamsRadar|BattleshipGameParamsShoot><unknown>null,
-  tempoPeriodMs: 5000,
-  tmNextEvaluation: new Date().getTime() + 5000,
+  tempoPeriodMs: defaultTempoMs,
+  tmNextEvaluation: new Date().getTime() + defaultTempoMs,
 
   phaseWatcher: Ember.observer('phase', function(this:BattleshipMoveSelectorMouse) {
     if(this.get('phase') === DisplayPhase.SelectAction) {
@@ -172,6 +173,10 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
       const params:BattleshipGameParamsShoot = {
         ixRow,
         ixCol,
+      }
+      const game:BattleshipGameMap = this.get('theirGame');
+      if(isFinite(ixRow) && isFinite(ixCol) && ixRow >= 0 && ixRow < game.nGrid && ixCol >= 0 && ixCol < game.nGrid) {
+        this.onSelectActionParameter(this.get('pendingTurnType'), params);
       }
       this._selectNewTurn();
     },

@@ -40,6 +40,8 @@ export default class Battleship extends Controller.extend({
           // ...coward
           break;
         case BattleshipGameTurnType.SHOOT:
+          this.theirGame.applyMove(compiledTurn);
+          break;
         case BattleshipGameTurnType.RADAR:
           this.theirGame.applyMove(compiledTurn);
           break;

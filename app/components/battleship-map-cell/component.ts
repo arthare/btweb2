@@ -22,7 +22,7 @@ export default class BattleshipMapCell extends Component.extend({
   @computed("cell")
   get cellDisplay():string {
     if(this.get('cell').ixCol === 0) {
-      return '' + this.get('cell').ixRow;
+      return '' + (this.get('cell').ixRow + 1);
     } else if(this.get('cell').ixRow === 0) {
       return String.fromCharCode('A'.charCodeAt(0) + this.get('cell').ixCol);
     } else {

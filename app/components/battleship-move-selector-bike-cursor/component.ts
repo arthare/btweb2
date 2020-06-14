@@ -3,6 +3,7 @@ import Ember from 'ember';
 import { SelectableAction, SelectableActionMode } from '../battleship-move-selector-bike/component';
 import Devices from 'bt-web2/services/devices';
 import { User } from 'bt-web2/server-client-common/User';
+import { assert2 } from 'bt-web2/server-client-common/Utils';
 
 interface EarnedAction {
   action: SelectableAction;
@@ -14,7 +15,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   devices: <Devices><unknown>Ember.inject.service('devices'),
   tmNextEvaluation: <number>0,
   tmStartEvaluation: new Date().getTime(),
-
+  name: '',
 
   totalJAtStart: 0,
   resultEvaluated: false,
@@ -152,6 +153,9 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
         const totalJAtStart = this.get('totalJAtStart');
         const totalJ = this.devices.getTotalJ();
         const seconds = (tmNow - this.get('tmStartEvaluation')) / 1000;
+        const watts = (totalJ-totalJAtStart) / seconds;
+        const avgFtp = watts / user.getHandicap();
+        const totalTss = (avgFtp * 100) * (seconds / 3600);
 
         const earnedActionAverage:EarnedAction = this._findEarnedAction(totalJAtStart, 
                                                        totalJ, 
@@ -201,6 +205,8 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   }
 
   didInsertElement() {
+    assert2(this.get('name'));
+
     console.log("setting up " + this.get('name'));
     this.set('resultEvaluated', false);
     this.set('tmStartEvaluation', new Date().getTime());
