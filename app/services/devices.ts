@@ -22,6 +22,7 @@ export default class Devices extends Service.extend({
 
   goodUpdates = 0;
   badUpdates = 0;
+  totalJ = 0;
   
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
@@ -76,6 +77,7 @@ export default class Devices extends Service.extend({
     device.setPowerRecipient(user);
     device.setHrmRecipient(user);
     device.setSlopeSource(user);
+    this._internalTick(new Date().getTime());
 
     // get rid of all the old devices
     this.devices = this.devices.filter((oldDevice) => {
@@ -129,6 +131,10 @@ export default class Devices extends Service.extend({
     }
   }
 
+  getTotalJ():number {
+    return this.totalJ;
+  }
+
   getUsers(tmNow:number):User[] {
     return this.users.filter((user) => {
       return user.getUserType() & UserTypeFlags.Local ||
@@ -158,8 +164,31 @@ export default class Devices extends Service.extend({
   getUser(id:number):User|null {
     return this.users.find((user) => user.getId() === id) || null;
   }
-  tick(tmNow:number) {
+
+  tmLastInternalTick = 0;
+  nextTickHandle = 0;
+  _internalTick(tmNow:number) {
+    
+    this.nextTickHandle = 0;
+    if(this.tmLastInternalTick === 0) {
+    } else {
+      const deltaSeconds = (tmNow - this.tmLastInternalTick) / 1000;
+      const power = this.getLocalUser()?.getLastPower() || 0;
+      this.totalJ += deltaSeconds*power;
+
+    }
+    this.tmLastInternalTick = tmNow;
+
+    if(!this.nextTickHandle) {
+      setTimeout(() => {
+        this._internalTick(new Date().getTime());
+      }, 100);
+    }
+  }
+  tick(tmNow:number, dtSeconds:number) {
     this.updateSlopes(tmNow);
+
+
     if(this.workoutSaver) {
       this.workoutSaver.tick(tmNow);
     }

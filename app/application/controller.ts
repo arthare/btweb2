@@ -12,7 +12,6 @@ export class FakeDevice extends PowerDataDistributor {
   constructor() {
     super();
     setInterval(() => {
-      console.log("fake device notifying power");
       this._notifyNewPower(new Date().getTime(), Math.random()*50 + 100);
     }, 500);
   }
@@ -86,11 +85,13 @@ export default class Application extends Controller.extend({
     }
     this.incrementProperty('frame');
 
-    fetch('http://localhost:63939/device-list').then(() => {
-      this.set('hasPlugins', true);
-    }, (failure) => {
-      this.set('hasPlugins', false);
-    })
+    if(!hasBluetoothDevice) {
+      fetch('http://localhost:63939/device-list').then(() => {
+        this.set('hasPlugins', true);
+      }, (failure) => {
+        this.set('hasPlugins', false);
+      })
+    }
 
 
     setTimeout(() => this._tick(), 2000);

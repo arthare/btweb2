@@ -1,0 +1,13 @@
+.battleship {
+  &__controls {
+    flex: 0 0 auto;
+  }
+  &__container {
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

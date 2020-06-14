@@ -1,0 +1,13 @@
+<div class="battleship__container">
+  <div class="battleship__controls">
+    {{battleship-move-selector-bike 
+              theirGame=theirGame 
+              yourGame=yourGame
+              onSelectActionParameter=(action 'onSelectActionParameter')
+              onChangeMapHighlights=(action 'onChangeMapHighlights')
+    }}
+  </div>
+
+  {{battleship-map showMode=yourShowMode title="Your Map" game=yourGame updateCounter=updateCounter hidden=false}}
+  {{battleship-map showMode=theirShowMode title="Their Map" game=theirGame updateCounter=updateCounter hidden=true}}
+</div>

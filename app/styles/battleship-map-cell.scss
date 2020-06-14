@@ -1,0 +1,101 @@
+$sea1: #6495ED;
+$sea2: #74a5fD;
+
+
+@keyframes pulse-red {
+  0% {background-color: red;}
+  50% {background-color: darkred;}
+  100% {background-color: red;}
+}
+@keyframes drift-up {
+  0% {
+    margin-top: 0%;
+    opacity: 70%;
+    width: 50%;
+    height: 50%;
+  }
+  50% {
+    opacity: 50%;
+  }
+  100% {
+    margin-top: -100%;
+    opacity: 0%;
+    width: 125%;
+    height: 125%;
+  }
+}
+
+.battleship-map-cell {
+  &__container {
+    position: relative;
+    z-index: 0;
+
+    flex: 1 1 0px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border: 0.5px solid rgba(255,255,255,0.25);
+
+    background: linear-gradient(to right, $sea1, $sea2);
+    &:nth-child(2n+1) {
+      background: linear-gradient(to left, $sea1, $sea2 );
+    }
+    &:hover {
+      background: $sea2;
+      border: 1px solid rgba(0,0,0, 0.5);
+    }
+    &:active {
+      background: $sea2;
+      border: 1px solid rgba(0,0,0, 0.5);
+    }
+  }
+
+  &__radar {
+    position: absolute;
+    top: -12.5%;
+    left: -12.5%;
+    border-radius: 50%;
+    border: 1px solid green;
+    width: 125%;
+    height: 125%;
+    z-index: 1;
+  }
+  &__shot {
+    border-radius: 50%;
+    border: 1px solid white;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background-color: rgba(255,255,255,0.7);
+    
+  }
+
+  &__ship {
+    position: relative;
+
+    border-radius: 50%;
+    background-color: grey;
+    width: 125%;
+    height: 125%;
+    margin-left: -12.5%;
+    margin-top: -12.5%;
+    z-index: 1;
+
+    &.damaged {
+      animation-name: pulse-red;
+      animation-duration: 1.5s;
+      animation-iteration-count: infinite;
+    }
+
+    &--smoke {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      animation-name: drift-up;
+      animation-duration: 1.5s;
+      animation-iteration-count: infinite;
+      background-color: rgba(255,255,255,0.4);
+    }
+  }
+}
