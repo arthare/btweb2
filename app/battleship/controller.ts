@@ -2,6 +2,8 @@ import Controller from '@ember/controller';
 import { BattleshipGameMap, BattleshipGameShip, BattleshipGameTurnType, BattleshipGameTurn } from 'bt-web2/server-client-common/battleship-game';
 import {BattleshipShipType} from '../server-client-common/battleship-game';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
+import Ember from 'ember';
+import Devices from 'bt-web2/services/devices';
 
 export enum MapShowMode {
   HIDDEN='hidden',
@@ -12,6 +14,8 @@ export enum MapShowMode {
 
 export default class Battleship extends Controller.extend({
   // anything which *must* be merged to prototype here
+  devices: <Devices><unknown>Ember.inject.service(),
+  
   yourGame: <BattleshipGameMap><unknown>null,
   theirGame: <BattleshipGameMap><unknown>null,
   updateCounter: 0,
@@ -25,6 +29,8 @@ export default class Battleship extends Controller.extend({
         type:action,
         params,
       }
+
+      this.devices.setResistanceMode(0.4);
 
       switch(action) {
         case BattleshipGameTurnType.MOVE:
@@ -52,6 +58,7 @@ export default class Battleship extends Controller.extend({
   startup(yourGame:BattleshipGameMap, theirGame:BattleshipGameMap) {
     this.set('yourGame', yourGame);
     this.set('theirGame', theirGame);
+
 
   }
 }

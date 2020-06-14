@@ -6,6 +6,7 @@ import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState'
 import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 import Ember from 'ember';
 import { WorkoutFileSaver, samplesToPWX } from 'bt-web2/server-client-common/FileSaving';
+import { assert2 } from 'bt-web2/server-client-common/Utils';
 
 
 
@@ -143,6 +144,26 @@ export default class Devices extends Service.extend({
              user.isFinished();
     });
   }
+
+  setResistanceMode(pct:number) {
+    assert2(pct >= 0 && pct <= 1, "resistance fractions should be between 0 and 1");
+    this.devices = this.devices.filter((device:ConnectedDeviceInterface) => {
+      return device.userWantsToKeep();
+    });
+
+    this.devices.forEach((device) => {
+      device.updateResistance(pct).then((good:boolean) => {
+        if(good) {
+          this.incrementProperty('goodUpdates');
+        } else {
+          // benign "failure", such as the device doing rate-limiting or just doesn't support slope changes
+        }
+      }, (failure) => {
+        this.incrementProperty('badUpdates');
+      });
+    })
+  }
+
   updateSlopes(tmNow:number) {
     this.devices = this.devices.filter((device:ConnectedDeviceInterface) => {
       return device.userWantsToKeep();
