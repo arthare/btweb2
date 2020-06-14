@@ -1,0 +1,5 @@
+{{#if colSelected}}
+  {{battleship-move-selector-bike-cursor name="Select Target Row" actionsList=rowActions onSelectAction=(action 'onSelectRow') tmNextEvaluation=tmNextEvaluation}}
+{{else}}
+  {{battleship-move-selector-bike-cursor name="Select Target Column" actionsList=colActions onSelectAction=(action 'onSelectCol') tmNextEvaluation=tmNextEvaluation}}
+{{/if}}

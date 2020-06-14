@@ -40,6 +40,8 @@ export interface ConnectedDeviceInterface {
   // resolve(false) -> device not updated for rate-limiting reasons or other benign issues
   // reject -> device not updated because something is messed up
   updateSlope(tmNow:number):Promise<boolean>; 
+
+  updateResistance(tmNow:number, pct:number):Promise<boolean>;
 }
 
 export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
@@ -61,6 +63,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   abstract getState():BTDeviceState;
   abstract name():string;
   abstract updateSlope(tmNow:number):Promise<boolean>;
+  abstract updateResistance(tmNow:number, pct:number):Promise<boolean>;
 
   public setPowerRecipient(who: PowerRecipient): void {
     this._powerOutput.push(who);
@@ -193,6 +196,27 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     });
   }
   
+  updateResistance(tmNow:number, pct:number):Promise<boolean> {
+
+    const dtMs = tmNow - this._tmLastSlopeUpdate;
+    if(dtMs < 500) {
+      return Promise.resolve(false); // don't update the ftms device too often
+    }
+    this._tmLastSlopeUpdate = tmNow;
+
+    const charOut = new DataView(new ArrayBuffer(7));
+    charOut.setUint8(0, 0x04); // setTargetResistance
+    charOut.setUint8(1, pct * 200);
+
+    return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut).then(() => {
+      console.log("sent FTMS resistance command to " + this._gattDevice.device.name);
+      return true;
+    }).catch((failure) => {
+      throw failure;
+    });
+
+  }
+  
   hasPower(): boolean {
     return true;
   }
@@ -312,6 +336,9 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
     this._notifyNewPower(tmNow, power);
 
   }
+  updateResistance(tmNow:number, pct:number):Promise<boolean> {
+    return Promise.resolve(false);
+  }
 
   hasPower(): boolean {
     return true;
@@ -393,6 +420,38 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
       throw failure;
     });
 
+  }
+  updateResistance(tmNow:number, pct:number):Promise<boolean> {
+
+    const dtMs = tmNow - this._tmLastSlopeUpdate;
+    if(dtMs < 500) {
+      return Promise.resolve(false); // don't update the ftms device too often
+    }
+
+    this._tmLastSlopeUpdate = tmNow;
+
+    const charOut = new DataView(new ArrayBuffer(3));
+    charOut.setUint8(0, 0x40);
+
+    const pctUphill = pct;
+
+    let pctUphillClamped = Math.max(0, pctUphill);
+    pctUphillClamped = Math.min(1, pctUphill);
+
+    const resistanceAtDownhill = 0x5f5b;
+    const resistanceAtUphill = 0x185b;
+
+    assert2(pctUphillClamped >= 0 && pctUphillClamped <= 1);
+    const uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;
+    console.log("sending ", uint16, pctUphillClamped);
+    charOut.setUint8(1, uint16 & 0xff);
+    charOut.setUint8(2, (uint16>>8) & 0xff);
+
+    return writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut).then(() => {
+      return true;
+    }).catch((failure) => {
+      throw failure;
+    });
   }
   
   hasCadence(): boolean {

@@ -1,0 +1,8 @@
+<h3 class="battleship-map__title">{{title}}</h3>
+{{#each rows as |row index|}}
+  <div class="battleship-map__row">
+    {{#each row.cols as |cell|}}
+      {{battleship-map-cell cell=cell wide=wide onPickSquare=(action 'onPickSquare')}}
+    {{/each}}
+  </div>
+{{/each}}

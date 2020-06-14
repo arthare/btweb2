@@ -1,0 +1,49 @@
+@mixin indicator() {
+  position: absolute;
+  width: 3px;
+  height: 100%;
+  opacity: 0.0;
+  transition: left 0.25s, opacity 0.25s;
+  &.shown {
+    opacity: 1.0;
+  }
+}
+
+.battleship-move-selector-bike-cursor {
+  &__container {
+    font-size: 16px;
+  }
+  &__actions {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+  }
+  &__action {
+    position: relative;
+    flex: 1 1 0px;
+    border: 1px solid black;
+    min-height: 7vh;
+    text-align: center;
+
+    &.selected {
+      background-color: lightgreen;
+    }
+  }
+  &__progress {
+    position: absolute;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    background-color: rgba(0,0,0,0.2);
+
+    transition: height 0.2s;
+  }
+  &__average {
+    @include indicator();
+    background-color: green;
+  }
+  &__instant {
+    @include indicator();
+    background-color: red;
+  }
+}

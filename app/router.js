@@ -30,6 +30,7 @@ Router.map(function() {
   this.route('set-up-join');
   this.route('test-hacks');
   this.route('strava-auth');
+  this.route('battleship');
 });
 
 export default Router;

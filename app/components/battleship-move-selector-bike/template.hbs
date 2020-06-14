@@ -1,0 +1,31 @@
+{{#if selectActionPhase}}
+  {{battleship-move-selector-bike-cursor name="Select Turn" actionsList=turnActions onSelectAction=(action 'onSelectTurn') tmNextEvaluation=tmNextEvaluation}}
+{{/if}}
+{{#if selectParamsPhase}}
+
+  {{#if isShoot}}
+    {{battleship-move-selector-bike-shoot msTempo=tempoPeriodMs 
+                                         game=theirGame 
+                                         onSelectShoot=(action 'onSelectShoot') 
+                                         }}
+  {{else if isMoveNW}}
+    {{battleship-move-selector-bike-move msTempo=tempoPeriodMs 
+                                         game=yourGame 
+                                         isNW=isNW 
+                                         onSelectMove=(action 'onSelectMove') 
+                                         }}
+  {{else if isMoveSE}}
+    {{battleship-move-selector-bike-move msTempo=tempoPeriodMs 
+                                         game=yourGame 
+                                         isNW=isNW 
+                                         onSelectMove=(action 'onSelectMove') 
+                                         }}
+  {{else if isRadar}}
+    {{battleship-move-selector-bike-radar msTempo=tempoPeriodMs 
+                                         game=theirGame
+                                         onSelectRadar=(action 'onSelectRadar') 
+                                         }}
+  {{else if isPass}}
+  {{/if}}
+
+{{/if}}

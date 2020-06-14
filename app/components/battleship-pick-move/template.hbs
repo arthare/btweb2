@@ -1,0 +1,19 @@
+{{#if pickedShip}}
+  {{#if isNW}}
+    <button {{action 'pickDirection' -1 1}}>⬋</button>
+    <button {{action 'pickDirection' -1 0}}>🡐</button>
+    <button {{action 'pickDirection' -1 -1}}>⬉</button>
+    <button {{action 'pickDirection' 0 -1}}>🡑</button>
+    <button {{action 'pickDirection' 1 -1}}>⬈</button>
+  {{else}}
+    <button {{action 'pickDirection' -1 1}}>⬋</button>
+    <button {{action 'pickDirection' 0 1}}>🡓</button>
+    <button {{action 'pickDirection' 1 1}}>⬊</button>
+    <button {{action 'pickDirection' 1 0}}>🡒</button>
+    <button {{action 'pickDirection' 1 -1}}>⬈</button>
+  {{/if}}
+{{else}}
+  {{#each ships as |ship|}}
+    <button {{action 'pickShip' ship}}>Move {{ship.name}}</button>
+  {{/each}}
+{{/if}}

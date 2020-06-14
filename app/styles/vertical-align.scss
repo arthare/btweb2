@@ -1,0 +1,14 @@
+.vertical-align {
+  &__container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+.vgap {
+  flex: 1 1 0px;
+}
+.vgap-content {
+  flex: 0 0 auto;
+}

@@ -1,0 +1,11 @@
+<h4>{{name}}</h4>
+<div class="battleship-move-selector-bike-cursor__actions">
+  <div class="battleship-move-selector-bike-cursor__progress"></div>
+  {{#each actionsList as |actionType|}}
+    <div class="battleship-move-selector-bike-cursor__action {{actionType.cls}}" {{action 'forceSelection' actionType}}>
+      <div class="battleship-move-selector-bike-cursor__instant {{actionType.cls}}"></div>
+      <div class="battleship-move-selector-bike-cursor__average {{actionType.cls}}"></div>
+      {{#vertical-align}}<span class="battleship-move-selector-bike-cursor__words">{{{actionType.words}}}</span>{{/vertical-align}}
+    </div>
+  {{/each}}
+</div>

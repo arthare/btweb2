@@ -25,6 +25,24 @@
     }, {
         "type": "node",
         "request": "launch",
+        "cwd": "${workspaceFolder}/api",
+        "name": "Bt-web2 API - Tests",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "program": "${workspaceFolder}/api/index-test.ts",
+        "preLaunchTask":{
+            "type": "typescript",
+            "tsconfig": "api/tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": "build",
+        },
+        "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
+    }, {
+        "type": "node",
+        "request": "launch",
         "cwd": "${workspaceFolder}/plugins/",
         "name": "Bt-web2 Plugin Server",
         "skipFiles": [
