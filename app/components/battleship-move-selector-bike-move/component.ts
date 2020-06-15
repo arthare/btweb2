@@ -2,7 +2,7 @@ import Component from '@ember/component';
 import Ember from 'ember';
 import { BattleshipGameMap, BattleshipShipType } from 'bt-web2/server-client-common/battleship-game';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { SelectableActionMode, SelectableAction } from '../battleship-move-selector-bike/component';
+import { SelectableActionMode, SelectableAction, applyEffortLevels, MIN_TSS_FOR_TURNPARAMS, MAX_TSS_FOR_TURNPARAMS } from '../battleship-move-selector-bike/component';
 import { computed } from '@ember/object';
 
 const cSteps = 2;
@@ -14,6 +14,7 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
   isNW: null,
   msTempo: 0, // how many milliseconds do we get for the whole cycle?
   tmNextEvaluation: 0,
+  msTempoDefault: 0,
   onSelectMove: <(ship:BattleshipShipType, ixCols:number,ixRows:number)=>void><unknown>null,
 
   actions: {
@@ -51,12 +52,13 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
     const isShipPicked = this.get('ship') !== null;
 
     const cSteps = 2;
-    const msPerStep = this.get('msTempo') / cSteps;
+    const msPerStep = this.get('msTempoDefault') / cSteps;
     const secondsPerStep = msPerStep / 1000;
 
     const tssPerSecondAtFtp = 100 / 3600;
     const tssPerPercentFtp = secondsPerStep*tssPerSecondAtFtp / 100;
     
+    let ret = [];
     if(!isShipPicked) {
 
       const availableShips = this.get('game').ships.filter((ship) => !ship.isSunk());
@@ -74,7 +76,7 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
         }
       })
 
-      return [{
+      ret = [{
           assign: {misfire:true},
           words: "Misfire",
           mode: SelectableActionMode.TotalTss,
@@ -86,79 +88,83 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
       ];
 
     } else if(isNW) {
-      return [{
+      ret = [{
         assign: {ixCols: -1, ixRows: 1},
-        words: "⬋",
+        words: "SW",
         mode: SelectableActionMode.TotalTss,
         minValue: 0,
         maxValue: tssPerPercentFtp*100,
         cls: 'southwest',
       }, {
         assign: {ixCols: -1, ixRows: 0},
-        words: "🡐",
+        words: "W",
         mode: SelectableActionMode.TotalTss,
         minValue: tssPerPercentFtp*100,
-        maxValue: tssPerPercentFtp*110,
+        maxValue: tssPerPercentFtp*107,
         cls: 'west',
       }, {
         assign: {ixCols: -1, ixRows: -1},
-        words: "⬉",
+        words: "NW",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*110,
-        maxValue: tssPerPercentFtp*120,
+        minValue: tssPerPercentFtp*107,
+        maxValue: tssPerPercentFtp*114,
         cls: 'northwest',
       }, {
         assign: {ixCols: 0, ixRows: -1},
-        words: "🡑",
+        words: "N",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*120,
-        maxValue: tssPerPercentFtp*130,
+        minValue: tssPerPercentFtp*114,
+        maxValue: tssPerPercentFtp*121,
         cls: 'north',
       }, {
         assign: {ixCols: 1, ixRows: -1},
-        words: "⬈",
+        words: "NE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*130,
-        maxValue: tssPerPercentFtp*150,
+        minValue: tssPerPercentFtp*121,
+        maxValue: tssPerPercentFtp*128,
         cls: 'northeast',
       }]
     } else {
-      return [{
+      ret = [{
         assign: {ixCols: -1, ixRows: 1},
-        words: "⬋",
+        words: "SW",
         mode: SelectableActionMode.TotalTss,
         minValue: 0,
         maxValue: tssPerPercentFtp*100,
         cls: 'southwest',
       }, {
         assign: {ixCols: 0, ixRows: 1},
-        words: "🡓",
+        words: "S",
         mode: SelectableActionMode.TotalTss,
         minValue: tssPerPercentFtp*100,
-        maxValue: tssPerPercentFtp*110,
+        maxValue: tssPerPercentFtp*107,
         cls: 'south',
       }, {
         assign: {ixCols: 1, ixRows: 1},
-        words: "⬊",
+        words: "SE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*110,
-        maxValue: tssPerPercentFtp*120,
+        minValue: tssPerPercentFtp*107,
+        maxValue: tssPerPercentFtp*114,
         cls: 'southeast',
       }, {
         assign: {ixCols: 1, ixRows: 0},
-        words: "🡒",
+        words: "E",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*120,
-        maxValue: tssPerPercentFtp*130,
+        minValue: tssPerPercentFtp*114,
+        maxValue: tssPerPercentFtp*121,
         cls: 'east',
       }, {
         assign: {ixCols: 1, ixRows: -1},
-        words: "⬈",
+        words: "NE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*130,
-        maxValue: tssPerPercentFtp*150,
+        minValue: tssPerPercentFtp*121,
+        maxValue: tssPerPercentFtp*128,
         cls: 'northeast',
       }]
     }
+
+    applyEffortLevels(ret, tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS, tssPerPercentFtp*MAX_TSS_FOR_TURNPARAMS);
+
+    return ret;
   }
 };

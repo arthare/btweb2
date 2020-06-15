@@ -1,6 +1,8 @@
 <div class="battleship__container">
   <div class="battleship__controls">
     {{battleship-move-selector-bike 
+              onChangeResistance=(action 'onChangeResistance')
+              onNeedHighlight=(action 'onNeedHighlight')
               theirGame=theirGame 
               yourGame=yourGame
               onSelectActionParameter=(action 'onSelectActionParameter')
@@ -8,6 +10,18 @@
     }}
   </div>
 
-  {{battleship-map showMode=yourShowMode title="Your Map" game=yourGame updateCounter=updateCounter hidden=false}}
-  {{battleship-map showMode=theirShowMode title="Their Map" game=theirGame updateCounter=updateCounter hidden=true}}
+  {{battleship-map 
+      showMode=yourShowMode 
+      title="Your Map" 
+      game=yourGame 
+      updateCounter=updateCounter 
+      hidden=false}}
+  {{battleship-map 
+      showMode=theirShowMode 
+      title="Their Map" 
+      game=theirGame 
+      updateCounter=updateCounter 
+      hidden=true 
+      ixColHighlight=ixColHighlight 
+      ixRowHighlight=ixRowHighlight}}
 </div>

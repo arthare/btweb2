@@ -46,6 +46,7 @@ class BattleshipGameDisplay {
           hasRadar: this.game.getRadarAt(ixCol, ixRow),
           shipDamaged: (ship && ship.isDamagedAt(ixCol, ixRow)) || false,
           shipType: BattleshipShipType.UNKNOWN,
+
           ixCol,
           ixRow,
         }
@@ -73,7 +74,7 @@ export default class BattleshipMap extends Component.extend({
 
   onPickSquare:<any>null,
 
-  updater: Ember.observer('updateCounter', function(this:BattleshipMap) {
+  updater: Ember.observer('updateCounter', 'ixColHighlight', 'ixRowHighlight', function(this:BattleshipMap) {
     this.gameDisplay.update(this.get('hidden'));
     this.set('rows', this.gameDisplay.rows);
   }),

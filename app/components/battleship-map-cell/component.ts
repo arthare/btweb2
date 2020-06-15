@@ -1,16 +1,23 @@
 import Component from '@ember/component';
 import { BattleshipGameDisplayCell } from '../battleship-map/component';
 import { computed } from '@ember/object';
+import Ember from 'ember';
 
 export default class BattleshipMapCell extends Component.extend({
   // anything which *must* be merged to prototype here
   tagName: 'div',
   classNames: ['battleship-map-cell__container'],
-  classNameBindings: ['wide'],
+  classNameBindings: ['wide', 'highlight'],
   ixCol: -1,
   ixRow: -1,
   onPickSquare: <(ixCol:number, ixRow:number)=>void><unknown>null,
   cell: <BattleshipGameDisplayCell><unknown>null,
+
+  highlight: Ember.computed('ixColHighlight', 'ixRowHighlight', function() {
+    return this.get('cell').ixRow === this.get('ixRowHighlight') ||
+           this.get('cell').ixCol === this.get('ixColHighlight');
+  }),
+
 }) {
   // normal class body definition here
   click() {

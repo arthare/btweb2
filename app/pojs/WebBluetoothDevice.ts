@@ -8,9 +8,8 @@ export enum BTDeviceState {
   Disconnected,
 }
 
-export interface PowerRecipient {
-  notifyPower(tmNow:number, watts:number):void;
-}
+export type FnPowerReceipient = (tmNow:number, watts:number) => void
+
 export interface CadenceRecipient {
   notifyCadence(tmNow:number, cadence:number):void;
 }
@@ -30,7 +29,7 @@ export interface ConnectedDeviceInterface {
   name():string;
   getDeviceTypeDescription():string;
 
-  setPowerRecipient(who:PowerRecipient):void;
+  setPowerRecipient(who:FnPowerReceipient):void;
   setCadenceRecipient(who:CadenceRecipient):void;
   setHrmRecipient(who:HrmRecipient):void;
   setSlopeSource(who:SlopeSource):void;
@@ -45,7 +44,7 @@ export interface ConnectedDeviceInterface {
 }
 
 export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
-  private _powerOutput:PowerRecipient[] = [];
+  private _powerOutput:FnPowerReceipient[] = [];
   private _cadenceOutput:CadenceRecipient[] = [];
   private _hrmOutput:HrmRecipient[] = [];
   protected _slopeSource:SlopeSource|null = null;
@@ -65,7 +64,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   abstract updateSlope(tmNow:number):Promise<boolean>;
   abstract updateResistance(tmNow:number, pct:number):Promise<boolean>;
 
-  public setPowerRecipient(who: PowerRecipient): void {
+  public setPowerRecipient(who: FnPowerReceipient): void {
     this._powerOutput.push(who);
   }
   public setCadenceRecipient(who: CadenceRecipient): void {
@@ -80,7 +79,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
 
   protected _notifyNewPower(tmNow:number, watts:number) :void {
     this._powerOutput.forEach((pwr) => {
-      pwr.notifyPower(tmNow, watts);
+      pwr(tmNow, watts);
     });
   }
   protected _notifyNewCadence(tmNow:number, cadence:number) :void {

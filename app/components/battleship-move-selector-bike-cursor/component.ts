@@ -1,7 +1,7 @@
 import Component from '@ember/component';
 import Ember from 'ember';
 import { SelectableAction, SelectableActionMode } from '../battleship-move-selector-bike/component';
-import Devices from 'bt-web2/services/devices';
+import Devices, { PowerTimerAverage } from 'bt-web2/services/devices';
 import { User } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 
@@ -17,12 +17,12 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   tmStartEvaluation: new Date().getTime(),
   name: '',
 
-  totalJAtStart: 0,
   resultEvaluated: false,
 
   actionsList: <SelectableAction[]><unknown>null,
 
   onSelectAction: <(act:SelectableAction)=>void><unknown>null,
+  onPendingSelection: <(act:SelectableAction)=>void><unknown>null,
 
   intervalHandle: <any>null,
 
@@ -30,7 +30,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
     console.log(this.actionsList, " evaluating start time");
     this.set('resultEvaluated', false);
     this.set('tmStartEvaluation', new Date().getTime());
-    this.set('totalJAtStart', this.devices.getTotalJ());
+    this.devices.startPowerTimer(this.get('name'));
   }),
 
   actions: {
@@ -42,22 +42,20 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 }) {
   // normal class body definition here
 
-  _findEarnedAction(totalJAtStart:number,
-                    totalJNow:number,
-                    totalSeconds:number,
+  _findEarnedAction(avg:PowerTimerAverage,
                     secondsOfCycle:number,
                     user:User|undefined,
                     actionsList:SelectableAction[]
     ):EarnedAction {
-    const totalJDone = totalJNow - totalJAtStart;
-    const avgWatts = totalJDone / totalSeconds;
+    const totalJDone = avg.joules;
+    const avgWatts = avg.powerAvg;
 
     if(user) {
       const avgPctFtp = avgWatts / user.getHandicap();
 
       const tss100Joules = user.getHandicap() * 3600;
       const tssProducedSoFar = (totalJDone / tss100Joules) * 100;
-      const tssProducedExpected = tssProducedSoFar * (secondsOfCycle / totalSeconds);
+      const tssProducedExpected = tssProducedSoFar * (secondsOfCycle / avg.totalTimeSeconds);
 
       const bottomAction = actionsList[0];
       switch(bottomAction.mode) {
@@ -120,7 +118,6 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
     }
 
     { // doing instant and average indicators
-      const tmNow = new Date().getTime();
       const user = this.devices.getLocalUser();
       if(!user) {
         throw new Error("wtf, no user?");
@@ -130,9 +127,12 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
       if(true)
       {
         const lastPower = user.getLastPower();
-        const earnedActionInstant:EarnedAction = this._findEarnedAction(0, 
-          lastPower, 
-           1, 
+        const avg:PowerTimerAverage = {
+          powerAvg: lastPower,
+          totalTimeSeconds: 1,
+          joules: lastPower,
+        }
+        const earnedActionInstant:EarnedAction = this._findEarnedAction(avg,
            secondsOfCycle,
            user, 
            this.actionsList);
@@ -150,19 +150,16 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
         }
       }
       {
-        const totalJAtStart = this.get('totalJAtStart');
-        const totalJ = this.devices.getTotalJ();
-        const seconds = (tmNow - this.get('tmStartEvaluation')) / 1000;
-        const watts = (totalJ-totalJAtStart) / seconds;
-        const avgFtp = watts / user.getHandicap();
-        const totalTss = (avgFtp * 100) * (seconds / 3600);
-
-        const earnedActionAverage:EarnedAction = this._findEarnedAction(totalJAtStart, 
-                                                       totalJ, 
-                                                       seconds, 
+        const avg = this.devices.getPowerCounterAverage(this.get('name'));
+        const earnedActionAverage:EarnedAction = this._findEarnedAction(avg, 
                                                        secondsOfCycle,
                                                        user, 
                                                        this.actionsList);
+
+
+        if(this.onPendingSelection) {
+          this.onPendingSelection(earnedActionAverage.action);
+        }
         const allAverageIndicators = this.element.querySelectorAll(`.battleship-move-selector-bike-cursor__average`);
         const averageIndicator:HTMLDivElement|null = this.element.querySelector(`.battleship-move-selector-bike-cursor__average.${earnedActionAverage.action.cls}`);
       
@@ -195,9 +192,8 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 
     // this function gets called when the rider has finished an interval and we need to figure out which one they earned!
 
-    const findEarnedAction = this._findEarnedAction(this.get('totalJAtStart'),
-                                                    this.devices.getTotalJ(),
-                                                    (this.get('tmNextEvaluation') - this.get('tmStartEvaluation')) / 1000,
+    const avg = this.devices.getPowerCounterAverage(this.get('name'));
+    const findEarnedAction = this._findEarnedAction(avg,
                                                     (this.get('tmNextEvaluation') - this.get('tmStartEvaluation')) / 1000,
                                                     this.devices.getLocalUser(),
                                                     this.actionsList);
@@ -210,8 +206,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
     console.log("setting up " + this.get('name'));
     this.set('resultEvaluated', false);
     this.set('tmStartEvaluation', new Date().getTime());
-    this.set('totalJAtStart', this.devices.getTotalJ());
-
+    this.devices.startPowerTimer(this.get('name'));
     this.set('intervalHandle', setInterval(() => {
       this._updateDisplay();
     }, 250));

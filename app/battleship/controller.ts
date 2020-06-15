@@ -20,17 +20,27 @@ export default class Battleship extends Controller.extend({
   theirGame: <BattleshipGameMap><unknown>null,
   updateCounter: 0,
 
+  ixColHighlight: -1,
+  ixRowHighlight: -1,
+
   yourShowMode: MapShowMode.COLOR,
   theirShowMode: MapShowMode.COLOR,
 
   actions: {
+    onChangeResistance(pct:number) {
+      this.devices.setResistanceMode(pct);
+    },
+    onNeedHighlight(ixCol:number, ixRow:number) {
+      this.set('ixColHighlight', ixCol);
+      this.set('ixRowHighlight', ixRow);
+    },
     onSelectActionParameter(action:BattleshipGameTurnType, params:any) {
       const compiledTurn:BattleshipGameTurn = {
         type:action,
         params,
       }
 
-      this.devices.setResistanceMode(0.4);
+      console.log("setting resistance mode");
 
       switch(action) {
         case BattleshipGameTurnType.MOVE:
@@ -40,6 +50,8 @@ export default class Battleship extends Controller.extend({
           // ...coward
           break;
         case BattleshipGameTurnType.SHOOT:
+          this.set('ixColHighlight', -1);
+          this.set('ixRowHighlight', -1);
           this.theirGame.applyMove(compiledTurn);
           break;
         case BattleshipGameTurnType.RADAR:

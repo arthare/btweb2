@@ -322,14 +322,35 @@ export class BattleshipGameMap {
       case BattleshipGameTurnType.SHOOT:
         const shootParams = <BattleshipGameParamsShoot>turn.params;
 
-        const key = shootParams.ixCol + "|" + shootParams.ixRow;
-        this.setShotHistory.add(key);
+
+        // let's make this a shotgun
+        const shots:BattleshipGameParamsShoot[] = [];
+        for(var x = 0;x < 3; x++) {
+          for(var y = 0; y < 3; y++) {
+            const ixCol = shootParams.ixCol - 1 + x;
+            const ixRow = shootParams.ixRow - 1 + y;
+            if(ixCol >= 0 && ixCol < this.nGrid && 
+               ixRow >= 0 && ixRow < this.nGrid) {
+
+              shots.push({
+                ixCol,
+                ixRow,
+              });
+            }
+          }
+        }
 
         let ret;
-        this.ships.forEach((ship) => {
-          if(ship.isShipPresent(shootParams.ixCol, shootParams.ixRow)) {
-            ret = ship.applyShot(shootParams);
-          }
+        shots.forEach((shot) => {
+          const key = shot.ixCol + "|" + shot.ixRow;
+          this.setShotHistory.add(key);
+          this.ships.forEach((ship) => {
+            if(ship.isShipPresent(shot.ixCol, shot.ixRow)) {
+
+              // todo: this return hasn't been adapted for shotgunning
+              ret = ship.applyShot(shot);
+            }
+          })
         })
         if(ret) {
           return ret;
