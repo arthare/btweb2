@@ -9,5 +9,21 @@
   </div>
 
   {{battleship-map showMode=yourShowMode title="Your Map" game=yourGame updateCounter=updateCounter hidden=false}}
-  {{battleship-map showMode=theirShowMode title="Their Map" game=theirGame updateCounter=updateCounter hidden=true}}
+
+  {{#if theirGame}}
+    {{battleship-map showMode=theirShowMode title="Their Map" game=theirGame updateCounter=updateCounter hidden=true}}
+  {{else}}
+    <div class="battleship__not-connected">
+      {{#vertical-align}}
+        You haven't connected to a game.  Your game ID is <b>{{yourGameId}}</b>
+        <ul>
+          {{#each otherGames as |otherGame|}}
+            <li><a href='#' {{action 'selectGame' otherGame}}>{{otherGame}}</a></li>
+          {{else}}
+            Nobody else is playing right now.
+          {{/each}}
+        </ul>
+      {{/vertical-align}}
+    </div>
+  {{/if}}
 </div>

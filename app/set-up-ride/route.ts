@@ -8,7 +8,7 @@ export function apiGet(endPoint:string, data?:any):Promise<any> {
 
   let queries = '?';
   for(var key in data) {
-    queries += key + '=' + encodeURIComponent(data) + '&';
+    queries += key + '=' + encodeURIComponent(data[key]) + '&';
   }
 
   return fetch(apiRoot + slash + endPoint + queries, {

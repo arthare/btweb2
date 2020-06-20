@@ -1,26 +1,17 @@
 import Route from '@ember/routing/route';
-import { BattleshipGameShip, BattleshipShipType, BattleshipGameMap } from 'bt-web2/server-client-common/battleship-game';
+import { BattleshipGameShip, BattleshipShipType, BattleshipGameMap, BattleshipMapCreate, BattleshipMapCreateResponse } from 'bt-web2/server-client-common/battleship-game';
+import { apiPost } from 'bt-web2/set-up-ride/route';
+import Ember from 'ember';
+import Devices from 'bt-web2/services/devices';
+import { inflateMap } from './controller';
 
 export default class Battleship extends Route.extend({
   // anything which *must* be merged to prototype here
+  devices: <Devices><unknown>Ember.inject.service('devices'),
 }) {
   // normal class body definition here
 
-  setupController(controller:any, model:any) {
-    
-    const nGrid = 15;
-
-    const ships:BattleshipGameShip[] = [];
-    ships.push(new BattleshipGameShip(BattleshipShipType.BATTLESHIP, 1, 1, true, nGrid));
-    ships.push(new BattleshipGameShip(BattleshipShipType.CARRIER, 3, 7, true, nGrid));
-    ships.push(new BattleshipGameShip(BattleshipShipType.CRUISER, 5, 5, false, nGrid));
-    ships.push(new BattleshipGameShip(BattleshipShipType.PATROL, 15, 2, true, nGrid));
-    ships.push(new BattleshipGameShip(BattleshipShipType.SUB, 12, 12, false, nGrid));
-
-    const yourGame = new BattleshipGameMap(nGrid, ships);
-    
-    const theirShips:BattleshipGameShip[] = [];
-
+  model() {
     const shipTypesNeeded = [
       BattleshipShipType.BATTLESHIP,
       BattleshipShipType.CARRIER,
@@ -28,6 +19,8 @@ export default class Battleship extends Route.extend({
       BattleshipShipType.PATROL,
       BattleshipShipType.SUB,
     ]
+    const nGrid = 15;
+    const yourShips:BattleshipGameShip[] = [];
     shipTypesNeeded.forEach((typ) => {
 
       while(true) {
@@ -39,20 +32,38 @@ export default class Battleship extends Route.extend({
           continue;
         }
   
-        const intersect = theirShips.find((theirShip) => {
+        const intersect = yourShips.find((theirShip) => {
           return (theirShip.intersects(shipAttempt));
         });
         if(!intersect) {
           // we don't intersect other ships, we're good
-          theirShips.push(shipAttempt);
+          yourShips.push(shipAttempt);
           break;
         }
       }
     })
 
-    const theirGame = new BattleshipGameMap(nGrid, theirShips);
-      
+    const user = this.get('devices').getLocalUser();
+    if(user) {
+      const mapCreate:BattleshipMapCreate = {
+        nGrid,
+        ships: yourShips,
+        mapId: `${user.getName()} @ ${user.getHandicap().toFixed(0)}W`,
+      }
+  
+      return apiPost('create-battleship-map', mapCreate);
+    } else {
+      return Promise.reject("You need to set a user up first");
+    }
 
-    controller.startup(yourGame, theirGame);
+  }
+
+  setupController(controller:any, model:BattleshipMapCreateResponse) {
+    
+    // the model will be the response from create-battleship-map
+    const yourGame = inflateMap(model.create);
+    controller.startup(yourGame);
+    controller.set('otherGames', model.waitingPlayers);
+    controller.set('yourGameId', model.mapId);
   }
 }

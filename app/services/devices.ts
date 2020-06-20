@@ -151,8 +151,10 @@ export default class Devices extends Service.extend({
       return device.userWantsToKeep();
     });
 
+    const tmNow = new Date().getTime();
+
     this.devices.forEach((device) => {
-      device.updateResistance(pct).then((good:boolean) => {
+      device.updateResistance(tmNow, pct).then((good:boolean) => {
         if(good) {
           this.incrementProperty('goodUpdates');
         } else {

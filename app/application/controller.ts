@@ -15,6 +15,9 @@ export class FakeDevice extends PowerDataDistributor {
       this._notifyNewPower(new Date().getTime(), Math.random()*50 + 100);
     }, 500);
   }
+  getDeviceId() {
+    return "Fake";
+  }
   getDeviceTypeDescription():string {
     return "Fake Device";
   }

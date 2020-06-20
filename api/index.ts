@@ -8,7 +8,11 @@ import { RideMap, RideMapPartial } from '../app/server-client-common/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './ServerConstants';
 import { ServerGame, ServerUser } from '../app/server-client-common/ServerGame';
-import { setUpServerHttp } from './ServerHttp';
+import { setUpServerHttp } from './HttpTourJs';
+import express from 'express';
+import * as core from "express-serve-static-core";
+import { setUpBattleshipHttp } from './HttpBattleship';
+import { setUpCors } from './HttpUtils';
 
 var fs = require('fs');
 
@@ -289,18 +293,24 @@ wss.on('connection', (wsConnection) => {
   const sendUpdate = () => {
     if(thisConnectionGameId !== null && thisConnectionUserId !== null) {
       const tmNow = new Date().getTime();
-      const game = races.get(thisConnectionGameId);
-      if(!game) {
-        // this game has almost certainly ended
-        return;
-      }
-      const user = game.getUser(thisConnectionUserId);
-      if(!user) {
-        // or this user has disconnected perhaps
-        return;
+
+      if(thisConnectionGameId.startsWith("battleship://")) {
+        // nothing to do
+      } else {
+        const game = races.get(thisConnectionGameId);
+        if(!game) {
+          // this game has almost certainly ended
+          return;
+        }
+        const user = game.getUser(thisConnectionUserId);
+        if(!user) {
+          // or this user has disconnected perhaps
+          return;
+        }
+  
+        sendUpdateToClient(game, user, tmNow, wsConnection);
       }
 
-      sendUpdateToClient(game, user, tmNow, wsConnection);
     }
     
 
@@ -403,4 +413,8 @@ wss.on('connection', (wsConnection) => {
 });
 
 
-setUpServerHttp(races);
+let app = <core.Express>express();
+setUpCors(app);
+setUpServerHttp(app, races);
+setUpBattleshipHttp(app);
+app.listen(8081);

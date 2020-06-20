@@ -3,6 +3,7 @@ import { User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
+import { BattleshipGameTurn } from "./battleship-game";
 
 
 
@@ -15,6 +16,7 @@ export enum BasicMessageType {
   S2CNameUpdate,
   S2CFinishUpdate,
   S2CImageUpdate,
+  BattleshipMessage,
 }
 
 export enum CurrentRaceState {
@@ -27,6 +29,21 @@ export interface C2SBasicMessage {
   type:BasicMessageType;
   payload:any; // check type, then cast to the appropriate message
 }
+
+export enum BattleshipMessageType {
+  Turn,
+  Meta,
+}
+
+export interface BattleshipMessage {
+  type:BattleshipMessageType;
+  gameId:string;
+  payload:BattleshipGameTurn|BattleshipGameMeta;
+}
+export interface BattleshipGameMeta {
+  
+}
+
 export interface S2CBasicMessage {
   timeStamp:number;
   type:BasicMessageType;

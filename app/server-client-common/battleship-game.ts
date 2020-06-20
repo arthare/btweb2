@@ -241,6 +241,25 @@ export interface BattleshipTurnResultRadar {
   shipPresent:boolean[];
 }
 
+export interface BattleshipMapCreate {
+  nGrid:number;
+  ships:BattleshipGameShip[];
+  mapId:string;
+  shotHistory?:string[];
+  radarHistory?:string[];
+}
+
+export interface BattleshipApplyMove {
+  mapId: string;
+  move: BattleshipGameTurn;
+}
+
+export interface BattleshipMapCreateResponse {
+  mapId:string;
+  create: BattleshipMapCreate;
+  waitingPlayers: string[];
+}
+
 export class BattleshipGameMap {
   nGrid:number;
   grid:BattleshipGameSquare[][];
@@ -248,8 +267,10 @@ export class BattleshipGameMap {
 
   setRadarHistory:Set<string>;
   setShotHistory:Set<string>;
+  mapId:string;
 
-  constructor(nGrid:number, ships:BattleshipGameShip[]) {
+  constructor(mapId:string, nGrid:number, ships:BattleshipGameShip[], shotHistory?:string[]) {
+    this.mapId = mapId;
     this.nGrid = nGrid;
     this.grid = [];
     this.ships = ships;
@@ -261,7 +282,35 @@ export class BattleshipGameMap {
       this.grid.push(cols);
     }
     this.setShotHistory = new Set<string>();
+    if(shotHistory) {
+      shotHistory.forEach((shot) => {
+        this.setShotHistory.add(shot);
+      })
+    }
+
     this.setRadarHistory = new Set<string>();
+  }
+
+  getMapId():string {
+    return this.mapId;
+  }
+
+  toMapCreate():BattleshipMapCreate {
+    let shots:string[] = [];
+    this.setShotHistory.forEach((shot) => {
+      shots.push(shot);
+    })
+    let radars:string[] = [];
+    this.setRadarHistory.forEach((radar) => {
+      radars.push(radar);
+    })
+    return {
+      nGrid: this.nGrid,
+      ships: this.ships,
+      mapId: this.mapId,
+      shotHistory: shots,
+      radarHistory: radars,
+    }
   }
 
   isShipPresent(ixCol:number, ixRow:number):boolean {
