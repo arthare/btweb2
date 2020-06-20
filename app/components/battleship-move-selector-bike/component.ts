@@ -26,59 +26,31 @@ export interface SelectableAction {
 
 const defaultTempoMs = 20000;
 
+export const MIN_FTP_AVG_FOR_TURNS = 0.05;
+export const MAX_FTP_AVG_FOR_TURNS = 0.7;
+export const MIN_TSS_FOR_TURNPARAMS = 90;
+export const MAX_TSS_FOR_TURNPARAMS = 125;
+
+export function applyEffortLevels(raw:SelectableAction[], minAppliedValue:number, maxAppliedValue:number) {
+
+  for(var x = 1; x < raw.length; x++) {
+    const n = raw.length - 1;
+    const offset = x - 1;
+    const pct = (offset+1) / n;
+    raw[x].minValue = raw[x-1].maxValue;
+    raw[x].maxValue = pct * maxAppliedValue + (1-pct)*minAppliedValue;
+  }
+}
+
+
 export default class BattleshipMoveSelectorMouse extends Component.extend({
   // anything which *must* be merged to prototype here
   classNames: ['battleship-move-selector-bike__container'],
 
+  onChangeResistance:<(pct:number)=>void><unknown>null,
   phase: DisplayPhase.SelectAction,
   selectActionPhase: Ember.computed.equal('phase', DisplayPhase.SelectAction),
   selectParamsPhase: Ember.computed.equal('phase', DisplayPhase.SetActionParameters),
-
-  turnActions: [
-    {
-      assign: {pendingTurnType: BattleshipGameTurnType.PASS, tempoAdjust: 0.8},
-      words: "Tempo Down",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0,
-      maxValue: 0.5,
-      cls: 'tempo-down',
-    }, {
-      assign: {pendingTurnType: BattleshipGameTurnType.PASS, tempoAdjust: 1.25},
-      words: "Tempo Up",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0.5,
-      maxValue: 0.6,
-      cls: 'tempo-up',
-    }, {
-      assign: {pendingTurnType: BattleshipGameTurnType.MOVE, isNW: true},
-      words: "Move<br>🡐⬉ 🡑",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0.6,
-      maxValue: 0.7,
-      cls: 'move-nw',
-    }, {
-      assign: {pendingTurnType: BattleshipGameTurnType.MOVE, isNW: false},
-      words: "Move<br>🡓⬊ 🡒",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0.7,
-      maxValue: 0.8,
-      cls: 'move-se',
-    }, {
-      assign: {pendingTurnType: BattleshipGameTurnType.RADAR},
-      words: "Radar",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0.8,
-      maxValue: 0.9,
-      cls: 'radar',
-    }, {
-      assign: {pendingTurnType: BattleshipGameTurnType.SHOOT},
-      words: "Shoot",
-      mode: SelectableActionMode.AvgPctOfFtp,
-      minValue: 0.9,
-      maxValue: 1.0,
-      cls: 'shoot',
-    }
-  ],
 
   yourGame: <BattleshipGameMap><unknown>null,
   theirGame: <BattleshipGameMap><unknown>null,
@@ -97,17 +69,17 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
   pendingTurnType: <BattleshipGameTurnType>BattleshipGameTurnType.PASS,
   pendingTurnParams: <BattleshipGameParamsMove|BattleshipGameParamsRadar|BattleshipGameParamsShoot><unknown>null,
   tempoPeriodMs: defaultTempoMs,
+  tempoPeriodMsDefault: defaultTempoMs,
   tmNextEvaluation: new Date().getTime() + defaultTempoMs,
 
   phaseWatcher: Ember.observer('phase', function(this:BattleshipMoveSelectorMouse) {
     if(this.get('phase') === DisplayPhase.SelectAction) {
       this.onChangeMapHighlights(MapShowMode.COLOR, MapShowMode.COLOR);
       const tmNow = new Date().getTime();
-
-      
+      this.onChangeResistance(0.3);
       this.set('tmNextEvaluation', tmNow + this.get('tempoPeriodMs'));
-      console.log("move-selector-bike changing next-eval time to ", this.get('tmNextEvaluation'));
     } else {
+      this.onChangeResistance(0.55);
       switch(this.get('pendingTurnType')) {
         case BattleshipGameTurnType.MOVE:
           this.onChangeMapHighlights(MapShowMode.COLOR, MapShowMode.FADE);
@@ -156,14 +128,21 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
 
       // the "assign" member changes our internal state
       for(var key in actionSelected.assign) {
-        this.set(key, actionSelected.assign[key]);
+        this.set(<any>key, actionSelected.assign[key]);
       }
 
       if(actionSelected.assign.pendingTurnType !== BattleshipGameTurnType.PASS) {
+        this.onChangeResistance(0.55);
         this.set('phase', DisplayPhase.SetActionParameters);
       } else {
         // leave things as they were
+        if(actionSelected.assign.tempoPeriodAdjust) {
+          const currentTempo = this.get('tempoPeriodMs');
+          this.set('tempoPeriodMs', currentTempo * actionSelected.assign.tempoPeriodAdjust);
+        }
+        this.onChangeResistance(0.3);
         this._selectNewTurn();
+        this.onSelectActionParameter(BattleshipGameTurnType.PASS, {});
       }
     },
 
@@ -204,5 +183,68 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
   }
 }) {
   // normal class body definition here
+
+
+
+  @computed()
+  get turnActions():SelectableAction[] {
+    const raw = [
+      {
+        assign: {pendingTurnType: BattleshipGameTurnType.PASS, tempoPeriodAdjust: 1.0},
+        words: "Pass",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: 0.0,
+        maxValue: MIN_FTP_AVG_FOR_TURNS,
+        cls: 'pass',
+      }, 
+      {
+        assign: {pendingTurnType: BattleshipGameTurnType.PASS, tempoPeriodAdjust: 1.25},
+        words: "Tempo Down",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'tempo-down',
+      }, {
+        assign: {pendingTurnType: BattleshipGameTurnType.PASS, tempoPeriodAdjust: 0.8},
+        words: "Tempo Up",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'tempo-up',
+      }, {
+        assign: {pendingTurnType: BattleshipGameTurnType.MOVE, isNW: true},
+        words: "Move<br>NW",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'move-nw',
+      }, {
+        assign: {pendingTurnType: BattleshipGameTurnType.MOVE, isNW: false},
+        words: "Move<br>SE",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'move-se',
+      }, {
+        assign: {pendingTurnType: BattleshipGameTurnType.RADAR},
+        words: "Radar",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'radar',
+      }, {
+        assign: {pendingTurnType: BattleshipGameTurnType.SHOOT},
+        words: "Shoot",
+        mode: SelectableActionMode.AvgPctOfFtp,
+        minValue: -1,
+        maxValue: -1,
+        cls: 'shoot',
+      }
+    ];
+
+    applyEffortLevels(raw, MIN_FTP_AVG_FOR_TURNS, MAX_FTP_AVG_FOR_TURNS);
+
+    return raw;
+  }
 
 };

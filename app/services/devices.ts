@@ -9,7 +9,43 @@ import { WorkoutFileSaver, samplesToPWX } from 'bt-web2/server-client-common/Fil
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 
 
+export interface PowerTimerAverage {
+  powerAvg:number,
+  totalTimeSeconds:number,
+  joules:number,
+}
 
+class PowerTimer {
+  tmStart:number;
+  tmLast:number;
+  sumPower:number;
+  countPower:number;
+
+  constructor(tmStart:number) {
+    this.tmStart = tmStart;
+    this.tmLast = tmStart;
+    this.sumPower = 0;
+    this.countPower = 0;
+  }
+
+  notifyPower(tmNow:number, power:number) {
+    const dt = (tmNow - this.tmLast) / 1000;
+    if(dt <= 0) {
+      return;
+    }
+    this.sumPower += power * dt;
+    this.countPower += dt;
+    this.tmLast = tmNow;
+  }
+
+  getAverage():PowerTimerAverage {
+    return {
+      powerAvg: this.countPower > 0 ? this.sumPower / this.countPower : 0,
+      joules: this.sumPower,
+      totalTimeSeconds: this.countPower,
+    }
+  }
+}
 
 export default class Devices extends Service.extend({
   // anything which *must* be merged to prototype here
@@ -23,7 +59,8 @@ export default class Devices extends Service.extend({
 
   goodUpdates = 0;
   badUpdates = 0;
-  totalJ = 0;
+
+  _powerCounters:Map<string,PowerTimer> = new Map<string,PowerTimer>();
   
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
@@ -69,13 +106,39 @@ export default class Devices extends Service.extend({
     this.incrementProperty('ridersVersion');
   }
 
+  _updatePowerCounters(tmNow:number, power:number) {
+    this._powerCounters.forEach((counter) => {
+      counter.notifyPower(tmNow, power);
+    })
+  }
+
+  getPowerCounterAverage(name:string):PowerTimerAverage {
+    const counter = this._powerCounters.get(name);
+    if(counter) {
+      return counter.getAverage();
+    } else {
+      return {
+        powerAvg: 0,
+        joules: 0,
+        totalTimeSeconds: 0,
+      }
+    }
+  }
+
+  startPowerTimer(name:string) {
+    this._powerCounters.set(name, new PowerTimer(new Date().getTime()));
+  }
+
   setLocalUserDevice(device:ConnectedDeviceInterface) {
     const user = this.getLocalUser();
     if(!user) {
       throw new Error("You can't set a device for a local user that doesn't exist");
     }
     device.setCadenceRecipient(user);
-    device.setPowerRecipient(user);
+    device.setPowerRecipient((tmNow:number, power:number) => {
+      user.notifyPower(tmNow, power);
+      this._updatePowerCounters(tmNow, power);
+    });
     device.setHrmRecipient(user);
     device.setSlopeSource(user);
     this._internalTick(new Date().getTime());
@@ -132,10 +195,6 @@ export default class Devices extends Service.extend({
     }
   }
 
-  getTotalJ():number {
-    return this.totalJ;
-  }
-
   getUsers(tmNow:number):User[] {
     return this.users.filter((user) => {
       return user.getUserType() & UserTypeFlags.Local ||
@@ -152,8 +211,8 @@ export default class Devices extends Service.extend({
     });
 
     const tmNow = new Date().getTime();
-
     this.devices.forEach((device) => {
+      console.log("setting resistance mode for ", device);
       device.updateResistance(tmNow, pct).then((good:boolean) => {
         if(good) {
           this.incrementProperty('goodUpdates');
@@ -193,13 +252,7 @@ export default class Devices extends Service.extend({
   _internalTick(tmNow:number) {
     
     this.nextTickHandle = 0;
-    if(this.tmLastInternalTick === 0) {
-    } else {
-      const deltaSeconds = (tmNow - this.tmLastInternalTick) / 1000;
-      const power = this.getLocalUser()?.getLastPower() || 0;
-      this.totalJ += deltaSeconds*power;
-
-    }
+    
     this.tmLastInternalTick = tmNow;
 
     if(!this.nextTickHandle) {

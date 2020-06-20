@@ -2,7 +2,12 @@
 {{#each rows as |row index|}}
   <div class="battleship-map__row">
     {{#each row.cols as |cell|}}
-      {{battleship-map-cell cell=cell wide=wide onPickSquare=(action 'onPickSquare')}}
+      {{battleship-map-cell 
+          ixColHighlight=ixColHighlight 
+          ixRowHighlight=ixRowHighlight 
+          cell=cell 
+          wide=wide 
+          onPickSquare=(action 'onPickSquare')}}
     {{/each}}
   </div>
 {{/each}}
