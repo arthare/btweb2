@@ -1,4 +1,4 @@
-import { CadenceRecipient, PowerRecipient, HrmRecipient, SlopeSource } from "../pojs/WebBluetoothDevice";
+import { CadenceRecipient, FnPowerReceipient, HrmRecipient, SlopeSource } from "../pojs/WebBluetoothDevice";
 import { RideMap } from "./RideMap";
 import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
@@ -25,7 +25,7 @@ export interface UserDisplay {
   user:User;
 }
 
-class UserDataRecorder implements CadenceRecipient, PowerRecipient, HrmRecipient {
+class UserDataRecorder implements CadenceRecipient, HrmRecipient {
   private _lastPower:number = 0;
   private _tmLastPower:number = 0;
   private _id:number = -1; // assigned by the server.  Positive when set
