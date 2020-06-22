@@ -9,11 +9,21 @@ import Connection from 'bt-web2/services/connection';
 
 
 export class FakeDevice extends PowerDataDistributor {
+  nextPower:number;
+
   constructor() {
     super();
+    this.nextPower = 0;
     setInterval(() => {
-      this._notifyNewPower(new Date().getTime(), Math.random()*50 + 100);
-    }, 500);
+      if(this.nextPower) {
+        this._notifyNewPower(new Date().getTime(), Math.random()*2 + this.nextPower - 1);
+      } else {
+        this._notifyNewPower(new Date().getTime(), Math.random()*50 + 100);
+      }
+    }, 250);
+  }
+  setNextPower(power:number) {
+    this.nextPower = power;
   }
   getDeviceId() {
     return "Fake";
@@ -38,7 +48,7 @@ export class FakeDevice extends PowerDataDistributor {
   }
 
 }
-
+let g_fakeDevice:FakeDevice;
 
 export default class Application extends Controller.extend({
   // anything which *must* be merged to prototype here
@@ -47,6 +57,7 @@ export default class Application extends Controller.extend({
   bluetoothWarning: false,
   canDoBluetooth: false,
   frame: 0,
+  showCheater: false,
   
   observeGoodUpdates: Ember.observer('devices.goodUpdates', function(this:Application) {
     const deviceWrite = document.querySelector('.application__device-write');
@@ -63,7 +74,7 @@ export default class Application extends Controller.extend({
       const canDoBluetooth = this.get('canDoBluetooth');
       if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
 
-        const device = new FakeDevice();
+        const device = g_fakeDevice = new FakeDevice();
         this.devices.setLocalUserDevice(device);
       } else {
         getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
@@ -104,6 +115,24 @@ export default class Application extends Controller.extend({
   }
 
   start() {
+
+    if(window.location.hostname === 'localhost') {
+      this.set('showCheater', true);
+
+      Ember.run.later('afterRender', () => {
+        const cheater:HTMLDivElement|null = document.querySelector('.application__user-status--cheater');
+        if(cheater) {
+          cheater.onmousemove = (evt) => {
+            const x = evt.offsetX;
+            if(g_fakeDevice) {
+              g_fakeDevice.setNextPower(x);
+            }
+
+          }
+        }
+      })
+    }
+
     if(!window.navigator || !window.navigator.bluetooth || !window.navigator.bluetooth.getAvailability) {
       this.set('canDoBluetooth', false);
     } else {

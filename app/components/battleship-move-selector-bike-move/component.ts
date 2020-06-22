@@ -59,11 +59,20 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
     const tssPerPercentFtp = secondsPerStep*tssPerSecondAtFtp / 100;
     
     let ret = [];
+    const stepSize = 7;
     if(!isShipPicked) {
 
       const availableShips = this.get('game').ships.filter((ship) => !ship.isSunk());
 
-      let minFtp = 100;
+      let minFtp = MIN_TSS_FOR_TURNPARAMS;
+      const misFire = {
+        assign: {misfire:true},
+        words: "Misfire",
+        mode: SelectableActionMode.TotalTss,
+        minValue: 0,
+        maxValue: tssPerPercentFtp*minFtp,
+        cls: 'mis-fire',
+      }
       const shipActions = availableShips.map((ship) => {
         minFtp += 10;
         return {
@@ -76,14 +85,8 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
         }
       })
 
-      ret = [{
-          assign: {misfire:true},
-          words: "Misfire",
-          mode: SelectableActionMode.TotalTss,
-          minValue: 0,
-          maxValue: tssPerPercentFtp*100,
-          cls: 'mis-fire',
-        }, 
+      ret = [
+        misFire, 
         ...shipActions
       ];
 
@@ -93,35 +96,35 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
         words: "SW",
         mode: SelectableActionMode.TotalTss,
         minValue: 0,
-        maxValue: tssPerPercentFtp*100,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS,
         cls: 'southwest',
       }, {
         assign: {ixCols: -1, ixRows: 0},
         words: "W",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*100,
-        maxValue: tssPerPercentFtp*107,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*0,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*1,
         cls: 'west',
       }, {
         assign: {ixCols: -1, ixRows: -1},
         words: "NW",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*107,
-        maxValue: tssPerPercentFtp*114,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*1,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*2,
         cls: 'northwest',
       }, {
         assign: {ixCols: 0, ixRows: -1},
         words: "N",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*114,
-        maxValue: tssPerPercentFtp*121,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*2,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*3,
         cls: 'north',
       }, {
         assign: {ixCols: 1, ixRows: -1},
         words: "NE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*121,
-        maxValue: tssPerPercentFtp*128,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*3,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*4,
         cls: 'northeast',
       }]
     } else {
@@ -130,35 +133,35 @@ export default class BattleshipMoveSelectorBikeMove extends Component.extend({
         words: "SW",
         mode: SelectableActionMode.TotalTss,
         minValue: 0,
-        maxValue: tssPerPercentFtp*100,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS,
         cls: 'southwest',
       }, {
         assign: {ixCols: 0, ixRows: 1},
         words: "S",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*100,
-        maxValue: tssPerPercentFtp*107,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*0,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*1,
         cls: 'south',
       }, {
         assign: {ixCols: 1, ixRows: 1},
         words: "SE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*107,
-        maxValue: tssPerPercentFtp*114,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*1,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*2,
         cls: 'southeast',
       }, {
         assign: {ixCols: 1, ixRows: 0},
         words: "E",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*114,
-        maxValue: tssPerPercentFtp*121,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*2,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*3,
         cls: 'east',
       }, {
         assign: {ixCols: 1, ixRows: -1},
         words: "NE",
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*121,
-        maxValue: tssPerPercentFtp*128,
+        minValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*3,
+        maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS+stepSize*4,
         cls: 'northeast',
       }]
     }

@@ -17,6 +17,7 @@
 @import './battleship.scss';
 @import './battleship-move-selector-bike-cursor.scss';
 @import './vertical-align.scss';
+@import './index.scss';
 
 * {
   font-family: sans-serif;
@@ -52,6 +53,12 @@ body {
     font-size: 2.0vh;
     line-height: 2.0vh;
 
+    &--cheater {
+      border: 1px solid black;
+      width: 400px;
+      height: 100px;
+    }
+    
     &.user-valid {
       top: 92.5vh;
     }

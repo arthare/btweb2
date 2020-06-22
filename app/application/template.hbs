@@ -20,6 +20,9 @@
     </div>
   </div>
   <div class="application__user-status {{if localUser 'user-valid'}}">
+    {{#if showCheater}}
+      <div class="application__user-status--cheater"></div>
+    {{/if}}
     {{localUser.name}}<br />
     <i class="fas fa-bolt"></i>{{localUser.lastPower}} 
     <a href='#' {{action 'connectDevice'}}>BLE</a> 

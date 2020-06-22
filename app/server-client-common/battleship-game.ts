@@ -17,6 +17,12 @@ export enum BattleshipShipType {
   UNKNOWN,
 }
 
+export interface BattleshipGameCellCoords {
+  ixCol: number;
+  ixRow: number;
+}
+export const BATTLESHIP_DEFAULT_GRIDSIZE = 11;
+
 export interface BattleshipGameTurn {
   type:BattleshipGameTurnType;
   params: BattleshipGameParamsMove|BattleshipGameParamsRadar|BattleshipGameParamsShoot;
@@ -28,7 +34,7 @@ export interface BattleshipGameParamsMove {
   push:boolean; // whether they earned the bonus "push" capability
 }
 export interface BattleshipGameParamsRadar {
-  count:number; // how many radar squares do they get?
+  squares: BattleshipGameParamsShoot[];
   stealth:boolean; // whether they earned the bonus "stealth" capability
 }
 export interface BattleshipGameParamsShoot {
@@ -250,14 +256,38 @@ export interface BattleshipMapCreate {
 }
 
 export interface BattleshipApplyMove {
-  mapId: string;
+  shotByMapId:string;
+  targetMapId: string;
   move: BattleshipGameTurn;
 }
 
 export interface BattleshipMapCreateResponse {
   mapId:string;
   create: BattleshipMapCreate;
-  waitingPlayers: string[];
+}
+
+export enum BattleshipMessageType {
+  Turn,
+  Meta,
+}
+export enum BattleshipMetaType {
+  Identify,
+  NotifyNewPlayer,
+}
+
+export interface BattleshipMessage {
+  type:BattleshipMessageType;
+  payload:BattleshipApplyMove|BattleshipGameMeta;
+}
+
+export interface BattleshipMetaNotifyNewPlayer {
+  // send server->client when the server wants the clients know about the new player list
+  newMapId:string;
+  waitingPlayersNow:string[];
+}
+export interface BattleshipGameMeta {
+  type:BattleshipMetaType;
+  payload:string|BattleshipMetaNotifyNewPlayer;
 }
 
 export class BattleshipGameMap {
@@ -269,7 +299,7 @@ export class BattleshipGameMap {
   setShotHistory:Set<string>;
   mapId:string;
 
-  constructor(mapId:string, nGrid:number, ships:BattleshipGameShip[], shotHistory?:string[]) {
+  constructor(mapId:string, nGrid:number, ships:BattleshipGameShip[], shotHistory?:string[], radarHistory?:string[]) {
     this.mapId = mapId;
     this.nGrid = nGrid;
     this.grid = [];
@@ -287,8 +317,13 @@ export class BattleshipGameMap {
         this.setShotHistory.add(shot);
       })
     }
-
     this.setRadarHistory = new Set<string>();
+    if(radarHistory) {
+      radarHistory.forEach((radar) => {
+        this.setRadarHistory.add(radar);
+      })
+    }
+
   }
 
   getMapId():string {
@@ -355,9 +390,9 @@ export class BattleshipGameMap {
           ixRowScanned:[],
           shipPresent:[],
         }
-        for(var x = 0;x < radarParams.count; x++) {
-          const ixCol = Math.floor(Math.random() * this.nGrid);
-          const ixRow = Math.floor(Math.random() * this.nGrid);
+        for(var x = 0;x < radarParams.squares.length; x++) {
+          const ixCol = radarParams.squares[x].ixCol;
+          const ixRow = radarParams.squares[x].ixRow;
 
           result.ixColScanned.push(ixCol);
           result.ixRowScanned.push(ixRow);
@@ -410,4 +445,13 @@ export class BattleshipGameMap {
         throw new Error("Unrecognized move type");
     }
   }
+}
+
+export function inflateMap(create:BattleshipMapCreate):BattleshipGameMap {
+  
+  const fullShips:BattleshipGameShip[] = create.ships.map((rawShip:BattleshipGameShip) => {
+    return new BattleshipGameShip(rawShip.shipType, rawShip.ixTopLeftCol, rawShip.ixTopLeftRow, rawShip.isVertical, rawShip.nGrid);
+  });
+  const game = new BattleshipGameMap(create.mapId, create.nGrid, fullShips, create.shotHistory, create.radarHistory);
+  return game;
 }

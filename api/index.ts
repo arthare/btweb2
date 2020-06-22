@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate } from '../app/server-client-common/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS } from '../app/server-client-common/communication';
 import { assert2 } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
 import { User, UserTypeFlags } from '../app/server-client-common/User';
@@ -16,11 +16,12 @@ import { setUpCors } from './HttpUtils';
 
 var fs = require('fs');
 
+
 // read ssl certificate
 let wss:WebSocket.Server;
 
 try {
-  const config = JSON.parse(fs.readFileSync('./ssl-config.json'));
+  const config = JSON.parse(fs.readFileSync('./ssl-config.json', 'utf8'));
   var privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   var certificate = fs.readFileSync(config.fullChain, 'utf8');
 
@@ -29,13 +30,13 @@ try {
   
   //pass in your credentials to create an https server
   var httpsServer = https.createServer(credentials);
-  httpsServer.listen(8080);
+  httpsServer.listen(PORTS.TOURJS_WEBSOCKET_PORT);
   wss = new WebSocket.Server({
     server: httpsServer,
   });
 } catch(e) {
   wss = new WebSocket.Server({
-    port: 8080,
+    port: PORTS.TOURJS_WEBSOCKET_PORT,
   });
 }
 
@@ -417,4 +418,4 @@ let app = <core.Express>express();
 setUpCors(app);
 setUpServerHttp(app, races);
 setUpBattleshipHttp(app);
-app.listen(8081);
+app.listen(PORTS.GENERAL_HTTP_PORT);

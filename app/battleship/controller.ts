@@ -1,26 +1,18 @@
 import Controller from '@ember/controller';
-import { BattleshipGameMap, BattleshipGameShip, BattleshipGameTurnType, BattleshipGameTurn, BattleshipMapCreate } from 'bt-web2/server-client-common/battleship-game';
+import { BattleshipGameMap, BattleshipGameShip, BattleshipGameTurnType, BattleshipGameTurn, BattleshipMapCreate, BattleshipApplyMove, BattleshipMessageType, BattleshipGameMeta, BattleshipMetaType, BattleshipMessage, inflateMap, BattleshipMetaNotifyNewPlayer } from 'bt-web2/server-client-common/battleship-game';
 import {BattleshipShipType} from '../server-client-common/battleship-game';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { apiGet, apiPost } from 'bt-web2/set-up-ride/route';
 import ENV from 'bt-web2/config/environment';
+import { PORTS } from 'bt-web2/server-client-common/communication';
 
 export enum MapShowMode {
   HIDDEN='hidden',
   COLOR='color',
   FADE='fade',
   ONTOP='on-top',
-}
-
-export function inflateMap(create:BattleshipMapCreate):BattleshipGameMap {
-  
-  const fullShips:BattleshipGameShip[] = create.ships.map((rawShip:BattleshipGameShip) => {
-    return new BattleshipGameShip(rawShip.shipType, rawShip.ixTopLeftCol, rawShip.ixTopLeftRow, rawShip.isVertical, rawShip.nGrid);
-  });
-  const game = new BattleshipGameMap(create.mapId, create.nGrid, fullShips);
-  return game;
 }
 
 export default class Battleship extends Controller.extend({
@@ -36,23 +28,37 @@ export default class Battleship extends Controller.extend({
 
   yourShowMode: MapShowMode.COLOR,
   theirShowMode: MapShowMode.COLOR,
+  otherGames: <string[]>[],
 
   ws: <WebSocket|null>null,
 
-  applyMoveRemote(key:"yourGame"|"theirGame", game:BattleshipGameMap, move:BattleshipGameTurn) {
+  applyMoveRemote(key:"yourGame"|"theirGame", yourMapId:string, game:BattleshipGameMap, move:BattleshipGameTurn) {
     // tell the server about this
     const applyMove:BattleshipApplyMove = {
-      mapId: game.getMapId(),
+      shotByMapId: yourMapId,
+      targetMapId: game.getMapId(),
       move,
     }
     return apiPost('battleship-apply-move', applyMove).then((newMap:BattleshipMapCreate) => {
       this.set(key, inflateMap(newMap));
     })
-  }
+  },
+
+  _refreshWaiting() {
+    return apiGet('battleship-waiting-players').then((waitingPlayers:string[]) => {
+
+      waitingPlayers = waitingPlayers.filter((player) => player !== this.get('yourMap').getMapId());
+      console.log("updating other games: ", waitingPlayers);
+      this.set('otherGames', waitingPlayers);
+    })
+  },
 
   actions: {
     onChangeResistance(pct:number) {
       this.devices.setResistanceMode(pct);
+    },
+    refreshWaiting() {
+      return this._refreshWaiting();
     },
     onNeedHighlight(ixCol:number, ixRow:number) {
       this.set('ixColHighlight', ixCol);
@@ -63,13 +69,16 @@ export default class Battleship extends Controller.extend({
         type:action,
         params,
       }
+      console.log("they have selected action parameters", action, params);
+      if(params.ixCol === 1 && params.ixRow === 0) {
+        debugger;
+      }
 
-      console.log("setting resistance mode");
 
       switch(action) {
         case BattleshipGameTurnType.MOVE:
           this.yourGame.applyMove(compiledTurn);
-          this.applyMoveRemove("yourGame", this.yourGame, compiledTurn);
+          this.applyMoveRemote("yourGame", this.yourGame.getMapId(), this.yourGame, compiledTurn);
           break;
         case BattleshipGameTurnType.PASS:
           // ...coward
@@ -79,13 +88,13 @@ export default class Battleship extends Controller.extend({
             this.set('ixColHighlight', -1);
             this.set('ixRowHighlight', -1);
             this.theirGame.applyMove(compiledTurn);
-            this.applyMoveRemove("theirGame", this.theirGame, compiledTurn);
+            this.applyMoveRemote("theirGame", this.yourGame.getMapId(), this.theirGame, compiledTurn);
           }
           break;
         case BattleshipGameTurnType.RADAR:
           if(this.theirGame) {
             this.theirGame.applyMove(compiledTurn);
-            this.applyMoveRemove("theirGame", this.theirGame, compiledTurn);
+            this.applyMoveRemote("theirGame", this.yourGame.getMapId(), this.theirGame, compiledTurn);
           }
           break;
       }
@@ -109,33 +118,77 @@ export default class Battleship extends Controller.extend({
     }
   },
 
+
+}) {
+  // normal class body definition here
+
   _connectWebsocket():Promise<any> {
     // we need to connect our websocket so we can get real time hits to our own map
     if(this.ws && this.ws.readyState === WebSocket.OPEN) {
       return Promise.resolve(this.ws);
     } else {
       return new Promise((resolve) => {
-        let targetHost = 'localhost';
-        let url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
-        this.ws = new WebSocket(url);
+        const targetHost = ENV.gameServerHost;
+        let url = ENV.environment === 'production' ? `wss://${targetHost}:${PORTS.BATTLESHIP_WEBSOCKET_PORT}` : `ws://${targetHost}:${PORTS.BATTLESHIP_WEBSOCKET_PORT}`;
+        let ws = new WebSocket(url);
+        this.ws = ws;
+        
+        const myMapId = this.get('yourGame').getMapId();
+
         this.ws.onopen = (ev:MessageEvent) => {
           // yay we're connected!
+          const identify:BattleshipMessage = {
+            type:BattleshipMessageType.Meta,
+            payload:<BattleshipGameMeta>{
+              type:BattleshipMetaType.Identify,
+              payload: myMapId,
+            }
+          }
+          ws.send(JSON.stringify(identify));
           resolve();
         }
         this.ws.onmessage = (ev:MessageEvent) => {
-          debugger;
+          const data = ev.data;
+          let bm:BattleshipMessage|null = null;
+          try {
+            bm = JSON.parse(data);
+          } catch(e) {
+            bm = null;
+          }
+
+          if(bm) {
+            switch(bm.type) {
+              case BattleshipMessageType.Turn:
+                
+                const turn = <BattleshipApplyMove>bm.payload;
+                console.log("a move has arrived to be applied to our map: ", turn.targetMapId, turn.move);
+                assert2(turn.targetMapId === this.get('yourGame').getMapId());
+                this.get('yourGame').applyMove(turn.move);
+                this.incrementProperty('updateCounter');
+                break;
+              case BattleshipMessageType.Meta:
+                const meta = <BattleshipGameMeta>bm.payload;
+                switch(meta.type) {
+                  case BattleshipMetaType.NotifyNewPlayer:
+                    const notify = <BattleshipMetaNotifyNewPlayer>meta.payload;
+                    console.log("they told us about the arrival of ", notify.newMapId, ", making the list look like ", notify.waitingPlayersNow);
+                    const withoutMe = notify.waitingPlayersNow.filter((waitingPlayer) => waitingPlayer !== myMapId);
+                    this.set('otherGames', withoutMe);
+                    break;
+                }
+            }
+          }
         }
       })
 
     }
-  },
+  }
 
-}) {
-  // normal class body definition here
-
-  startup(yourGame:BattleshipGameMap, theirGame:BattleshipGameMap) {
+  startup(yourGame:BattleshipGameMap) {
     this.set('yourGame', yourGame);
     this.set('theirGame', null);
+
+    this._connectWebsocket();
   }
 }
 

@@ -3,8 +3,13 @@ import { User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
-import { BattleshipGameTurn } from "./battleship-game";
+import { BattleshipGameTurn, BattleshipApplyMove } from "./battleship-game";
 
+export enum PORTS {
+  TOURJS_WEBSOCKET_PORT = 8080,
+  GENERAL_HTTP_PORT = 8081,
+  BATTLESHIP_WEBSOCKET_PORT = 8082,
+}
 
 
 export enum BasicMessageType {
@@ -30,19 +35,6 @@ export interface C2SBasicMessage {
   payload:any; // check type, then cast to the appropriate message
 }
 
-export enum BattleshipMessageType {
-  Turn,
-  Meta,
-}
-
-export interface BattleshipMessage {
-  type:BattleshipMessageType;
-  gameId:string;
-  payload:BattleshipGameTurn|BattleshipGameMeta;
-}
-export interface BattleshipGameMeta {
-  
-}
 
 export interface S2CBasicMessage {
   timeStamp:number;

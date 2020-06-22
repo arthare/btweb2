@@ -66,11 +66,11 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
       words: "Misfire",
       mode: SelectableActionMode.TotalTss,
       minValue: 0,
-      maxValue: tssPerPercentFtp*100,
+      maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS,
       cls: 'misfire',
     }];
     
-    const stepPerRow = (130 - 100) / n;
+    const stepPerRow = (MAX_TSS_FOR_TURNPARAMS - MIN_TSS_FOR_TURNPARAMS) / n;
     for(var x = 0;x < n; x++) {
       const ixRow = n - x - 1
       const char = '' + (ixRow+1);
@@ -78,8 +78,8 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
         assign: {ixRow},
         words: char,
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*(100 + stepPerRow*x),
-        maxValue: tssPerPercentFtp*(100 + stepPerRow*(x+1)),
+        minValue: tssPerPercentFtp*(MIN_TSS_FOR_TURNPARAMS + stepPerRow*x),
+        maxValue: tssPerPercentFtp*(MIN_TSS_FOR_TURNPARAMS + stepPerRow*(x+1)),
         cls: 'row-' + char,
       })
     }
@@ -102,11 +102,11 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
       words: "Misfire",
       mode: SelectableActionMode.TotalTss,
       minValue: 0,
-      maxValue: tssPerPercentFtp*100,
+      maxValue: tssPerPercentFtp*MIN_TSS_FOR_TURNPARAMS,
       cls: 'misfire',
     }];
     
-    const stepPerCol = (130 - 100) / n;
+    const stepPerCol = (MAX_TSS_FOR_TURNPARAMS - MIN_TSS_FOR_TURNPARAMS) / n;
 
     for(var x = 0;x < n; x++) {
       const char = String.fromCharCode('A'.charCodeAt(0) + x);
@@ -114,8 +114,8 @@ export default class BattleshipMoveSelectorBikeShoot extends Component.extend({
         assign: {ixCol: x},
         words: char,
         mode: SelectableActionMode.TotalTss,
-        minValue: tssPerPercentFtp*(100 + stepPerCol*x),
-        maxValue: tssPerPercentFtp*(100 + stepPerCol*(x+1)),
+        minValue: tssPerPercentFtp*(MIN_TSS_FOR_TURNPARAMS + stepPerCol*x),
+        maxValue: tssPerPercentFtp*(MIN_TSS_FOR_TURNPARAMS + stepPerCol*(x+1)),
         cls: 'col-' + char,
       })
     }

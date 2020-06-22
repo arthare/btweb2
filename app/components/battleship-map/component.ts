@@ -22,10 +22,12 @@ class BattleshipGameDisplay {
   constructor(game:BattleshipGameMap, hidden:boolean) {
     this.game = game;
     this.rows = [];
-    this.update(hidden);
+    this.update(this.game, hidden);
   }
 
-  update(hidden:boolean) {
+  update(game:BattleshipGameMap, hidden:boolean) {
+    this.game = game;
+
     this.rows = this.game.grid.map((gridRow, ixRow) => {
       const cols = gridRow.map((gridRowCell:BattleshipGameSquare, ixCol) => {
 
@@ -71,11 +73,13 @@ export default class BattleshipMap extends Component.extend({
 
   wide: '',
   hidden: true,
+  mapId: '',
 
   onPickSquare:<any>null,
 
   updater: Ember.observer('updateCounter', 'ixColHighlight', 'ixRowHighlight', function(this:BattleshipMap) {
-    this.gameDisplay.update(this.get('hidden'));
+    console.log("update counter changed.  updating ", this.get('updateCounter'), this.get('game').getMapId());
+    this.gameDisplay.update(this.get('game'), this.get('hidden'));
     this.set('rows', this.gameDisplay.rows);
   }),
 
@@ -91,6 +95,7 @@ export default class BattleshipMap extends Component.extend({
   didInsertElement() {
     assert2(this.get('game'));
 
+    this.set('mapId', this.get('game').getMapId());
     this.set('gameDisplay', new BattleshipGameDisplay(this.get('game'), this.get('hidden')));
     this.updater();
 

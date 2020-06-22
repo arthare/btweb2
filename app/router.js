@@ -14,10 +14,16 @@ const Router = EmberRouter.extend({
     this.on('routeDidChange', (transition) => {
       console.log("transition = ", transition);
 
-      if(transition.from && transition.from.name === 'ride') {
-        console.log("they jumped away from the ride screen.  We probably need to disconnect");
-        console.log("connections = ", this.get('connection'));
-        this.get('connection').disconnect();
+      if(transition.from) {
+        switch(transition.from.name) {
+          case 'ride':
+          case 'battleship':
+            console.log("they jumped away from the ride screen.  We probably need to disconnect");
+            console.log("connections = ", this.get('connection'));
+            this.get('connection').disconnect();
+            break;
+        }
+        
       }
     })
   }

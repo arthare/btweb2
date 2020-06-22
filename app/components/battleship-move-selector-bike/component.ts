@@ -24,9 +24,11 @@ export interface SelectableAction {
   cls:string;
 }
 
+// how much time do they get to get their green line in the right spot?
+export const warmup_offset = 2500;
 const defaultTempoMs = 20000;
 
-export const MIN_FTP_AVG_FOR_TURNS = 0.05;
+export const MIN_FTP_AVG_FOR_TURNS = 0.3;
 export const MAX_FTP_AVG_FOR_TURNS = 0.7;
 export const MIN_TSS_FOR_TURNPARAMS = 90;
 export const MAX_TSS_FOR_TURNPARAMS = 125;
@@ -77,7 +79,7 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
       this.onChangeMapHighlights(MapShowMode.COLOR, MapShowMode.COLOR);
       const tmNow = new Date().getTime();
       this.onChangeResistance(0.3);
-      this.set('tmNextEvaluation', tmNow + this.get('tempoPeriodMs'));
+      this.set('tmNextEvaluation', tmNow + this.get('tempoPeriodMs') + warmup_offset);
     } else {
       this.onChangeResistance(0.55);
       switch(this.get('pendingTurnType')) {
@@ -117,7 +119,7 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
   },
 
   _selectNewTurn() {
-    this.set('tmNextEvaluation', new Date().getTime() + this.get('tempoPeriodMs'));
+    this.set('tmNextEvaluation', new Date().getTime() + this.get('tempoPeriodMs') + warmup_offset);
     this.set('phase', DisplayPhase.SelectAction);
 
   },
@@ -148,6 +150,7 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
 
     onSelectShoot(ixCol:number, ixRow:number) {
       // we're ready to shoot!
+      console.log("they selected to shoot at col/row ", ixCol, ixRow);
       assert2(this.get('pendingTurnType') === BattleshipGameTurnType.SHOOT);
       const params:BattleshipGameParamsShoot = {
         ixRow,
@@ -156,6 +159,8 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
       const game:BattleshipGameMap = this.get('theirGame');
       if(isFinite(ixRow) && isFinite(ixCol) && ixRow >= 0 && ixRow < game.nGrid && ixCol >= 0 && ixCol < game.nGrid) {
         this.onSelectActionParameter(this.get('pendingTurnType'), params);
+      } else {
+        console.log("but that was not permitted");
       }
       this._selectNewTurn();
     },
@@ -172,8 +177,18 @@ export default class BattleshipMoveSelectorMouse extends Component.extend({
       console.log("move-selector onSelectRadar");
       assert2(this.pendingTurnType === BattleshipGameTurnType.RADAR);
       
+      const count = action.assign.count;
+      const squares = [];
+      for(var x = 0;x < count; x++) {
+        const spot:BattleshipGameParamsShoot = {
+          ixCol: Math.floor(Math.random() * this.yourGame.nGrid),
+          ixRow: Math.floor(Math.random() * this.yourGame.nGrid),
+        }
+        squares.push(spot);
+      }
+
       const params:BattleshipGameParamsRadar = {
-        count: action.assign.count,
+        squares,
         stealth: false,
       }
       this.onSelectActionParameter(this.get('pendingTurnType'), params);

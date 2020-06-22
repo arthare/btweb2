@@ -1,6 +1,6 @@
 import Component from '@ember/component';
 import Ember from 'ember';
-import { SelectableAction, SelectableActionMode } from '../battleship-move-selector-bike/component';
+import { SelectableAction, SelectableActionMode, warmup_offset } from '../battleship-move-selector-bike/component';
 import Devices, { PowerTimerAverage } from 'bt-web2/services/devices';
 import { User } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
@@ -10,6 +10,7 @@ interface EarnedAction {
   pct: number; // 0..1 for where in the action you earned it.  0 being "just barely picked this action" to 1 being "just about picked the next one"
 }
 
+
 export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service('devices'),
@@ -18,6 +19,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   name: '',
 
   resultEvaluated: false,
+  starting: false,
 
   actionsList: <SelectableAction[]><unknown>null,
 
@@ -29,8 +31,9 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   nextTimeObserver: Ember.observer('tmNextEvaluation', function(this:BattleshipMoveSelectorBikeCursor) {
     console.log(this.actionsList, " evaluating start time");
     this.set('resultEvaluated', false);
-    this.set('tmStartEvaluation', new Date().getTime());
-    this.devices.startPowerTimer(this.get('name'));
+    this.set('tmStartEvaluation', new Date().getTime() + 2500);
+    this.set('starting', true);
+    this.devices.stopPowerTimer(this.get('name'));
   }),
 
   actions: {
@@ -106,9 +109,20 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 
   _updateDisplay() {
     const tmNow = new Date().getTime();
-    const offset = tmNow - this.get('tmStartEvaluation');
+    const tmStartEvaluation = this.get('tmStartEvaluation');
+    const avg = this.devices.getPowerCounterAverage(this.get('name'));
 
-    const span:number = this.get('tmNextEvaluation') - this.get('tmStartEvaluation');
+    if(tmNow > tmStartEvaluation && avg.powerAvg === 0 && !this.get('starting')) {
+      // this is the first cycle we've been past
+      this.devices.startPowerTimer(this.get('name'));
+    }
+    this.set('starting', tmNow < tmStartEvaluation);
+
+
+
+    const offset = Math.max(0, tmNow - tmStartEvaluation);
+
+    const span:number = this.get('tmNextEvaluation') - tmStartEvaluation;
     const pct = offset / span;
     const pctcss = (pct*100).toFixed(1) + '%';
 
@@ -149,14 +163,15 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
           instantIndicator.style.left = (100*earnedActionInstant.pct).toFixed(1) + '%';
         }
       }
+
       {
-        const avg = this.devices.getPowerCounterAverage(this.get('name'));
+        // only show the average indicator once we're past the "ready your aim" section
         const earnedActionAverage:EarnedAction = this._findEarnedAction(avg, 
                                                        secondsOfCycle,
                                                        user, 
                                                        this.actionsList);
 
-
+        console.log("current average: ", avg);
         if(this.onPendingSelection) {
           this.onPendingSelection(earnedActionAverage.action);
         }
@@ -164,7 +179,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
         const averageIndicator:HTMLDivElement|null = this.element.querySelector(`.battleship-move-selector-bike-cursor__average.${earnedActionAverage.action.cls}`);
       
         allAverageIndicators.forEach((avg) => {
-          if(!avg.classList.contains(earnedActionAverage.action.cls)) {
+          if(!avg.classList.contains(earnedActionAverage.action.cls) || this.get('starting')) {
             avg.classList.remove('shown');
           } else {
             avg.classList.add('shown');
@@ -202,11 +217,11 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 
   didInsertElement() {
     assert2(this.get('name'));
+    this.devices.stopPowerTimer(this.get('name'));
 
     console.log("setting up " + this.get('name'));
     this.set('resultEvaluated', false);
-    this.set('tmStartEvaluation', new Date().getTime());
-    this.devices.startPowerTimer(this.get('name'));
+    this.set('tmStartEvaluation', new Date().getTime() + warmup_offset);
     this.set('intervalHandle', setInterval(() => {
       this._updateDisplay();
     }, 250));

@@ -30,12 +30,6 @@ export default class Application extends Route.extend({
         imageBase64:image,
       })
 
-      if(params && params.to) {
-        if(params.to.name === 'index') {
-          // we've got a name, but they can't really go to the index route
-          return this.transitionTo('set-up-ride');
-        }
-      }
 
     } else if(params.to.name === 'strava-auth') {
       // I'm going to allow this

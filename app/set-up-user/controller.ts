@@ -10,7 +10,7 @@ export default class UserSetUp extends Controller.extend({
   actions: {
     onAddedUser(user:UserSetupParameters) {
       this.devices.addUser(user);
-      this.transitionToRoute('set-up-ride');
+      this.transitionToRoute('index');
     }
   }
 }) {

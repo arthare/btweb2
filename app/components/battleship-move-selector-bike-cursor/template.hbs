@@ -1,6 +1,13 @@
 <h4>{{name}}</h4>
 <div class="battleship-move-selector-bike-cursor__actions">
   <div class="battleship-move-selector-bike-cursor__progress"></div>
+  {{#if starting}}
+    <div class="battleship-move-selector-bike-cursor__prepare">
+      {{#vertical-align}}
+        Prepare your aim...
+      {{/vertical-align}}
+    </div>
+  {{/if}}
   {{#each actionsList as |actionType|}}
     <div class="battleship-move-selector-bike-cursor__action {{actionType.cls}}" {{action 'forceSelection' actionType}}>
       <div class="battleship-move-selector-bike-cursor__instant {{actionType.cls}}"></div>

@@ -1,9 +1,8 @@
 import Route from '@ember/routing/route';
-import { BattleshipGameShip, BattleshipShipType, BattleshipGameMap, BattleshipMapCreate, BattleshipMapCreateResponse } from 'bt-web2/server-client-common/battleship-game';
-import { apiPost } from 'bt-web2/set-up-ride/route';
+import { BattleshipGameShip, BattleshipShipType, BattleshipGameMap, BattleshipMapCreate, BattleshipMapCreateResponse, inflateMap, BATTLESHIP_DEFAULT_GRIDSIZE } from 'bt-web2/server-client-common/battleship-game';
+import { apiPost, apiGet } from 'bt-web2/set-up-ride/route';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
-import { inflateMap } from './controller';
 
 export default class Battleship extends Route.extend({
   // anything which *must* be merged to prototype here
@@ -19,7 +18,7 @@ export default class Battleship extends Route.extend({
       BattleshipShipType.PATROL,
       BattleshipShipType.SUB,
     ]
-    const nGrid = 15;
+    const nGrid = BATTLESHIP_DEFAULT_GRIDSIZE;
     const yourShips:BattleshipGameShip[] = [];
     shipTypesNeeded.forEach((typ) => {
 
@@ -51,19 +50,27 @@ export default class Battleship extends Route.extend({
         mapId: `${user.getName()} @ ${user.getHandicap().toFixed(0)}W`,
       }
   
-      return apiPost('create-battleship-map', mapCreate);
+      return apiPost('create-battleship-map', mapCreate).then((mapCreateResponse:BattleshipMapCreateResponse) => {
+        // we also need to do an initial lookup for the other maps available to shoot at
+        return apiGet('battleship-waiting-players').then((waitingPlayers) => {
+          return {
+            mapCreate: mapCreateResponse,
+            waitingPlayers,
+          }
+        })
+      })
     } else {
       return Promise.reject("You need to set a user up first");
     }
 
   }
 
-  setupController(controller:any, model:BattleshipMapCreateResponse) {
+  setupController(controller:any, model:{mapCreate:BattleshipMapCreateResponse, waitingPlayers:string[]}) {
     
     // the model will be the response from create-battleship-map
-    const yourGame = inflateMap(model.create);
+    const yourGame = inflateMap(model.mapCreate.create);
     controller.startup(yourGame);
     controller.set('otherGames', model.waitingPlayers);
-    controller.set('yourGameId', model.mapId);
+    controller.set('yourGameId', model.mapCreate.mapId);
   }
 }

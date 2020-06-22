@@ -128,6 +128,9 @@ export default class Devices extends Service.extend({
   startPowerTimer(name:string) {
     this._powerCounters.set(name, new PowerTimer(new Date().getTime()));
   }
+  stopPowerTimer(name:string) {
+    this._powerCounters.delete(name);
+  }
 
   setLocalUserDevice(device:ConnectedDeviceInterface) {
     const user = this.getLocalUser();
