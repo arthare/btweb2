@@ -55,7 +55,8 @@ export default class Battleship extends Controller.extend({
 
   actions: {
     onChangeResistance(pct:number) {
-      this.devices.setResistanceMode(pct);
+
+      this.set('targetedResistance', pct);
     },
     refreshWaiting() {
       return this._refreshWaiting();
@@ -189,6 +190,22 @@ export default class Battleship extends Controller.extend({
     this.set('theirGame', null);
 
     this._connectWebsocket();
+
+    let tmLast = new Date().getTime();
+
+    const doATick = () => {
+      if(this.isDestroyed) {
+        return;
+      }
+      const tmNow = new Date().getTime();
+      this.devices.tick(tmNow, (tmNow - tmLast) / 1000);
+
+      const targetedResistance = this.get('targetedResistance');
+      this.devices.setResistanceMode(targetedResistance);
+
+      setTimeout(doATick, 250);
+    }
+    setTimeout(doATick, 250);
   }
 }
 
