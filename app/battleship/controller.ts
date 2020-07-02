@@ -32,6 +32,8 @@ export default class Battleship extends Controller.extend({
 
   ws: <WebSocket|null>null,
 
+  targetedResistance: 0.35,
+
   applyMoveRemote(key:"yourGame"|"theirGame", yourMapId:string, game:BattleshipGameMap, move:BattleshipGameTurn) {
     // tell the server about this
     const applyMove:BattleshipApplyMove = {
@@ -201,7 +203,9 @@ export default class Battleship extends Controller.extend({
       this.devices.tick(tmNow, (tmNow - tmLast) / 1000);
 
       const targetedResistance = this.get('targetedResistance');
-      this.devices.setResistanceMode(targetedResistance);
+      if(targetedResistance) {
+        this.devices.setResistanceMode(targetedResistance);
+      }
 
       setTimeout(doATick, 250);
     }
