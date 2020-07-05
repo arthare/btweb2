@@ -15,6 +15,7 @@ export interface CadenceRecipient {
 }
 export interface HrmRecipient {
   notifyHrm(tmNow:number, hrm:number):void;
+  getLastHrm(tmNow:number):number;
 }
 export interface SlopeSource {
   getLastSlopeInWholePercent():number;
@@ -50,7 +51,6 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   protected _slopeSource:SlopeSource|null = null;
   private _userWantsToKeep:boolean = true;
 
-  abstract getDeviceTypeDescription():string;
   disconnect():Promise<void> {
     this._userWantsToKeep = false;
     return Promise.resolve();
@@ -58,6 +58,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   userWantsToKeep():boolean {
     return this._userWantsToKeep;
   }
+  abstract getDeviceTypeDescription():string;
   abstract getDeviceId():string;
   abstract getState():BTDeviceState;
   abstract name():string;
@@ -83,15 +84,20 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
     });
   }
   protected _notifyNewCadence(tmNow:number, cadence:number) :void {
-    this._cadenceOutput.forEach((pwr) => {
-      pwr.notifyCadence(tmNow, cadence);
+    this._cadenceOutput.forEach((cad) => {
+      cad.notifyCadence(tmNow, cadence);
+    });
+  }
+  protected _notifyNewHrm(tmNow:number, newHrm:number):void {
+    this._hrmOutput.forEach((hrm) => {
+      hrm.notifyHrm(tmNow, newHrm);
     });
   }
 
 }
 
 
-abstract class BluetoothDeviceShared extends PowerDataDistributor {
+export abstract class BluetoothDeviceShared extends PowerDataDistributor {
   protected _gattDevice:BluetoothRemoteGATTServer;
   protected _state:BTDeviceState;
 

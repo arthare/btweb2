@@ -8,6 +8,8 @@ export class DecorationState {
   private _map:RideMapElevationOnly;
   private _lastRight:number = 0;
 
+  private _images:{[key:string]:HTMLImageElement} = {};
+
   constructor(map:RideMapElevationOnly, factory:DecorationFactory) {
     this._decorations = new Map<Layer, Decoration[]>();
     
@@ -16,7 +18,29 @@ export class DecorationState {
     })
     this._factory = factory;
     this._map = map;
+
+    const imageNames:{[key:string]:string} = {
+      "heart": "/assets/heart.png",
+    }
+    for(var key in imageNames) {
+      const el = document.createElement('img');
+      el.onload = () => {
+        this._images[key] = el;
+      }
+      el.onerror = () => {
+        debugger;
+      }
+      el.src = imageNames[key];
+    }
   }
+
+  public getImage(key:string):HTMLImageElement|null {
+    if(this._images[key]) {
+      return this._images[key];
+    }
+    return null;
+  }
+
   public tick(dt:number, windowLeft:number, windowRight:number) {
     this._decorations.forEach((decorations) => {
       decorations.forEach((dec) => {

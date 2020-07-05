@@ -60,12 +60,14 @@ export default class TestHacks extends Controller.extend({
       if(!this.isDestroyed) {
         const tmNow = new Date().getTime();
         userProvider.getUsers(tmNow).forEach((user, index) => {
-          if(user.getUserType() & UserTypeFlags.Local) {
+          //if(user.getUserType() & UserTypeFlags.Local) 
+          {
             // this is a local guy.  we'll send fake power if there's not a device connected
             if(this.devices.devices.length > 0) {
               // there's already a device for this guy
             } else {
-              user.notifyPower(tmNow, Math.random()*50 + 200 + index*2);
+              user.notifyHrm(tmNow, Math.random() + 170 + index*5);
+              user.notifyPower(tmNow, Math.random()*50 + 100 + index*2);
             }
           }
         })

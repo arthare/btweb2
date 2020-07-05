@@ -23,6 +23,7 @@ export interface UserDisplay {
   secondsDelta?:string;
   handicap:string;
   user:User;
+  hrm: string;
 }
 
 class UserDataRecorder implements CadenceRecipient, HrmRecipient {
@@ -31,6 +32,9 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
   private _id:number = -1; // assigned by the server.  Positive when set
   private _tmFinish:number = -1;
   private _tmLastPacket:number = -1;
+
+  private _lastHrm = 0;
+  private _tmLastHrm = 0;
 
   isPowerValid(tmNow:number):boolean {
     return tmNow - this._tmLastPower < 5000;
@@ -44,9 +48,16 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
 
   }
   public notifyHrm(tmNow:number, hrm:number):void {
-
+    this._tmLastHrm = tmNow;
+    this._lastHrm = hrm;
   }
 
+  public getLastHrm(tmNow:number):number {
+    if(tmNow <= this._tmLastHrm + 5000) {
+      return this._lastHrm;
+    }
+    return 0;
+  }
   public getLastPower():number {
     return this._lastPower;
   }
@@ -123,12 +134,13 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._handicap = watts;
   }
 
-  getPositionUpdate():S2CPositionUpdateUser {
+  getPositionUpdate(tmNow:number):S2CPositionUpdateUser {
     return {
       id:this.getId(),
       distance:this.getDistance(),
       speed:this.getSpeed(),
       power:this.getLastPower(),
+      hrm:this.getLastHrm(tmNow),
     }
   }
   setDistance(dist:number) {
@@ -200,7 +212,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     let closestRider:User|null = null;
     let closestRiderDist:number = 1e30;
 
-    otherUsers.forEach((user) => {
+    otherUsers.forEach((user:User) => {
       const userAhead = user.getDistance() - this.getDistance();
       if(userAhead >= draftingClose && userAhead <= draftingFar) {
         if(!closestRider || userAhead < closestRiderDist) {
@@ -210,6 +222,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       }
     });
     if(closestRider) {
+      closestRider = <User>closestRider; // make typescript shut up
       // there was a draftable rider
       assert2(closestRiderDist >= draftingClose && closestRiderDist <= draftingFar);
       // if there's 10 guys clustered behind a single rider, they're not going to get
@@ -340,6 +353,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       classes.push("remote");
     }
 
+    const tmNow = new Date().getTime();
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
@@ -351,6 +365,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       lastWattsSaved: this.getLastWattsSaved().watts.toFixed(1) + 'W',
       handicap: this.getHandicap().toFixed(0) + 'W',
       user: this,
+      hrm: this.getLastHrm(tmNow).toFixed(0) + "bpm",
     }
   }
 
@@ -385,7 +400,8 @@ export class User extends UserDataRecorder implements SlopeSource {
       // we're local, so we won't re-absorb the power from the server
     } else {
       // we're a remote or AI user, so we should try to be as similar to the server as possible
-      this.notifyPower(new Date().getTime(), update.power);
+      this.notifyPower(tmNow, update.power);
+      this.notifyHrm(tmNow, update.hrm);
     }
     this.notePacket(tmNow);
   }

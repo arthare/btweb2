@@ -53,6 +53,7 @@ export interface S2CPositionUpdateUser {
   distance:number;
   speed:number;
   power:number;
+  hrm:number;
 }
 export interface S2CPositionUpdate {
   clients: S2CPositionUpdateUser[];
@@ -195,10 +196,17 @@ export class ClientToServerUpdate {
     this.userId = localGuy.getId();
     assert2(this.userId >= 0, "We can't really tell the server about our user unless we know his id...");
     this.lastPower = localGuy.getLastPower();
+
+    const hrm = localGuy.getLastHrm(new Date().getTime());
+    
+    if(hrm > 0) {
+      this.lastHrm = hrm;
+    }
   }
   gameId:string;
   userId:number;
   lastPower:number;
+  lastHrm?:number;
 }
 
 export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:number, elevations:number[]) {

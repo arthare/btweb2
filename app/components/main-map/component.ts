@@ -24,6 +24,7 @@ class DisplayUser {
   public image:HTMLImageElement[]|null = null;
   public loadingImage:boolean = false;
   public crankPosition:number = 0;
+  public heartPosition:number = 0;
 }
 
 class PaintFrameState {
@@ -77,9 +78,20 @@ function doPaintFrameStateUpdates(tmNow:number, dtSeconds:number, raceState:Race
 
     const rpm = Math.random()*20 + 80;
     const rps = rpm/60;
-    paintUser.crankPosition += rps*dtSeconds*5;
+    paintUser.crankPosition += rps*dtSeconds;
     while(paintUser.crankPosition >= 1.0) {
       paintUser.crankPosition -= 1.0;
+    }
+
+    const bpm = user.getLastHrm(tmNow);
+    const bps = bpm / 60;
+    paintUser.heartPosition += bps*dtSeconds;
+    while(paintUser.heartPosition >= 1.0) {
+      paintUser.heartPosition -= 1.0;
+    }
+    
+    if(user.getUserType() & UserTypeFlags.Local) {
+      console.log("heartpos ", paintUser.heartPosition, bpm, bps, dtSeconds);
     }
 
     if(!paintUser.image && user.getImage()) {
@@ -261,10 +273,13 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       }
     }
     
+    const heartImage = decorationState.getImage("heart");
     { // actually doing the user draw
       const before = ctx.getTransform();
       const slope = map.getSlopeAtDistance(user.getDistance());
       const angleDegrees = -Math.atan(slope);
+
+
       ctx.translate(dist-sz / 2,elev + sz/2);
       ctx.rotate(-angleDegrees);
       ctx.scale(1,-1);
@@ -289,7 +304,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       }
 
       // ok let's draw a name
-      if(nameToDraw) {
+      if(displayUser && nameToDraw) {
         const before2 = ctx.getTransform();
         ctx.font = `${sz}px Arial`;
 
@@ -314,8 +329,25 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
         ctx.lineWidth = 0.3;
         ctx.translate(0 + xShift, -sz/2 + yShift);
         ctx.rotate(-Math.PI/3);
+        
+        if(heartImage && user.getLastHrm(tmNow) > 0 && localUser && localUser?.getLastHrm(tmNow) > 0) {
+          // the local user has a HRM, so they get to see other user's BPM data
+          //ctx.fillRect(0, -sz, sz,sz);
+          assert2(displayUser?.heartPosition >= 0 && displayUser?.heartPosition <= 1);
+
+          const heartBeatPosition = Math.sqrt(1 - Math.pow(2*displayUser.heartPosition - 1,2));
+          const heartSpan = 1.5;
+          const heartMod = (1-heartSpan/2) + heartBeatPosition*heartSpan;
+          const finalHeartSz = heartMod * sz; 
+          ctx.drawImage(heartImage, -finalHeartSz/2 + sz/2, -sz/2 - finalHeartSz/2, finalHeartSz, finalHeartSz)
+          ctx.translate(sz*1.25,0);
+        }
+
         ctx.strokeText(nameToDraw, 0, 0);
         ctx.fillText(nameToDraw, 0, 0);
+
+        
+
         ctx.setTransform(before2);
       }
 
@@ -465,8 +497,10 @@ export default class MainMap extends Component.extend({
 
         const tmNow = new Date().getTime();
         raceState.tick(tmNow);
-        if(frame % 5 == 0) {
-          doPaintFrameStateUpdates(tmNow, dt, raceState, paintState);
+
+        const frameMod = 1;
+        if(frame % frameMod == 0) {
+          doPaintFrameStateUpdates(tmNow, dt*frameMod, raceState, paintState);
         }
         paintCanvasFrame(canvas, raceState, time, decorationState, dt, paintState);
 

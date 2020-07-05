@@ -186,7 +186,7 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
  
   // stage one: always send the central player's position
   const ret:S2CPositionUpdate = {
-    clients: [centralUser.getPositionUpdate()],
+    clients: [centralUser.getPositionUpdate(tmNow)],
   };
   setPicked.add(centralUser.getId());
 
@@ -199,7 +199,7 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
   });
   assert2(sortedByDistance[0].getId() === centralUser.getId() || sortedByDistance[0].getDistance() === centralUser.getDistance()); // the central user is closest to themselves...
   for(var x = 1;x < nClosest && x < sortedByDistance.length; x++) {
-    ret.clients.push(sortedByDistance[x].getPositionUpdate());
+    ret.clients.push(sortedByDistance[x].getPositionUpdate(tmNow));
     setPicked.add(sortedByDistance[x].getId());
   }
 
@@ -214,7 +214,7 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
     } else {
       setPicked.add(u.getId());
     }
-    ret.clients.push(u.getPositionUpdate());
+    ret.clients.push(u.getPositionUpdate(tmNow));
   }
   return ret;
 }
@@ -394,6 +394,9 @@ wss.on('connection', (wsConnection) => {
         const user = game.getUser(payload.userId);
         if(user) {
           user.notifyPower(tmNow, payload.lastPower);
+          if(payload.lastHrm) {
+            user.notifyHrm(tmNow, payload.lastHrm);
+          }
           user.notePacket(tmNow);
         } else {
           throw new Error("How are we hearing about a user that has never registered?");

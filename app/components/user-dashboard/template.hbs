@@ -13,6 +13,12 @@
         <span class="user-dashboard__label"><i class="fas fa-mountain"></i></span>
         <span class="user-dashboard__value">{{userDisplay.slope}}</span>
       </div>
+      {{#if userDisplay.hrm}}
+        <div class="user-dashboard__group">
+          <span class="user-dashboard__label"><i class="fa fa-heart" aria-hidden="true"></i></span>
+          <span class="user-dashboard__value">{{userDisplay.hrm}}</span>
+        </div>
+      {{/if}}
     </div>
   </div>
 {{/if}}

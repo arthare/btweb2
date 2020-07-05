@@ -1,6 +1,6 @@
 import Controller from '@ember/controller';
 import Ember from 'ember';
-import Devices from 'bt-web2/services/devices';
+import Devices, { DeviceFlags } from 'bt-web2/services/devices';
 import { getDeviceFactory } from 'bt-web2/pojs/DeviceFactory';
 import { ConnectedDeviceInterface, PowerDataDistributor, BTDeviceState } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserDisplay } from 'bt-web2/server-client-common/User';
@@ -19,6 +19,7 @@ export class FakeDevice extends PowerDataDistributor {
         this._notifyNewPower(new Date().getTime(), Math.random()*2 + this.nextPower - 1);
       } else {
         this._notifyNewPower(new Date().getTime(), Math.random()*50 + 100);
+        this._notifyNewHrm(new Date().getTime(), Math.random() * 5 + 50);
       }
     }, 250);
   }
@@ -58,6 +59,7 @@ export default class Application extends Controller.extend({
   canDoBluetooth: false,
   frame: 0,
   showCheater: false,
+  hasPlugins: false,
   
   observeGoodUpdates: Ember.observer('devices.goodUpdates', function(this:Application) {
     const deviceWrite = document.querySelector('.application__device-write');
@@ -73,19 +75,29 @@ export default class Application extends Controller.extend({
     connectDevice() {
       const canDoBluetooth = this.get('canDoBluetooth');
       if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
-
         const device = g_fakeDevice = new FakeDevice();
-        this.devices.setLocalUserDevice(device);
+        this.devices.setLocalUserDevice(device, DeviceFlags.All);
       } else {
         getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
-          this.devices.setLocalUserDevice(device);
+          this.devices.setLocalUserDevice(device, DeviceFlags.AllButHrm);
         });
       }
     },
+    connectHrm() {
+      const canDoBluetooth = this.get('canDoBluetooth');
+      if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
+        const device = g_fakeDevice = new FakeDevice();
+        this.devices.setLocalUserDevice(device, DeviceFlags.Hrm);
+      } else {
+        getDeviceFactory().findHrm().then((device:ConnectedDeviceInterface) => {
+          this.devices.setLocalUserDevice(device, DeviceFlags.Hrm);
+        });
+      }
 
+    },
     connectPlugin() {
       getDeviceFactory().findPowermeter(true).then((device:ConnectedDeviceInterface) => {
-        this.devices.setLocalUserDevice(device);
+        this.devices.setLocalUserDevice(device, DeviceFlags.AllButHrm);
       })
     }
   }
@@ -117,7 +129,7 @@ export default class Application extends Controller.extend({
   start() {
 
     if(window.location.hostname === 'localhost') {
-      this.set('showCheater', true);
+      this.set('showCheater', false);
 
       Ember.run.later('afterRender', () => {
         const cheater:HTMLDivElement|null = document.querySelector('.application__user-status--cheater');

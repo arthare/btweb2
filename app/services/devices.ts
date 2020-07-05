@@ -47,6 +47,16 @@ class PowerTimer {
   }
 }
 
+export enum DeviceFlags {
+  PowerOnly = 0x1,
+  Trainer =   0x2,
+  Cadence =   0x4,
+  Hrm =       0x8,
+
+  AllButHrm = 0x7,
+  All =       0xf,
+}
+
 export default class Devices extends Service.extend({
   // anything which *must* be merged to prototype here
 }) implements UserProvider {
@@ -132,18 +142,31 @@ export default class Devices extends Service.extend({
     this._powerCounters.delete(name);
   }
 
-  setLocalUserDevice(device:ConnectedDeviceInterface) {
+  setLocalUserDevice(device:ConnectedDeviceInterface, deviceFlags:number) {
     const user = this.getLocalUser();
     if(!user) {
       throw new Error("You can't set a device for a local user that doesn't exist");
     }
-    device.setCadenceRecipient(user);
-    device.setPowerRecipient((tmNow:number, power:number) => {
-      user.notifyPower(tmNow, power);
-      this._updatePowerCounters(tmNow, power);
-    });
-    device.setHrmRecipient(user);
-    device.setSlopeSource(user);
+
+    if(deviceFlags & DeviceFlags.Cadence) {
+      device.setCadenceRecipient(user);
+    }
+    if(deviceFlags & DeviceFlags.Hrm) {
+      device.setHrmRecipient(user);
+    }
+    if(deviceFlags & DeviceFlags.PowerOnly || deviceFlags & DeviceFlags.Trainer) {
+      device.setPowerRecipient((tmNow:number, power:number) => {
+        user.notifyPower(tmNow, power);
+        this._updatePowerCounters(tmNow, power);
+      });
+    }
+    if(deviceFlags && DeviceFlags.Hrm) {
+      device.setHrmRecipient(user);
+    }
+    if(deviceFlags & DeviceFlags.Trainer) {
+      device.setSlopeSource(user);
+    }
+    
     this._internalTick(new Date().getTime());
 
     // get rid of all the old devices

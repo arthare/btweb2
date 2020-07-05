@@ -5,6 +5,7 @@ interface IWorkoutSample {
   tm:number;
   distance:number;
   speedMetersPerSec:number;
+  hrm:number;
 }
 
 class WorkoutSample implements IWorkoutSample {
@@ -13,11 +14,13 @@ class WorkoutSample implements IWorkoutSample {
     this.power = user.getLastPower();
     this.distance = user.getDistance();
     this.speedMetersPerSec = user.getSpeed();
+    this.hrm = user.getLastHrm(tmNow);
   }
   power:number;
   tm:number;
   distance:number;
   speedMetersPerSec:number;
+  hrm:number;
 }
 
 export class WorkoutFileSaver {
@@ -77,8 +80,15 @@ export function samplesToPWX(name:string, user:User, deviceName:string, samples:
   samples.forEach((sample) => {
     if(sample.distance >= lastSample.distance) {
       const timeSeconds = (sample.tm - firstSample.tm)/1000;
+
+      let hrLine = '';
+      if(sample.hrm > 0) {
+        hrLine = `<hr>${sample.hrm.toFixed(0)}</hr>`
+      }
+
       lines.push(`<sample>
                       <timeoffset>${timeSeconds.toFixed(0)}</timeoffset>
+                      ${hrLine}
                       <spd>${sample.speedMetersPerSec.toFixed(3)}</spd>
                       <pwr>${sample.power.toFixed(0)}</pwr>
                       <dist>${sample.distance.toFixed(0)}</dist>

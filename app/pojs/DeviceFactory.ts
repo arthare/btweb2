@@ -1,10 +1,11 @@
-import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice } from "./WebBluetoothDevice";
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice, BluetoothDeviceShared } from "./WebBluetoothDevice";
 import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect } from "./DeviceUtils";
 import { FakeDevice } from "bt-web2/application/controller";
 import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate, PluginMode } from "bt-web2/server-client-common/PluginCommunication";
 
 export interface DeviceFactory {
     findPowermeter(byPlugin?:boolean):Promise<ConnectedDeviceInterface>;
+    findHrm():Promise<ConnectedDeviceInterface>;
 }
 
 export class TestPowermeter extends PowerDataDistributor {
@@ -76,6 +77,9 @@ class PluginDevice extends PowerDataDistributor {
       return Promise.resolve();
     }
   }
+  updateResistance(tmNow: number, pct: number): Promise<boolean> {
+    // nothing to do!
+  }
 
   getDeviceTypeDescription(): string {
     return this._descriptor.humanName;
@@ -90,22 +94,22 @@ class PluginDevice extends PowerDataDistributor {
   name(): string {
     return this._descriptor.humanName;
   }
-  updateSlope(tmNow: number): void {
+  updateSlope(tmNow: number): Promise<boolean> {
     // we're not currently capable of this
     if(this._sendingSlope) {
-      return; // let's not queue up a bunch of slope-sends
+      return Promise.resolve(false); // let's not queue up a bunch of slope-sends
     }
     if(!this._descriptor.supportsSmartTrainer) {
       // we don't support a smart trainer!
-      return;
+      return Promise.resolve(false);
     }
     if(!this._slopeSource) {
       // we don't have a slope source!
-      return;
+      return Promise.resolve(false);
     }
     if(this._queryTimeout === null) {
       // we've been shut down/disconnected
-      return;
+      return Promise.resolve(false);
     }
 
     this._sendingSlope = true;
@@ -131,6 +135,50 @@ class PluginDevice extends PowerDataDistributor {
     })
   }
 
+}
+
+class BluetoothHrmDevice extends BluetoothDeviceShared {
+
+  constructor(gattDevice:BluetoothRemoteGATTServer) {
+    super(gattDevice);
+    
+    this._startupPromise = this._startupPromise.then(() => {
+      // need to start up property monitoring for ftms
+
+      const fnHrmData = (evt:any) => { this._decodeHrmData(evt.target.value)};
+      return monitorCharacteristic(gattDevice, 'heart_rate', 'heart_rate_measurement', fnHrmData);
+    })
+  }
+  _decodeHrmData(dataView:DataView) {
+    const tmNow = new Date().getTime();
+    const flags = dataView.getUint8(0);
+    let hr = 0;
+    if((flags & 1) === 0) {
+      // this is a uint8 hrm
+      hr = dataView.getUint8(1);
+    } else {
+      // this is a uint16 hrm
+      hr = dataView.getUint16(1, true);
+    }
+
+    this._notifyNewHrm(tmNow, hr);
+  }
+
+
+  public hasPower(): boolean { return false;}
+  public hasCadence(): boolean { return false;}
+  public hasHrm(): boolean {return true;}
+  
+  public getDeviceTypeDescription():string {
+    return "Bluetooth HRM";
+  }
+
+  public updateSlope(tmNow:number):Promise<boolean> {
+    return Promise.resolve(false);
+  }
+  public updateResistance(tmNow:number, pct:number):Promise<boolean> {
+    return Promise.resolve(false);
+  }
 }
 
 class TestDeviceFactory implements DeviceFactory {
@@ -198,6 +246,31 @@ class TestDeviceFactory implements DeviceFactory {
         });
       }
 
+    }
+    findHrm(): Promise<ConnectedDeviceInterface> {
+      const filters = {
+        filters: [
+          {services: ['heart_rate']},
+        ]
+      }
+      return navigator.bluetooth.requestDevice(filters).then((device) => {
+        if(device.gatt) {
+          return device.gatt.connect();
+        } else {
+          throw new Error("No device gatt?");
+        }
+      }).then((gattServer) => {
+        deviceUtilsNotifyConnect();
+        return gattServer.getPrimaryServices().then((services) => {
+          const hrm = getHrm(services);
+
+          if(hrm) {
+            return new BluetoothHrmDevice(gattServer);
+          } else {
+            throw new Error("We don't recognize what kind of device this is");
+          }
+        })
+      });
     }
 }
 
