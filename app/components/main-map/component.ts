@@ -90,9 +90,6 @@ function doPaintFrameStateUpdates(tmNow:number, dtSeconds:number, raceState:Race
       paintUser.heartPosition -= 1.0;
     }
     
-    if(user.getUserType() & UserTypeFlags.Local) {
-      console.log("heartpos ", paintUser.heartPosition, bpm, bps, dtSeconds);
-    }
 
     if(!paintUser.image && user.getImage()) {
       anyUsersNeedLoading = true;

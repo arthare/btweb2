@@ -171,16 +171,25 @@ export default class Devices extends Service.extend({
 
     // get rid of all the old devices
     this.devices = this.devices.filter((oldDevice) => {
+      const oldDeviceRemainingDeviceFlags = oldDevice.getDeviceFlags() & (~deviceFlags);
       if(oldDevice.getDeviceId() !== device.getDeviceId()) {
-        console.log("disconnecting " + oldDevice.name() + " because new device is a physically separate device");
-        oldDevice.disconnect();
-        return false;
+
+        // ok, this is a physically separate device.  But is it providing a different purpose?
+        if(oldDeviceRemainingDeviceFlags !== 0) {
+          oldDevice.setDeviceFlags(oldDeviceRemainingDeviceFlags);
+          return true;
+        } else {
+          console.log("disconnecting " + oldDevice.name() + " because new device is a physically separate device");
+          oldDevice.disconnect();
+          return false;
+        }
       } else {
         // exact same device.  don't send a physical disconnect because that'll kill the new device too.  but we don't want this device around anymore either
         return false;
       }
     })
 
+    device.setDeviceFlags(deviceFlags);
     this.devices.push(device);
   }
 

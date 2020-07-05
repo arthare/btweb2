@@ -29,6 +29,8 @@ export interface ConnectedDeviceInterface {
   getState():BTDeviceState;
   name():string;
   getDeviceTypeDescription():string;
+  getDeviceFlags():number;
+  setDeviceFlags(flags:number); // tell the device what it's currently getting used for
 
   setPowerRecipient(who:FnPowerReceipient):void;
   setCadenceRecipient(who:CadenceRecipient):void;
@@ -50,7 +52,14 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   private _hrmOutput:HrmRecipient[] = [];
   protected _slopeSource:SlopeSource|null = null;
   private _userWantsToKeep:boolean = true;
+  private _deviceFlags:number = 0;
 
+  getDeviceFlags():number {
+    return this._deviceFlags;
+  }
+  setDeviceFlags(flags:number) {
+    this._deviceFlags = flags;
+  }
   disconnect():Promise<void> {
     this._userWantsToKeep = false;
     return Promise.resolve();

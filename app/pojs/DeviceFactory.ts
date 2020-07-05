@@ -1,5 +1,5 @@
 import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice, BluetoothDeviceShared } from "./WebBluetoothDevice";
-import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect } from "./DeviceUtils";
+import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect, getHrm } from "./DeviceUtils";
 import { FakeDevice } from "bt-web2/application/controller";
 import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate, PluginMode } from "bt-web2/server-client-common/PluginCommunication";
 
@@ -161,6 +161,7 @@ class BluetoothHrmDevice extends BluetoothDeviceShared {
       hr = dataView.getUint16(1, true);
     }
 
+    console.log("hrm = ", hr, " bpm");
     this._notifyNewHrm(tmNow, hr);
   }
 
