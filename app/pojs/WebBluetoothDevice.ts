@@ -435,6 +435,7 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
 
     this._tmLastSlopeUpdate = tmNow;
 
+    console.log("kickr updating slope to ", pct);
     const charOut = new DataView(new ArrayBuffer(3));
     charOut.setUint8(0, 0x40);
 

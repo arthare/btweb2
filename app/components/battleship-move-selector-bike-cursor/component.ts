@@ -146,6 +146,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
           totalTimeSeconds: 1,
           joules: lastPower,
         }
+        console.log("lastPower was ", lastPower);
         const earnedActionInstant:EarnedAction = this._findEarnedAction(avg,
            secondsOfCycle,
            user, 
@@ -171,7 +172,6 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
                                                        user, 
                                                        this.actionsList);
 
-        console.log("current average: ", avg);
         if(this.onPendingSelection) {
           this.onPendingSelection(earnedActionAverage.action);
         }
