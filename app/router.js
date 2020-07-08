@@ -37,6 +37,7 @@ Router.map(function() {
   this.route('test-hacks');
   this.route('strava-auth');
   this.route('battleship');
+  this.route('hrm-control');
 });
 
 export default Router;

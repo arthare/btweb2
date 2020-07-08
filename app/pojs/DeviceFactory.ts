@@ -1,4 +1,4 @@
-import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, PowerRecipient, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice, BluetoothDeviceShared } from "./WebBluetoothDevice";
+import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice, BluetoothDeviceShared } from "./WebBluetoothDevice";
 import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect, getHrm } from "./DeviceUtils";
 import { FakeDevice } from "bt-web2/application/controller";
 import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate, PluginMode } from "bt-web2/server-client-common/PluginCommunication";
@@ -42,8 +42,17 @@ export class TestPowermeter extends PowerDataDistributor {
     hasHrm(): boolean {
         return false;
     }
-    updateSlope(tmNow:number): void {
-      return;
+    updateSlope(tmNow:number): Promise<boolean> {
+      return Promise.resolve(false);
+    }
+    updateErg(tmNow: number, watts:number): Promise<boolean> {
+      return Promise.resolve(false);
+    }
+    getDeviceId(): string {
+      throw new Error("Method not implemented.");
+    }
+    updateResistance(tmNow: number, pct: number): Promise<boolean> {
+      throw new Error("Method not implemented.");
     }
 }
 
@@ -79,6 +88,7 @@ class PluginDevice extends PowerDataDistributor {
   }
   updateResistance(tmNow: number, pct: number): Promise<boolean> {
     // nothing to do!
+    return Promise.resolve(false);
   }
 
   getDeviceTypeDescription(): string {
@@ -93,6 +103,9 @@ class PluginDevice extends PowerDataDistributor {
   }
   name(): string {
     return this._descriptor.humanName;
+  }
+  updateErg(tmNow: number, watts:number): Promise<boolean> {
+    return Promise.resolve(false);
   }
   updateSlope(tmNow: number): Promise<boolean> {
     // we're not currently capable of this
@@ -133,6 +146,8 @@ class PluginDevice extends PowerDataDistributor {
     }).finally(() => {
       this._sendingSlope = false;
     })
+
+    return Promise.resolve(true);
   }
 
 }
@@ -174,6 +189,9 @@ class BluetoothHrmDevice extends BluetoothDeviceShared {
     return "Bluetooth HRM";
   }
 
+  public updateErg(tmNow: number, watts:number): Promise<boolean> {
+    return Promise.resolve(false);
+  }
   public updateSlope(tmNow:number):Promise<boolean> {
     return Promise.resolve(false);
   }

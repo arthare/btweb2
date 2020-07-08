@@ -35,6 +35,9 @@ export class FakeDevice extends PowerDataDistributor {
   updateSlope(tmNow: number): Promise<boolean> {
     return Promise.resolve(false);
   }
+  updateErg(tmNow: number, watts: number): Promise<boolean> {
+    return Promise.resolve(false);
+  }
   updateResistance(tmNow: number): Promise<boolean> {
     return Promise.resolve(false);
   }

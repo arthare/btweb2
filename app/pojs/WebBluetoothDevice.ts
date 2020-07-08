@@ -30,7 +30,7 @@ export interface ConnectedDeviceInterface {
   name():string;
   getDeviceTypeDescription():string;
   getDeviceFlags():number;
-  setDeviceFlags(flags:number); // tell the device what it's currently getting used for
+  setDeviceFlags(flags:number):void; // tell the device what it's currently getting used for
 
   setPowerRecipient(who:FnPowerReceipient):void;
   setCadenceRecipient(who:CadenceRecipient):void;
@@ -42,7 +42,7 @@ export interface ConnectedDeviceInterface {
   // resolve(false) -> device not updated for rate-limiting reasons or other benign issues
   // reject -> device not updated because something is messed up
   updateSlope(tmNow:number):Promise<boolean>; 
-
+  updateErg(tmNow:number, watts:number):Promise<boolean>;
   updateResistance(tmNow:number, pct:number):Promise<boolean>;
 }
 
@@ -71,6 +71,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   abstract getDeviceId():string;
   abstract getState():BTDeviceState;
   abstract name():string;
+  abstract updateErg(tmNow:number, watts:number):Promise<boolean>;
   abstract updateSlope(tmNow:number):Promise<boolean>;
   abstract updateResistance(tmNow:number, pct:number):Promise<boolean>;
 
@@ -168,6 +169,27 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     return "FTMS Smart Trainer";
   }
 
+  _tmLastErgUpdate:number = 0;
+  public updateErg(tmNow: number, watts:number): Promise<boolean> {
+    const dtMs = tmNow - this._tmLastErgUpdate;
+    if(dtMs < 500) {
+      return Promise.resolve(false); // don't update the ftms device too often
+    }
+    this._tmLastErgUpdate = tmNow;
+
+    console.log("updating FTMS device with erg " + watts.toFixed(0) + 'W');
+    
+    const charOut = new DataView(new ArrayBuffer(20));
+    charOut.setUint8(0, 5); // setTargetPower
+    charOut.setInt16(1, watts, true);
+
+    return writeToCharacteristic(this._gattDevice, 'fitness_machine', 'fitness_machine_control_point', charOut).then(() => {
+      console.log("sent FTMS command to " + this._gattDevice.device.name);
+      return true;
+    }).catch((failure) => {
+      throw failure;
+    });
+  }
   _tmLastSlopeUpdate:number = 0;
   updateSlope(tmNow:number):Promise<boolean> {
 
@@ -326,6 +348,9 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
     // powermeters don't have slope adjustment, dummy!
     return Promise.resolve(false);
   }
+  public updateErg(tmNow: number, watts:number): Promise<boolean> {
+    return Promise.resolve(false);
+  }
   getDeviceTypeDescription():string {
     return "Bluetooth Powermeter";
   }
@@ -434,6 +459,22 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
       throw failure;
     });
 
+  }
+
+  _tmLastErgUpdate = 0;
+  updateErg(tmNow:number, watts:number):Promise<boolean> {
+    
+    const dtMs = tmNow - this._tmLastErgUpdate;
+    if(dtMs < 500) {
+      return Promise.resolve(false); // don't update the ftms device too often
+    }
+
+    const charOut = new DataView(new ArrayBuffer(3));
+    charOut.setUint8(0, 0x42); // setTargetPower
+    charOut.setUint16(1, watts, true); // setTargetPower
+
+    console.log("writing ", charOut.buffer, " to kickr");
+    return writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut);
   }
   updateResistance(tmNow:number, pct:number):Promise<boolean> {
 

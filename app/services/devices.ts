@@ -239,6 +239,24 @@ export default class Devices extends Service.extend({
     });
   }
 
+  setErgMode(watts:number) {
+    this.devices = this.devices.filter((device:ConnectedDeviceInterface) => {
+      return device.userWantsToKeep();
+    });
+    const tmNow = new Date().getTime();
+    this.devices.forEach((device) => {
+      console.log("setting erg mode for ", device);
+      device.updateErg(tmNow, watts).then((good:boolean) => {
+        if(good) {
+          this.incrementProperty('goodUpdates');
+        } else {
+          // benign "failure", such as the device doing rate-limiting or just doesn't support slope changes
+        }
+      }, (failure) => {
+        this.incrementProperty('badUpdates');
+      });
+    })
+  }
   setResistanceMode(pct:number) {
     assert2(pct >= 0 && pct <= 1, "resistance fractions should be between 0 and 1");
     this.devices = this.devices.filter((device:ConnectedDeviceInterface) => {
