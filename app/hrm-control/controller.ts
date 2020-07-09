@@ -2,22 +2,32 @@ import Controller from '@ember/controller';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { computed } from '@ember/object';
+import { User } from 'bt-web2/server-client-common/User';
 
 export default class HrmControl extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
 
   lastBpm: 0,
-  targetErg: 150,
+  targetHandicap: 75,
   targetBpm: 150,
 
 
   actions: {
-    up() {
+    upTarget() {
       this.incrementProperty('targetBpm');
     },
-    down() {
+    downTarget() {
       this.decrementProperty('targetBpm');
+    },
+    upErg() {
+      this.incrementProperty('targetHandicap');
+    },
+    downErg() {
+      this.decrementProperty('targetHandicap');
+    },
+    downloadFile() {
+      this.devices.dumpPwx(new Date().getTime());
     }
   }
 }) {
@@ -31,7 +41,9 @@ export default class HrmControl extends Controller.extend({
 
       const tmNow = new Date().getTime();
       const dt = (tmNow - tmLast) / 1000;
+      tmLast = tmNow;
       this._tick(tmNow, dt);
+      this.devices.tick(tmNow, false);
 
       if(!this.isDestroyed) {
         setTimeout(doTick, 500);
@@ -44,30 +56,39 @@ export default class HrmControl extends Controller.extend({
   _tick(tmNow:number, dt:number) {
     const user = this.devices.getLocalUser();
     const targetBpm = this.get('targetBpm');
-    const targetErg = this.get('targetErg');
+    const targetHandicap = this.get('targetHandicap');
     if(user) {
       const lastBpm = user.getLastHrm(tmNow);
+      const lastWatts = user.getLastPower();
       this.set('lastBpm', lastBpm);
 
       console.log("tick");
-      if(lastBpm > 0) {
+      if(lastBpm > 0 && lastWatts > 0) {
         // ok, so we know their lastBpm (in lastBpm), and we know their targetBpm (in targetBpm).
         // we probably need to adjust targetErg up or down based on the delta
-        const wattsPerSecToAdjust = 0.1*(targetBpm - lastBpm);
+
+        const error = targetBpm - lastBpm;
+        let handicapsPerSecToAdjust = 0;
+        if(error > 0) {
+          // we're too low
+          handicapsPerSecToAdjust = 0.025*(targetBpm - lastBpm);
+        } else {
+          // we're too high
+          handicapsPerSecToAdjust = 0.05*(targetBpm - lastBpm);
+        }
   
-  
-        let newTargetErg = targetErg + wattsPerSecToAdjust*dt;
-        this._applyTargetErg(newTargetErg);
+        let newTargetHandicap = targetHandicap + handicapsPerSecToAdjust*dt;
+        this._applyTargetErg(user, newTargetHandicap);
       } else {
-        this._applyTargetErg(targetErg);
+        this._applyTargetErg(user, targetHandicap);
       }
     }
 
   }
 
-  _applyTargetErg(erg:number) {
-    this.devices.setErgMode(this.get('targetErg'));
-    this.set('targetErg', erg);
+  _applyTargetErg(user:User, handicap:number) {
+    this.devices.setErgMode(handicap * user.getHandicap() / 100);
+    this.set('targetHandicap', handicap);
   }
 
   
@@ -75,9 +96,9 @@ export default class HrmControl extends Controller.extend({
   get strLastBpm():string {
     return this.get('lastBpm').toFixed(0) + 'bpm';
   }
-  @computed("targetErg")
-  get strTargetErg():string {
-    return this.get('targetErg').toFixed(0) + 'W';
+  @computed("targetHandicap")
+  get strTargetHandicap():string {
+    return this.get('targetHandicap').toFixed(0) + '% of handicap';
   }
   @computed("targetBpm")
   get strTargetBpm():string {

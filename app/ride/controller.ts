@@ -104,7 +104,7 @@ export default class Ride extends Controller.extend({
         window.tick(tmNow);
       }
     }
-    this.devices.tick(tmNow);
+    this.devices.tick(tmNow, true);
 
 
 

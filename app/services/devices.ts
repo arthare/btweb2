@@ -314,8 +314,11 @@ export default class Devices extends Service.extend({
       }, 100);
     }
   }
-  tick(tmNow:number, dtSeconds:number) {
-    this.updateSlopes(tmNow);
+  tick(tmNow:number, needSlopes:boolean) {
+
+    if(needSlopes) {
+      this.updateSlopes(tmNow);
+    }
 
 
     if(this.workoutSaver) {

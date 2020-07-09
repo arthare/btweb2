@@ -1,5 +1,11 @@
 <h3>Welcome to HRM control mode?</h3>
 
-Current erg target: {{strTargetErg}}<br>
+<button class="hrm-control__button" {{action 'upErg'}}>Target % Up</button><br>
+<button class="hrm-control__button" {{action 'downErg'}}>Target % Down</button><br>
+Current erg target: {{strTargetHandicap}}<br>
 Current bpm: {{strLastBpm}}<br>
-Target bpm: {{strTargetBpm}} <button class="hrm-control__button" {{action 'up'}}>Up</button><button class="hrm-control__button" {{action 'down'}}>Down</button><br>
+Target bpm: {{strTargetBpm}} <br>
+<button class="hrm-control__button" {{action 'upTarget'}}>Target Bpm Up</button><br>
+<button class="hrm-control__button" {{action 'downTarget'}}>Target Bpm Down</button><br>
+<br><br>
+<button class="hrm-control__button" {{action 'downloadFile'}}>Download PWX</button>

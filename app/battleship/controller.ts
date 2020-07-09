@@ -200,7 +200,7 @@ export default class Battleship extends Controller.extend({
         return;
       }
       const tmNow = new Date().getTime();
-      this.devices.tick(tmNow, (tmNow - tmLast) / 1000);
+      this.devices.tick(tmNow, false);
 
       const targetedResistance = this.get('targetedResistance');
       if(targetedResistance) {

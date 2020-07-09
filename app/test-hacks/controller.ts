@@ -73,7 +73,7 @@ export default class TestHacks extends Controller.extend({
         })
 
         setTimeout(fnUpdatePowers, 200);
-        this.devices.tick(tmNow);
+        this.devices.tick(tmNow, true);
       }
     }
     setTimeout(fnUpdatePowers);
