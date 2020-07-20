@@ -1,0 +1,22 @@
+{
+  "effort100": {
+    "name": "Default",
+    "time": 1800,
+    "hsLeft": 1
+  },
+  "effort90": {
+    "name": "Default",
+    "time": 1800,
+    "hsLeft": 1
+  },
+  "effort80": {
+    "name": "Default",
+    "time": 1800,
+    "hsLeft": 1
+  },
+  "effort50": {
+    "name": "Default",
+    "time": 1800,
+    "hsLeft": 1
+  }
+}

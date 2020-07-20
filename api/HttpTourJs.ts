@@ -1,13 +1,14 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { ServerGame } from '../app/server-client-common/ServerGame';
-import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap } from '../app/server-client-common/communication';
+import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission } from '../app/server-client-common/communication';
 import { RaceState } from '../app/server-client-common/RaceState';
 import { ScheduleRacePostRequest } from '../app/server-client-common/ServerHttpObjects';
 import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
 import { RideMapElevationOnly, RideMapPartial } from '../app/server-client-common/RideMap';
 import { assert2 } from '../app/server-client-common/Utils';
 import { setCorsHeaders, postStartup } from './HttpUtils';
+import fs from 'fs';
 
 
 export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame>) {
@@ -50,6 +51,40 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.end();
   })
   
+  app.get('/pacing-challenge-records', (req:core.Request, res:core.Response) => {
+    setCorsHeaders(req, res);
+    try {
+      const currentRecords = JSON.parse(fs.readFileSync('./pacing-challenge-records.json', 'utf8'));
+      
+      res.writeHead(200, 'ok');
+      res.write(JSON.stringify(currentRecords));
+      res.end();
+    } catch(e) {
+      res.writeHead(404, 'ok');
+      res.write("");
+      res.end();
+    }
+  });
+
+  app.post('/pacing-challenge-result', (req:core.Request, res:core.Response) => {
+    return postStartup(req, res).then((postInput:PacingChallengeResultSubmission) => {
+      setCorsHeaders(req, res);
+
+      try {
+        const currentRecords = JSON.parse(fs.readFileSync('./pacing-challenge-records.json', 'utf8'));
+
+        const key = `effort${postInput.pct.toFixed(0)}`;
+        currentRecords[key] = postInput;
+        fs.writeFileSync('./pacing-challenge-records.json', JSON.stringify(currentRecords));
+
+      } catch(e) {
+        res.writeHead(500, 'ok');
+        res.write("");
+        res.end();
+      }
+    });
+  })
+
   app.post('/create-race', (req, res) => {
     return postStartup(req, res).then((postInput:ScheduleRacePostRequest) => {
       setCorsHeaders(req, res);

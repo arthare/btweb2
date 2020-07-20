@@ -7,6 +7,7 @@ ssh $SIGNIN "mkdir -p $APIHOSTDIR"
 scp -r dist/* $SIGNIN:$APIHOSTDIR
 scp pm2.json $SIGNIN:$APIHOSTDIR/pm2.json
 scp ssl-config.json $SIGNIN:$APIHOSTDIR/ssl-config.json
+scp pacing-challenge-records.json $SIGNIN:$APIHOSTDIR/pacing-challenge-records.json
 scp package.json $SIGNIN:$APIHOSTDIR/package.json
 ssh $SIGNIN "cd $APIHOSTDIR && npm install"
 ssh art@tourjs.ca "cd $APIHOSTDIR && pm2 restart pm2.json"

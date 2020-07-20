@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement } from 'bt-web2/server-client-common/User';
+import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { computed } from '@ember/object';
@@ -43,7 +43,7 @@ function compactUserList(users:User[]):CompactedUser[] {
         // just continuing a run of AIs
       } else {
         // finished a run of AIs
-        const compactedUser = new User("Gr. " + lastUser.getName(), 80, 300, lastUser.getUserType());
+        const compactedUser = new User("Gr. " + lastUser.getName(), DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER, lastUser.getUserType());
 
         const leadOfGroup = users[ixStartOfGroup];
         const isBeatingLocal = leadOfGroup.getDistance() > localUser.getDistance();
@@ -81,7 +81,7 @@ function compactUserList(users:User[]):CompactedUser[] {
 
   // if the last user was an AI, then they wouldn't have gotten inserted
   if(lastUser.getUserType() & UserTypeFlags.Ai) {
-    const compactedUser = new User("Gr. " + lastUser.getName(), 80, 300, lastUser.getUserType());
+    const compactedUser = new User("Gr. " + lastUser.getName(), DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER, lastUser.getUserType());
     const leadOfGroup = users[ixStartOfGroup];
     const isBeatingLocal = leadOfGroup.getDistance() > localUser.getDistance();
     const representativeRider = isBeatingLocal ? lastUser : leadOfGroup;

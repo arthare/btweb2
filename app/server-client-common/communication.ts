@@ -186,6 +186,13 @@ export class S2CNameUpdate {
   userHandicaps: number[];
 }
 
+export interface PacingChallengeResultSubmission {
+  pct:number;
+  "name": string;
+  "time": number;
+  "hsLeft": number;
+}
+
 export class ClientToServerUpdate {
   constructor(raceState:RaceState) {
     const localGuy = raceState.getLocalUser();

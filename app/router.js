@@ -38,6 +38,8 @@ Router.map(function() {
   this.route('strava-auth');
   this.route('battleship');
   this.route('hrm-control');
+  this.route('pacing-challenge');
+  this.route('pacing-challenge-race', {path:'/pacing-challenge-race/:pct'});
 });
 
 export default Router;

@@ -1,5 +1,5 @@
 import { RideMapPartial, MapBounds } from "./RideMap";
-import { User } from "./User";
+import { User, DEFAULT_HANDICAP_POWER } from "./User";
 import { ServerMapDescription } from "./communication";
 import { assert2 } from "./Utils";
 
@@ -78,7 +78,7 @@ export class RideMapHandicap extends RideMapPartial {
   }
   getPowerTransform(who: User): (power: number) => number {
     return (power:number) => {
-      return 300*(power / who.getHandicap());
+      return DEFAULT_HANDICAP_POWER*(power / who.getHandicap());
     }
   }
 

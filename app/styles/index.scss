@@ -19,8 +19,8 @@
   &__activity {
     height: 240px;
     border: 2px solid gray;
-    color: white;
     border-radius: 8px;
+    color: white;
     text-align: center;
     font-size: 36px;
     text-transform: uppercase;
@@ -42,13 +42,34 @@
       @include background-cover();
       background-image: url('race.jpg');
     }
+    &.hrm-control {
+      @include background-contain();
+      background-image: url('mech-heart.png');
+    }
     &.user {
       @include background-contain();
       background-image: url('gear.png');
       background-size: 60%;
     }
+    &.pacing-challenge {
+      @include background-cover();
+      background-image: url('stopwatch.jpg');
+    }
+    &.explanation {
+      text-transform: none;
+      padding: 8px;
+      font-size: 14px;
+
+      & p {
+        margin-bottom: 12px;
+      }
+    }
 
 
+    &--small {
+      font-size: 14px;
+      text-transform: none;
+    }
     &--text {
       background-color: rgba(0,0,0,0.5);
     }

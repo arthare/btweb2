@@ -3,19 +3,12 @@ import { USERSETUP_KEY_IMAGE, USERSETUP_KEY_NAME, USERSETUP_KEY_HANDICAP } from 
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 
-var noSleep:any = new NoSleep();
-
 export default class Application extends Route.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service('devices'),
 }) {
   // normal class body definition here
   beforeModel(params:any) {
-    document.addEventListener('click', function enableNoSleep() {
-      document.removeEventListener('click', enableNoSleep, false);
-      noSleep.enable();
-    }, false);
-
     console.log(params);
 
     const image = localStorage.getItem(USERSETUP_KEY_IMAGE) || null;

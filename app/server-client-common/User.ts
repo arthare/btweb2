@@ -4,6 +4,13 @@ import { assert2, formatDisplayDistance } from "./Utils";
 import { RaceState } from "./RaceState";
 import { S2CPositionUpdateUser, S2CPositionUpdate } from "./communication";
 
+export const DEFAULT_CRR = 0.0033;
+export const DEFAULT_GRAVITY = 9.81;
+export const DEFAULT_RHO = 1.225;
+export const DEFAULT_CDA = 0.25;
+export const DEFAULT_HANDICAP_POWER = 300;
+export const DEFAULT_RIDER_MASS = 80;
+
 export enum UserTypeFlags {
   Local = 1,
   Remote = 2,
@@ -119,6 +126,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _pendingDraftees:any = {};
   private _lastDraftees:any = {};
   private _tmDrafteeCycle:number = 0;
+  private _lastElevation:number = 0;
 
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
@@ -134,6 +142,9 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._handicap = watts;
   }
 
+  getLastElevation():number {
+    return this._lastElevation;
+  }
   getPositionUpdate(tmNow:number):S2CPositionUpdateUser {
     return {
       id:this.getId(),
@@ -188,6 +199,8 @@ export class User extends UserDataRecorder implements SlopeSource {
 
 
   physicsTick(tmNow:number, map:RideMap, otherUsers:User[]) {
+
+
     const t = tmNow / 1000.0;
     const dtSeconds = t - this._lastT;
     this._lastT = t;
@@ -199,11 +212,10 @@ export class User extends UserDataRecorder implements SlopeSource {
     const fnTransformPower = map.getPowerTransform(this);
     const transformedPower:number = fnTransformPower(this.getLastPower());
 
-
     const powerForce = transformedPower / Math.max(this._speed, 0.5);
 
-    const rho = 1.225;
-    const cda = 0.25;
+    const rho = DEFAULT_RHO;
+    const cda = DEFAULT_CDA;
     let aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
 
 
@@ -254,13 +266,13 @@ export class User extends UserDataRecorder implements SlopeSource {
 
     const sinSquared = Math.sin(theta)*Math.sin(theta);
     const cosSquared = Math.pow(Math.cos(theta)-1,2);
-    let slopeForce = -Math.sqrt(sinSquared+cosSquared)*this._massKg*9.81;
+    let slopeForce = -Math.sqrt(sinSquared+cosSquared)*this._massKg*DEFAULT_GRAVITY;
     if(slope < 0) {
       assert2(slopeForce <= 0);
       slopeForce = -slopeForce;
     }
     
-    const rollingForce = -0.0033 * this._massKg * 9.81;
+    const rollingForce = -DEFAULT_CRR * this._massKg * DEFAULT_GRAVITY;
 
     assert2(rollingForce <= 0);
     assert2(aeroForce <= 0);
@@ -275,6 +287,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     const mapLength = map.getLength();
     this._position += Math.min(map.getLength(), this._speed * dtSeconds);
     this._position = Math.min(map.getLength(), this._position);
+    this._lastElevation = map.getElevationAtDistance(this._position);
 
     const lastDistanceHistory = this._distanceHistory && this._distanceHistory[this._distanceHistory.length-1];
     if(!lastDistanceHistory || 

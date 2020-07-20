@@ -1,7 +1,7 @@
 import Service from '@ember/service';
 import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
-import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
 import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
 import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 import Ember from 'ember';
@@ -15,7 +15,7 @@ export interface PowerTimerAverage {
   joules:number,
 }
 
-class PowerTimer {
+export class PowerTimer {
   tmStart:number;
   tmLast:number;
   sumPower:number;
@@ -29,10 +29,11 @@ class PowerTimer {
   }
 
   notifyPower(tmNow:number, power:number) {
-    const dt = (tmNow - this.tmLast) / 1000;
+    const dt = Math.min(2, (tmNow - this.tmLast) / 1000);
     if(dt <= 0) {
       return;
     }
+    console.log("dt = ", dt);
     this.sumPower += power * dt;
     this.countPower += dt;
     this.tmLast = tmNow;
@@ -90,7 +91,7 @@ export default class Devices extends Service.extend({
 
   addRemoteUser(pos:S2CPositionUpdateUser, image:string|null) {
     const tmNow = new Date().getTime();
-    const newUser = new User("Unknown User " + pos.id, 80, 300, UserTypeFlags.Remote);
+    const newUser = new User("Unknown User " + pos.id, DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER, UserTypeFlags.Remote);
     if(image) {
       newUser.setImage(image);
     }
@@ -100,7 +101,7 @@ export default class Devices extends Service.extend({
     this.incrementProperty('ridersVersion');
   }
   addUser(user:UserSetupParameters) {
-    const newUser = new User(user.name, 80, user.handicap, UserTypeFlags.Local);
+    const newUser = new User(user.name, DEFAULT_RIDER_MASS, user.handicap, UserTypeFlags.Local);
 
     const alreadyHaveLocal = this.getLocalUser();
     if(alreadyHaveLocal) {

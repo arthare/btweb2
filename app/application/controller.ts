@@ -171,10 +171,16 @@ export default class Application extends Controller.extend({
     try {
       const raceState = this.connection.getRaceState();
       if(raceState) {
+        // don't display the user if we're racing
         return null;
       }
     } catch(e) {
     }
+
+    if(window.location.pathname.includes("pacing-challenge-race")) {
+      return null;
+    }
+
     if(user) {
       return user.getDisplay(null);
     }

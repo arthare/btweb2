@@ -1,4 +1,4 @@
-import { User, UserTypeFlags } from "./User";
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from "./User";
 import { UserProvider, RaceState } from "./RaceState";
 import { ClientConnectionRequest, CurrentRaceState } from "./communication";
 import { RideMap } from "./RideMap";
@@ -160,7 +160,7 @@ export class ServerUserProvider implements UserProvider {
     }
 
     let newId = userIdCounter++;
-    const user = new ServerUser(ccr.riderName, 80, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
+    const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
     if(ccr.imageBase64) {
       console.log("user ", ccr.riderName, " has an image!");
       user.setImage(ccr.imageBase64);
@@ -367,7 +367,7 @@ export class ServerGame {
       this.userProvider.getUsers(tmNow).forEach((user:User) => {
         if(user.getUserType() & UserTypeFlags.Ai) {
           const spread = 50;
-          const pct = user.getHandicap() / 300;
+          const pct = user.getHandicap() / DEFAULT_HANDICAP_POWER;
           let power = pct*user.getHandicap() + Math.random()*spread - spread/2;
   
           // let's see if this user has a brain...

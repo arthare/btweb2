@@ -2,7 +2,7 @@ import Component from '@ember/component';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { RideMap, RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
 import setupContextWithTheseCoords from 'bt-web2/pojs/setupContextWithTheseCoords';
-import { UserTypeFlags, User } from 'bt-web2/server-client-common/User';
+import { UserTypeFlags, User, DEFAULT_HANDICAP_POWER } from 'bt-web2/server-client-common/User';
 import { DecorationState } from './DecorationState';
 import { DecorationFactory, ThemeConfig, Layer } from './DecorationFactory';
 import Ember from 'ember';
@@ -361,7 +361,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           const myDist = user.getDistance();
           const deltaAhead = draftStats.fromDistance - myDist;
           const pct = draftStats.pctOfMax;
-          const wattsSaved = draftStats.watts * (user.getHandicap() / 300);
+          const wattsSaved = draftStats.watts * (user.getHandicap() / DEFAULT_HANDICAP_POWER);
   
           ctx.lineWidth = 0.8 * pct;
           ctx.strokeStyle = `rgba(255,255,255,${pct})`;

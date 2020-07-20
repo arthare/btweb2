@@ -1,11 +1,29 @@
-<h3>Welcome to HRM control mode?</h3>
-
-<button class="hrm-control__button" {{action 'upErg'}}>Target % Up</button><br>
-<button class="hrm-control__button" {{action 'downErg'}}>Target % Down</button><br>
-Current erg target: {{strTargetHandicap}}<br>
-Current bpm: {{strLastBpm}}<br>
-Target bpm: {{strTargetBpm}} <br>
-<button class="hrm-control__button" {{action 'upTarget'}}>Target Bpm Up</button><br>
-<button class="hrm-control__button" {{action 'downTarget'}}>Target Bpm Down</button><br>
-<br><br>
-<button class="hrm-control__button" {{action 'downloadFile'}}>Download PWX</button>
+<div class="hrm-control__super-container">
+  <div class="hrm-control__container">
+    <h1>HRM control mode</h1>
+    <div class="hrm-control__button-row">
+      <button class="hrm-control__button" {{action 'upErg'}}>% Up</button><br>
+      <button class="hrm-control__button" {{action 'downErg'}}>% Down</button><br>
+    </div>
+    <div class="hrm-control__data">
+      <div class="hrm-control__data-row">
+        <div class="hrm-control__data-key">Target %</div>
+        <div class="hrm-control__data-value">{{strTargetHandicap}}</div>
+      </div>
+      <div class="hrm-control__data-row">
+        <div class="hrm-control__data-key">Current bpm</div>
+        <div class="hrm-control__data-value">{{strLastBpm}}</div>
+      </div>
+      <div class="hrm-control__data-row">
+        <div class="hrm-control__data-key">Target bpm</div>
+        <div class="hrm-control__data-value">{{strTargetBpm}}</div>
+      </div>
+    </div>
+    <div class="hrm-control__button-row">
+      <button class="hrm-control__button" {{action 'upTarget'}}>Bpm Up</button><br>
+      <button class="hrm-control__button" {{action 'downTarget'}}>Bpm Down</button><br>
+    </div>
+    <br><br>
+    <button class="hrm-control__download" {{action 'downloadFile'}}>Download PWX</button>
+  </div>
+</div>

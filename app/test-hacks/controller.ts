@@ -1,25 +1,25 @@
 import Controller from '@ember/controller';
 import { PureCosineMap, IntoAHillMap } from 'bt-web2/server-client-common/RideMap';
 import { RaceState, UserProvider } from 'bt-web2/server-client-common/RaceState';
-import { User, UserTypeFlags } from 'bt-web2/server-client-common/User';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
 import { ServerMapDescription } from 'bt-web2/server-client-common/communication';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 import Devices from 'bt-web2/services/devices';
 import Ember from 'ember';
 
-class FakeUserProvider implements UserProvider {
+export class FakeUserProvider implements UserProvider {
   users: User[];
 
   constructor(localUserOverride?:User) {
     this.users = [
-      localUserOverride ? localUserOverride : new User("Local User", 80, 600, UserTypeFlags.Local),
-      new User("Human Remote", 80, 280, UserTypeFlags.Remote),
-      new User("Slow Fella", 80, 900, UserTypeFlags.Remote),
-      new User("Fast Fella", 80, 30, UserTypeFlags.Remote),
+      localUserOverride ? localUserOverride : new User("Local User", DEFAULT_RIDER_MASS, 600, UserTypeFlags.Local),
+      new User("Human Remote", DEFAULT_RIDER_MASS, 280, UserTypeFlags.Remote),
+      new User("Slow Fella", DEFAULT_RIDER_MASS, 900, UserTypeFlags.Remote),
+      new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
     ];
 
     for(var x = 1;x < 50; x++) {
-      const aiUser = new User(`AI Remote ${x}`, 80, 300 + x*30, UserTypeFlags.Ai | UserTypeFlags.Remote);
+      const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER + x*30, UserTypeFlags.Ai | UserTypeFlags.Remote);
       this.users.push(aiUser);
     }
     this.users.forEach((user, index) => {

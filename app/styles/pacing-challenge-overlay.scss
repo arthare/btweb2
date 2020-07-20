@@ -1,0 +1,12 @@
+.pacing-challenge-overlay {
+  &__container {
+    flex: 0 0 auto;
+    padding: 8px;
+    color: white;
+  }
+
+  &__data {
+    font-size: 24px;
+    text-shadow: 2px 2px 2px black;
+  }
+}

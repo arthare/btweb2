@@ -31,7 +31,8 @@
     {{#if localUser.hrm}}
       <i class="fas fa-heart"></i>{{localUser.hrm}} 
     {{/if}}
-    <a href='#' {{action 'connectDevice'}}>BLE</a> 
+    <a href='#' {{action 'connectDevice'}}>Power/Trainer</a> 
+    <a href='#' {{action 'connectHrm'}}>HRM</a> 
     {{#if hasPlugins}}
       <a href='#' {{action 'connectPlugin'}}>Plugin</a>
     {{/if}}
