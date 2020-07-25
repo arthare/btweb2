@@ -2,16 +2,15 @@
   {{tourjs-header}}
   <div class="index__activity explanation">
     {{#vertical-align class="index__activity--text"}}
-      <p>In Pacing Challenge mode, you are given a fixed amount of energy to complete the short course.  Pace yourself well to maximize your speed.</p>
-
+      <p>Pacing Challenge mode is identical to if someone put 1L of gas in your can and told you to drive a 25km course as fast as you can.  You need to spend the energy available to you, but spend it efficiently!.  The various modes (125%, 100%, etc) give you more or less fuel to spend.</p>
       <p>If you use too much energy, game over.</p>
-      <p>Tip: Powering up uphills and coasting downhills is wise.  But not too much...</p>
+      <p>Tip: Powering up uphills and coasting downhills is wise.</p>
     {{/vertical-align}}
   </div>
   <div class="index__activity 100" {{action 'start' 125}}>
     {{#vertical-align class="index__activity--text"}}
       <p>125% Effort</p>
-      <p class="index__activity--small">Current record: {{time-display model.effort100.time}} by {{model.effort100.name}}</p>
+      <p class="index__activity--small">Current record: {{time-display model.effort125.time}} by {{model.effort125.name}}</p>
     {{/vertical-align}}
   </div>
   <div class="index__activity 100" {{action 'start' 100}}>

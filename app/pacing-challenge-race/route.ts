@@ -16,7 +16,13 @@ export default class PacingChallengeRace extends Route.extend({
   beforeModel() {
     if(!this.devices.getLocalUser()) {
       alert("You can't do a pacing challenge without having set yourself up first!");
-      this.transitionTo('pacing-challenge');
+      return this.transitionTo('pacing-challenge');
+    }
+
+    const tmNow = new Date().getTime();
+    if(!this.devices.getLocalUser()?.isPowerValid(tmNow)) {
+      alert("You need a powermeter or trainer set up to play this game");
+      return this.transitionTo('pacing-challenge');
     }
   }
 

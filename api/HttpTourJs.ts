@@ -77,6 +77,9 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
         currentRecords[key] = postInput;
         fs.writeFileSync('./pacing-challenge-records.json', JSON.stringify(currentRecords));
 
+        res.writeHead(200, 'ok');
+        res.write(JSON.stringify(currentRecords));
+        res.end();
       } catch(e) {
         res.writeHead(500, 'ok');
         res.write("");

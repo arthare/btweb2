@@ -1,9 +1,20 @@
-<span class="pacing-challenge-overlay__label">Energy Left:</span> 
-<span class="pacing-challenge-overlay__data">{{powerData.powerRemaining}}</span>
-<br>
-<span class="pacing-challenge-overlay__label">Energy Left per km:</span> 
-<span class="pacing-challenge-overlay__data">{{powerData.powerRemainingPerKm}}</span>
-<br>
-<span class="pacing-challenge-overlay__label">Energy Used per km:</span> 
-<span class="pacing-challenge-overlay__data">{{powerData.powerUsedPerKm}}</span>
-<br>
+<div class="pacing-challenge-overlay__row header">
+  <span class="pacing-challenge-overlay__label header">Dashboard</span> 
+  <span class="pacing-challenge-overlay__data header">Amount</span>
+  <span class="pacing-challenge-overlay__data header">Per Km</span>
+</div>
+<div class="pacing-challenge-overlay__row">
+  <span class="pacing-challenge-overlay__label">Energy Left:</span> 
+  <span class="pacing-challenge-overlay__data">{{powerData.powerRemaining}}</span>
+  <span class="pacing-challenge-overlay__data">{{powerData.powerRemainingPerKm}}</span>
+</div>
+<div class="pacing-challenge-overlay__row">
+  <span class="pacing-challenge-overlay__label">Raw Left</span> 
+  <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemaining}}</span>
+  <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemainingPerKm}}</span>
+</div>
+<div class="pacing-challenge-overlay__row">
+  <span class="pacing-challenge-overlay__label">Used:</span> 
+  <span class="pacing-challenge-overlay__data">{{powerData.powerUsed}}</span>
+  <span class="pacing-challenge-overlay__data">{{powerData.powerUsedPerKm}}</span>
+</div>

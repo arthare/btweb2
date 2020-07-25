@@ -51,7 +51,7 @@ export class PacingChallengeUserProvider implements UserProvider {
     // generate a bunch of slow AIs so that the user has to overtake them and decide whether to stick around and draft or push harder
     // all the AIs will ride at 90% of the handicapped effort level, so they'll be easy to catch up to and not fast enough to be useful
     const n = 30;
-    const aiLead = 2000;
+    const aiLead = Math.min(mapLen / 2, 2000);
     for(var x = 1;x < n; x++) {
       const aiUser = new User(`AI ${n - x + 1}`, DEFAULT_RIDER_MASS, 100, UserTypeFlags.Ai | UserTypeFlags.Remote);
       aiUser.setDistance((x / n) * aiLead);
@@ -133,7 +133,9 @@ export default class PacingChallengeRace extends Controller.extend({
   }
 
   _tick() {
+    const tmNow = new Date().getTime();
     this.incrementProperty("ticks");
+    this.devices.tick(tmNow, false);
 
     
     const localUser = this.devices.getLocalUser();
@@ -148,10 +150,10 @@ export default class PacingChallengeRace extends Controller.extend({
     if(!raceState) {
       throw new Error("No racestate");
     }
-    const result = this.devices.getPowerCounterAverage("pacing-challenge");
+    const result = this.devices.getPowerCounterAverage(tmNow, "pacing-challenge");
     const hsUsed = result.joules / localUser.getHandicap();
 
-    if(localUser.getDistance() > map.getLength()) {
+    if(localUser.getDistance() >= map.getLength()) {
       
       
       alert(`You made it!\nIt took you ${result.totalTimeSeconds.toFixed(1)} seconds and you used ${hsUsed.toFixed(1)} energies.`);
@@ -162,8 +164,11 @@ export default class PacingChallengeRace extends Controller.extend({
       return apiPost('pacing-challenge-result', {
         "name": localUser.getName(),
         "time": result.totalTimeSeconds,
-        "hsLeft": hsLeft
+        "hsLeft": hsLeft.toFixed(1),
+        "pct": this.get('pctZeroTo100'),
       }).finally(() => {
+        raceState.stop();
+        this.devices.dumpPwx(new Date().getTime());
         this.transitionToRoute('pacing-challenge');
       });
 
@@ -172,6 +177,7 @@ export default class PacingChallengeRace extends Controller.extend({
     if(hsUsed > this.get('handicapSecondsAllowed')) {
       alert(`You failed!\nYou used ${hsUsed.toFixed(1)} energies before finishing the course.`);
       raceState.stop();
+      this.devices.dumpPwx(new Date().getTime());
 
       // we done here!
       return this.transitionToRoute('pacing-challenge');

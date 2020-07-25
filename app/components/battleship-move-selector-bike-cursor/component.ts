@@ -110,7 +110,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
   _updateDisplay() {
     const tmNow = new Date().getTime();
     const tmStartEvaluation = this.get('tmStartEvaluation');
-    const avg = this.devices.getPowerCounterAverage(this.get('name'));
+    const avg = this.devices.getPowerCounterAverage(tmNow, this.get('name'));
 
     if(tmNow > tmStartEvaluation && avg.powerAvg === 0 && !this.get('starting')) {
       // this is the first cycle we've been past
@@ -207,7 +207,8 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 
     // this function gets called when the rider has finished an interval and we need to figure out which one they earned!
 
-    const avg = this.devices.getPowerCounterAverage(this.get('name'));
+    const tmNow = new Date().getTime();
+    const avg = this.devices.getPowerCounterAverage(tmNow, this.get('name'));
     const findEarnedAction = this._findEarnedAction(avg,
                                                     (this.get('tmNextEvaluation') - this.get('tmStartEvaluation')) / 1000,
                                                     this.devices.getLocalUser(),

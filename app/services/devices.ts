@@ -39,11 +39,13 @@ export class PowerTimer {
     this.tmLast = tmNow;
   }
 
-  getAverage():PowerTimerAverage {
+  getAverage(tmNow:number):PowerTimerAverage {
+
+    const elapsedSeconds = this.countPower > 0 ? this.countPower : (tmNow - this.tmStart) / 1000;
     return {
-      powerAvg: this.countPower > 0 ? this.sumPower / this.countPower : 0,
+      powerAvg: this.countPower > 0 ? this.sumPower / elapsedSeconds : 0,
       joules: this.sumPower,
-      totalTimeSeconds: this.countPower,
+      totalTimeSeconds: elapsedSeconds,
     }
   }
 }
@@ -123,10 +125,10 @@ export default class Devices extends Service.extend({
     })
   }
 
-  getPowerCounterAverage(name:string):PowerTimerAverage {
+  getPowerCounterAverage(tmNow:number, name:string):PowerTimerAverage {
     const counter = this._powerCounters.get(name);
     if(counter) {
-      return counter.getAverage();
+      return counter.getAverage(tmNow);
     } else {
       return {
         powerAvg: 0,
