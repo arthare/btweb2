@@ -71,7 +71,16 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
         rg.sort((a, b) => {
           return (a.time < b.time) ? -1 : 1;
         })
-        rg = rg.slice(0, 10);
+
+        rg = rg.filter((element, index) => {
+
+          const theirName = req.query && req.query.name;
+          element.rank = index+1;
+          if(index < 10 || element.name === theirName) {
+            return true;
+          }
+          return false;
+        });
         currentRecords[key] = rg;
       }
 

@@ -12,7 +12,7 @@
       <p>125% Effort</p>
 
       {{#each model.effort125 as |result index|}}
-        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+        <p class="index__activity--small">{{result.rank}}: {{time-display result.time}} by {{result.name}}</p>
       {{/each}}
       
     {{/vertical-align}}
@@ -21,7 +21,7 @@
     {{#vertical-align class="index__activity--text"}}
       <p>100% Effort</p>
       {{#each model.effort100 as |result index|}}
-        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+        <p class="index__activity--small">{{result.rank}}: {{time-display result.time}} by {{result.name}}</p>
       {{/each}}
     {{/vertical-align}}
   </div>
@@ -29,7 +29,7 @@
     {{#vertical-align class="index__activity--text"}}
       90% Effort
       {{#each model.effort90 as |result index|}}
-        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+        <p class="index__activity--small">{{result.rank}}: {{time-display result.time}} by {{result.name}}</p>
       {{/each}}
     {{/vertical-align}}
   </div>
@@ -37,7 +37,7 @@
     {{#vertical-align class="index__activity--text"}}
       80% Effort
       {{#each model.effort80 as |result index|}}
-        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+        <p class="index__activity--small">{{result.rank}}: {{time-display result.time}} by {{result.name}}</p>
       {{/each}}
     {{/vertical-align}}
   </div>
@@ -45,7 +45,7 @@
     {{#vertical-align class="index__activity--text"}}
       50% Effort
       {{#each model.effort50 as |result index|}}
-        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+        <p class="index__activity--small">{{result.rank}}: {{time-display result.time}} by {{result.name}}</p>
       {{/each}}
     {{/vertical-align}}
   </div>

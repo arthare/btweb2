@@ -63,8 +63,8 @@ export default class PacingChallengeOverlay extends Component.extend({
 
     const kmLeft = Math.max(0.001, (mySettings.mapLen - user.getDistance()) / 1000);
 
-    const powerRemaining = (handicapSecondsLeft - climbingHandicapSecondsLeft + velocityHandicapSecondsLeft);
     const rawPowerRemaining = handicapSecondsLeft;
+    const powerRemaining = Math.min(rawPowerRemaining, (handicapSecondsLeft - climbingHandicapSecondsLeft + velocityHandicapSecondsLeft));
 
     return {
       powerRemaining: powerRemaining.toFixed(0),
