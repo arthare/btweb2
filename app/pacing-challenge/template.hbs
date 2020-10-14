@@ -10,31 +10,43 @@
   <div class="index__activity 100" {{action 'start' 125}}>
     {{#vertical-align class="index__activity--text"}}
       <p>125% Effort</p>
-      <p class="index__activity--small">Current record: {{time-display model.effort125.time}} by {{model.effort125.name}}</p>
+
+      {{#each model.effort125 as |result index|}}
+        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+      {{/each}}
+      
     {{/vertical-align}}
   </div>
   <div class="index__activity 100" {{action 'start' 100}}>
     {{#vertical-align class="index__activity--text"}}
       <p>100% Effort</p>
-      <p class="index__activity--small">Current record: {{time-display model.effort100.time}} by {{model.effort100.name}}</p>
+      {{#each model.effort100 as |result index|}}
+        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+      {{/each}}
     {{/vertical-align}}
   </div>
   <div class="index__activity 90" {{action 'start' 90}}>
     {{#vertical-align class="index__activity--text"}}
       90% Effort
-      <p class="index__activity--small">Current record: {{time-display model.effort90.time}} by {{model.effort90.name}}</p>
+      {{#each model.effort90 as |result index|}}
+        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+      {{/each}}
     {{/vertical-align}}
   </div>
   <div class="index__activity 80" {{action 'start' 80}}>
     {{#vertical-align class="index__activity--text"}}
       80% Effort
-      <p class="index__activity--small">Current record: {{time-display model.effort80.time}} by {{model.effort80.name}}</p>
+      {{#each model.effort80 as |result index|}}
+        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+      {{/each}}
     {{/vertical-align}}
   </div>
   <div class="index__activity 50" {{action 'start' 50}}>
     {{#vertical-align class="index__activity--text"}}
       50% Effort
-      <p class="index__activity--small">Current record: {{time-display model.effort50.time}} by {{model.effort50.name}}</p>
+      {{#each model.effort50 as |result index|}}
+        <p class="index__activity--small">{{add index 1}}: {{time-display result.time}} by {{result.name}}</p>
+      {{/each}}
     {{/vertical-align}}
   </div>
 </div>

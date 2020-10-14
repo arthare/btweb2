@@ -54,8 +54,27 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   app.get('/pacing-challenge-records', (req:core.Request, res:core.Response) => {
     setCorsHeaders(req, res);
     try {
-      const currentRecords = JSON.parse(fs.readFileSync('./pacing-challenge-records.json', 'utf8'));
+      const currentRecords = JSON.parse(fs.readFileSync('../pacing-challenge-records.json', 'utf8'));
       
+      for(var key in currentRecords) {
+        const currentVal = currentRecords[key];
+        if(Array.isArray(currentVal)) {
+          // we good
+        } else {
+          currentRecords[key] = [currentVal];
+        }
+      }
+      
+      // let's sort and truncate shit!
+      for(var key in currentRecords) {
+        let rg = currentRecords[key];
+        rg.sort((a, b) => {
+          return (a.time < b.time) ? -1 : 1;
+        })
+        rg = rg.slice(0, 10);
+        currentRecords[key] = rg;
+      }
+
       res.writeHead(200, 'ok');
       res.write(JSON.stringify(currentRecords));
       res.end();
@@ -71,11 +90,20 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
       setCorsHeaders(req, res);
 
       try {
-        const currentRecords = JSON.parse(fs.readFileSync('./pacing-challenge-records.json', 'utf8'));
+        const currentRecords = JSON.parse(fs.readFileSync('../pacing-challenge-records.json', 'utf8'));
 
         const key = `effort${postInput.pct.toFixed(0)}`;
-        currentRecords[key] = postInput;
-        fs.writeFileSync('./pacing-challenge-records.json', JSON.stringify(currentRecords));
+        let val = currentRecords[key];
+
+        if(Array.isArray(val)) {
+          // is already an array!
+          val.push(postInput);
+        } else {
+          // probably old result
+          val = [val, postInput];
+        }
+        currentRecords[key] = val;
+        fs.writeFileSync('../pacing-challenge-records.json', JSON.stringify(currentRecords));
 
         res.writeHead(200, 'ok');
         res.write(JSON.stringify(currentRecords));
