@@ -1,5 +1,6 @@
 import Component from '@ember/component';
 import { RaceResultSubmission } from 'bt-web2/server-client-common/communication';
+import { assert2 } from 'bt-web2/server-client-common/Utils';
 import Devices, { dumpRaceResultToPWX } from 'bt-web2/services/devices';
 import { apiGet } from 'bt-web2/set-up-ride/route';
 import Ember from 'ember';
@@ -60,8 +61,20 @@ export default class StoredData extends Component.extend({
   }),
 
   actions: {
-    downloadRide(ride:RaceResultSubmission) {
-      dumpRaceResultToPWX(ride);
+    downloadRide(targetRide:RaceResultSubmission) {
+
+      assert2(targetRide.samples.length === 0, "we're expecting the parameter here to be a basic ride.  we need to ask the server for the whole thing");
+
+      const imgBase64 = this.get('yourImage')
+      const md5Result = md5(imgBase64);
+      const arg = {tmStart: targetRide.tmStart, riderName: targetRide.riderName, imageMd5: md5Result};
+
+      return apiGet('user-ride-result', arg).then((fullResult:RaceResultSubmission) => {
+        assert2(fullResult.samples.length > 0, "the one we fetch specifically should have full samples");
+        assert2(fullResult.tmStart === targetRide.tmStart && 
+                fullResult.rideName === targetRide.rideName);
+        dumpRaceResultToPWX(fullResult);
+      })
     },
     downloadImg() {
       const user = this.devices.getLocalUser();

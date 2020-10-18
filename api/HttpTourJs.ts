@@ -119,6 +119,30 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   }
   type UserResultDb = {[key:string]:RideNameResultDb};
 
+  app.get('/user-ride-result', (req:core.Request, res:core.Response) => {
+    setCorsHeaders(req, res);
+    if(req.query.imageMd5 && req.query.riderName && req.query.tmStart) {
+      req.query.tmStart = parseInt(req.query.tmStart);
+      
+      const fileName = `../rider-db-${req.query.imageMd5}.json`;
+      if(fs.existsSync(fileName)) {
+        // ok, this file exists!
+        const userDb:UserResultDb = JSON.parse(fs.readFileSync(fileName, 'utf8'));
+
+        const riderName:string = req.query.riderName;
+        const riderDb = userDb[riderName];
+        const ride:RaceResultSubmission = riderDb.results.find((result) => result.tmStart === req.query.tmStart);
+
+        res.writeHead(200, 'ok');
+        res.write(JSON.stringify(ride));
+        res.end();
+        return;
+      }
+    }
+    res.writeHead(404, 'ok');
+    res.write("");
+    res.end();
+  });
   app.get('/user-ride-results', (req:core.Request, res:core.Response) => {
     setCorsHeaders(req, res);
     if(req.query.imageMd5) {
@@ -128,7 +152,11 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
         const userDb:UserResultDb = JSON.parse(fs.readFileSync(fileName, 'utf8'));
 
         for(var key in userDb) {
-          const rides = userDb[key];
+          let rides = userDb[key];
+          rides.results = rides.results.map((ride) => {
+            ride.samples = [];
+            return ride;
+          })
           rides.results.sort((a, b) => {
             return a.tmStart > b.tmStart ? -1 : 1;
           });
