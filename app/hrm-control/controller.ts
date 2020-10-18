@@ -27,7 +27,7 @@ export default class HrmControl extends Controller.extend({
       this.decrementProperty('targetHandicap');
     },
     downloadFile() {
-      this.devices.dumpPwx(new Date().getTime());
+      this.devices.dumpPwx("HRM-Control", new Date().getTime());
     }
   }
 }) {

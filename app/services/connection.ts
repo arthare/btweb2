@@ -195,12 +195,12 @@ export default class Connection extends Service.extend({
     
   }
 
-  disconnect() {
+  disconnect(activityName:string) {
     this._timeout = null;
 
     const tmNow = new Date().getTime();
 
-    this.devices.dumpPwx(tmNow);
+    this.devices.dumpPwx(activityName, tmNow);
     const user = this.devices.getLocalUser();
     if(user) {
       user.setId(-1);

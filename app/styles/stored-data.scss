@@ -1,0 +1,20 @@
+.stored-data {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 32px;
+    padding-top: 16px;
+  }
+  &__p {
+    margin-bottom: 12px;
+  }
+  &__title {
+    margin-bottom: 12px;
+  }
+  &__link {
+    font-size: 12px;
+  }
+}

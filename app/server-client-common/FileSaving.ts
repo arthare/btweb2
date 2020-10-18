@@ -1,12 +1,6 @@
+import { IWorkoutSample, RaceResultSubmission } from "./communication";
 import { User } from "./User";
 
-interface IWorkoutSample {
-  power:number;
-  tm:number;
-  distance:number;
-  speedMetersPerSec:number;
-  hrm:number;
-}
 
 class WorkoutSample implements IWorkoutSample {
   constructor(tmNow:number, user:User) {
@@ -52,18 +46,19 @@ export class WorkoutFileSaver {
   }
 }
 
-export function samplesToPWX(name:string, user:User, deviceName:string, samples:IWorkoutSample[]) {
+export function samplesToPWX(name:string, submission:RaceResultSubmission) {
   let lines = [];
   lines.push(`<?xml version="1.0"?>`);
   lines.push(`<pwx xmlns="http://www.peaksware.com/PWX/1/0" creator="Golden Cheetah" xsi:schemaLocation="http://www.peaksware.com/PWX/1/0 http://www.peaksware.com/PWX/1/0/pwx.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">`);
   lines.push(`<workout>`);
-  lines.push(`<athlete><name>${user.getName()}</name></athlete>`);
+  lines.push(`<athlete><name>${submission.riderName}</name></athlete>`);
   lines.push(`<sportType>Bike</sportType>`);
   lines.push(`<device id="TourJS">
                 <make>Tour.JS</make>
-                <model>${deviceName}</model>
+                <model>${submission.deviceName}</model>
               </device>`);
 
+  const samples = submission.samples;
   const firstSample = samples[0];
   const durationSeconds = Math.floor((samples[samples.length-1].tm - samples[0].tm) / 1000);
   const lengthMeters = (samples[samples.length-1].distance - samples[0].distance);

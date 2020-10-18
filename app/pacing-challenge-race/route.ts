@@ -26,6 +26,11 @@ export default class PacingChallengeRace extends Route.extend({
     }
   }
 
+  resetController() {
+    debugger;
+    this.controller.notifyTransitionOut();
+  }
+
   setupController(controller:any, model:any) {
     controller._setup(model);
   }

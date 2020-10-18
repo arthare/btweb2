@@ -15,6 +15,11 @@ export default class Application extends Route.extend({
     const name = localStorage.getItem(USERSETUP_KEY_NAME);
     const handicap = localStorage.getItem(USERSETUP_KEY_HANDICAP);
 
+    if(image) {
+      console.log("loaded image ", image?.substr(0, 100), " with length ", image.length, " from localstorage");
+    }
+    
+
     if(name && handicap) {
       // this is enough to set up a user
       this.devices.addUser({

@@ -141,6 +141,7 @@ export default class UserSetUp extends Component.extend({
   setImage(base64:string, recursed:boolean) {
 
     if(!recursed) {
+      console.log("setting ", base64.substr(0, 100), " with length ", base64.length, " to localstorage");
       localStorage.setItem(USERSETUP_KEY_IMAGE, base64);
     }
 

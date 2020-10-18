@@ -5,7 +5,7 @@ import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
 import Ember from 'ember';
 
-export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:number, h:number, localPositionPct?:number, humanPositions?:number[], aiPositions?:number[]) {
+export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:number, h:number, minElevSpan:number, localPositionPct?:number, humanPositions?:number[], aiPositions?:number[]) {
   
   const ctx = canvas.getContext('2d');
   if(!ctx) {
@@ -35,7 +35,13 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
     }
   })
 
-  const elevSpan = maxElev - minElev;
+  let elevSpan = maxElev - minElev;
+  if(elevSpan < minElevSpan) {
+    const missedBy = minElevSpan - elevSpan;
+    maxElev += missedBy / 2;
+    minElev -= missedBy / 2;
+    elevSpan = minElevSpan;
+  }
   
   ctx.scale(1,-1);
   ctx.translate(0,-h);
@@ -120,10 +126,10 @@ export default class MiniMap extends Component.extend({
 
     const elevations = [];
     const len = race.getLength();
-    for(var pct = 0; pct <= 1.0; pct += 0.01) {
+    for(var pct = 0; pct <= 1.0; pct += 0.005) {
       elevations.push(race.getElevationAtDistance(pct*len));
     }
-    drawMinimap(canvas, elevations, w, h);
+    drawMinimap(canvas, elevations, w, h, race.getLength()*0.01);
 
     const png = canvas.toDataURL();
     const img = this.element.querySelector('img');

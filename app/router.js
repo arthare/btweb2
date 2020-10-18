@@ -8,6 +8,7 @@ const Router = EmberRouter.extend({
   location: config.locationType,
   rootURL: config.rootURL,
   connection: Ember.inject.service(),
+  devices: Ember.inject.service(),
 
   init() {
     this._super(...arguments);
@@ -16,11 +17,14 @@ const Router = EmberRouter.extend({
 
       if(transition.from) {
         switch(transition.from.name) {
+          case 'pacing-challenge-race':
+            this.get('devices').dumpPwx('pacing-challenge-abandoned');
+            break;
           case 'ride':
           case 'battleship':
             console.log("they jumped away from the ride screen.  We probably need to disconnect");
             console.log("connections = ", this.get('connection'));
-            this.get('connection').disconnect();
+            this.get('connection').disconnect(`Quit-${transition.from.name}`);
             break;
         }
         

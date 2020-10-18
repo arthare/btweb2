@@ -3,10 +3,11 @@ import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
 import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
-import { S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
+import { RaceResultSubmission, S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 import Ember from 'ember';
 import { WorkoutFileSaver, samplesToPWX } from 'bt-web2/server-client-common/FileSaving';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { apiPost } from 'bt-web2/set-up-ride/route';
 
 
 export interface PowerTimerAverage {
@@ -33,7 +34,6 @@ export class PowerTimer {
     if(dt <= 0) {
       return;
     }
-    console.log("dt = ", dt);
     this.sumPower += power * dt;
     this.countPower += dt;
     this.tmLast = tmNow;
@@ -48,6 +48,23 @@ export class PowerTimer {
       totalTimeSeconds: elapsedSeconds,
     }
   }
+}
+
+export function dumpRaceResultToPWX(submission:RaceResultSubmission) {
+  
+  const pwx = samplesToPWX("Workout", submission);
+
+  const lengthMeters = submission.samples[submission.samples.length - 1].distance - submission.samples[0].distance;
+
+  var data = new Blob([pwx], {type: 'application/octet-stream'});
+  var url = window.URL.createObjectURL(data);
+  const linky = document.createElement('a');
+  linky.href = url;
+  linky.download = `TourJS-${submission.activityName}-${lengthMeters.toFixed(0)}m-${new Date(submission.samples[0].tm).toDateString()}.pwx`;
+  linky.target="_blank";
+  document.body.appendChild(linky);
+  linky.click();
+  document.body.removeChild(linky);
 }
 
 export enum DeviceFlags {
@@ -103,6 +120,7 @@ export default class Devices extends Service.extend({
     this.incrementProperty('ridersVersion');
   }
   addUser(user:UserSetupParameters) {
+    console.log("images adding user with image length ", user.imageBase64 && user.imageBase64.length);
     const newUser = new User(user.name, DEFAULT_RIDER_MASS, user.handicap, UserTypeFlags.Local);
 
     const alreadyHaveLocal = this.getLocalUser();
@@ -139,6 +157,7 @@ export default class Devices extends Service.extend({
   }
 
   startPowerTimer(name:string) {
+    console.log("devices service: setting power timer " + name);
     this._powerCounters.set(name, new PowerTimer(new Date().getTime()));
   }
   stopPowerTimer(name:string) {
@@ -212,24 +231,41 @@ export default class Devices extends Service.extend({
     return false;
   }
 
-  dumpPwx(tmNow:number) {
+  dumpPwx(activityName:string, tmNow:number) {
     const user = this.getLocalUser();
     if(this.workoutSaver && user) {
       const samples = this.workoutSaver.getWorkout();
       
-      const pwx = samplesToPWX("Workout", user, this.get('deviceDescription'), samples);
+      let ixLastNonzeroPower = samples.length - 1;
+      while(ixLastNonzeroPower > 0 && samples[ixLastNonzeroPower].power <= 0) {
+        ixLastNonzeroPower--;
+      }
+
+      const strStart = new Date(samples[0].tm).toLocaleString();
+      const strEnd = new Date(samples[ixLastNonzeroPower].tm).toLocaleString();
 
       const lengthMeters = samples[samples.length - 1].distance - samples[0].distance;
+      const userImage = user.getImage();
 
-      var data = new Blob([pwx], {type: 'application/octet-stream'});
-      var url = window.URL.createObjectURL(data);
-      const linky = document.createElement('a');
-      linky.href = url;
-      linky.download = `TourJS-Workout-${lengthMeters.toFixed(0)}m-${new Date(tmNow).toDateString()}.pwx`;
-      linky.target="_blank";
-      document.body.appendChild(linky);
-      linky.click();
-      document.body.removeChild(linky);
+      const submission:RaceResultSubmission = {
+        rideName: `${user.getName()} doing ${activityName} for ${lengthMeters.toFixed(0)}m from ${strStart} to ${strEnd}`,
+        riderName: user.getName(),
+        tmStart: samples[0].tm,
+        tmEnd: samples[ixLastNonzeroPower].tm,
+        activityName,
+        handicap: user.getHandicap(),
+        imageBase64: userImage || '',
+        samples,
+        deviceName: this.get('deviceDescription'),
+      }
+
+      dumpRaceResultToPWX(submission);
+
+      // let's also send this to the main server.  This only happens if the user has an image.
+      // the image acts as their authentication.
+      if(userImage) {
+        apiPost('submit-ride-result', submission);
+      }
     }
   }
 

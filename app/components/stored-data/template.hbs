@@ -1,0 +1,31 @@
+<h3 class="stored-data__title">Stored Data</h3>
+{{#if hasData}}
+  {{#each riders as |rider|}}
+    <hr>
+    <h5 class="stored-data__title">{{rider.name}}</h5>
+    <ul>
+    {{log "rider " rider}}
+    {{#each rider.rides.results as |ride|}}
+      <li>
+        <a class="stored-data__link" href='#' {{action 'downloadRide' ride}}>{{ride.rideName}}</a>
+      </li>
+    {{/each}}
+    </ul>
+  {{/each}}
+{{else}}
+  {{#if triedToGetData}}
+    <p class="stored-data__p">Tour.js could not locate data for your current image</p>
+  {{else}}
+    {{#if userHasImageSet}}
+      <p class="stored-data__p">Loading...</p>
+    {{else}}
+      <p class="stored-data__p">You don't have a rider image set.</p>
+    {{/if}}
+    
+  {{/if}}
+{{/if}}
+<p class="stored-data__p">Tour.js kinda-sorta secures your data by requiring you to have an image set.  The exact pixels of your image allow you to access your specific data uniquely.</p>
+<p class="stored-data__p">Tip: Tour.js is a for-fun project with zero effort applied to security.  If you're sensitive about your data, I recommend not setting an image, which will result in data not getting saved.</p>
+{{#if yourImage}}
+  <p class="stored-data__p">Click <a href='#' {{action 'downloadImg'}}>here</a> to download your image if you want to set up other devices to save/load as that user.  Just use that image as your user image on the other device.</p>
+{{/if}}

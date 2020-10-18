@@ -33,9 +33,6 @@ export default class PacingChallengeOverlay extends Component.extend({
   
 
   didInsertElement() {
-    this.devices.startPowerTimer("pacing-challenge");
-    
-
   }
 
   @computed("frame")

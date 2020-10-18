@@ -61,7 +61,7 @@ export default class MiniMapLive extends Component.extend({
       const w = this.element.clientWidth;
       const h = this.element.clientHeight;
       requestAnimationFrame(() => {
-        drawMinimap(canvas, elevations, w, h, localPosition, humanPositions, aiPositions);
+        drawMinimap(canvas, elevations, w, h, map.getLength()*0.01, localPosition, humanPositions, aiPositions);
       })
 
       

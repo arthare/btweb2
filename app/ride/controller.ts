@@ -21,16 +21,6 @@ export default class Ride extends Controller.extend({
   _gameId: '',
 
   actions: {
-    newRide() {
-      this.connection.disconnect();
-      const raceState: RaceState | null = this.get('_raceState');
-
-      if (raceState) {
-        raceState.stop();
-      }
-      this.devices.getLocalUser()?.setId(-1);
-      this.transitionToRoute('set-up-ride');
-    },
     doneAddingUser(user:UserSetupParameters) {
       console.log("done adding user", arguments);
       this.devices.addUser(user);
@@ -96,7 +86,7 @@ export default class Ride extends Controller.extend({
       const user = raceState.getLocalUser();
       if (user) {
         if(user.getDistance() >= raceState.getMap().getLength() && !this.get('hasSentPwx')) {
-          this.devices.dumpPwx(tmNow);
+          this.devices.dumpPwx("Online-Race", tmNow);
           this.set('hasSentPwx', true);
         }
 

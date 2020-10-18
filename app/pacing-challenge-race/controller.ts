@@ -8,8 +8,9 @@ import { PacingChallengeOverlayData } from 'bt-web2/components/pacing-challenge-
 import { computed } from '@ember/object';
 import { race } from 'rsvp';
 import { apiPost } from 'bt-web2/set-up-ride/route';
+import { PacingChallengeResultSubmission } from 'bt-web2/server-client-common/communication';
 
-class PacingChallengeMap extends RideMapPartial implements RideMap {
+export class PacingChallengeShortMap extends RideMapPartial implements RideMap {
   getPowerTransform(who: User): (power: number) => number {
     return (power:number) => {
       return DEFAULT_HANDICAP_POWER*(power / who.getHandicap());
@@ -35,6 +36,97 @@ class PacingChallengeMap extends RideMapPartial implements RideMap {
     return 5000;
   }
 }
+export class PacingChallengeHills1 extends PacingChallengeShortMap {
+  getElevationAtDistance(meters: number): number {    
+    return 15*Math.cos(meters / 400) + 
+           2.5*Math.cos(meters / 170) -
+           7.5*Math.cos(meters /2200) +
+           50*Math.cos(Math.cos(meters / 750)) - 25;
+  }
+}
+export class PacingChallengeHills2 extends PacingChallengeShortMap {
+  getBounds(): MapBounds {
+    return {
+      minElev:0,
+      maxElev:60,
+      minDist:0,
+      maxDist:this.getLength(),
+    }
+  }
+  getElevationAtDistance(meters: number): number {    
+    return 12*Math.cos(meters / 300) + 
+           6.5*Math.cos(meters / 150) +
+           50*Math.cos(Math.cos(meters / 750)) - 25 + meters/250;
+  }
+}
+export class PacingChallengeFlat extends PacingChallengeShortMap {
+  getBounds(): MapBounds {
+    return {
+      minElev:0,
+      maxElev:20,
+      minDist:0,
+      maxDist:this.getLength(),
+    }
+  }
+  getElevationAtDistance(meters: number): number {    
+    return 2*Math.sin(meters/1000);
+  }
+}
+export class PacingChallengeLong extends PacingChallengeShortMap {
+  getBounds(): MapBounds {
+    return {
+      minElev:-10,
+      maxElev:60,
+      minDist:0,
+      maxDist:this.getLength(),
+    }
+  }
+  getLength(): number {
+    return 15000;
+  }
+  getElevationAtDistance(meters: number): number {    
+    if(meters <= 1500) {
+      // climb gradually from 0 to 15 meters at a steady grade
+      return 0.01*meters;
+    } else if(meters <= 3000) {
+      // descend back down to zero elevation
+      meters -= 1500;
+      return 15 - meters*0.01;
+    } else if(meters <= 5500) {
+      meters -= 3000;
+      return 12*Math.sin(meters / 300) + 
+           6.5*Math.sin(meters / 150) +
+           50*Math.sin(Math.sin(meters / 750));
+    } else if (meters <= 7500) {
+      // 2km perfectly flat
+      const lastElev = this.getElevationAtDistance(5500);
+      console.log("flat = ", lastElev);
+      return lastElev;
+    } else {
+      // something siney to finish things off
+      const lastElev = this.getElevationAtDistance(7500);
+      console.log("flat when building other = ", lastElev);
+      meters -= 7500;
+      return lastElev + 8*Math.sin(Math.pow(meters, 0.6) / 1300) + 
+                        5.5*Math.sin(meters / 250) +
+                        30*Math.sin(Math.sin(meters / 350));
+    }
+  }
+}
+export function getPacingChallengeMap(name:string):PacingChallengeShortMap {
+  switch(name) {
+    default:
+    case 'hills1':
+      return new PacingChallengeHills1();
+    case 'hills2':
+      return new PacingChallengeHills2();
+    case 'flat':
+      return new PacingChallengeFlat();
+    case 'long':
+      return new PacingChallengeLong();
+  }
+
+}
 
 export class PacingChallengeUserProvider implements UserProvider {
   users: User[];
@@ -43,6 +135,8 @@ export class PacingChallengeUserProvider implements UserProvider {
     if(!localUserOverride) {
       throw new Error("You need to have your devices set up before starting");
     }
+    localUserOverride.setDistance(0);
+    localUserOverride.setSpeed(10);
     this.users = [
       localUserOverride,
     ];
@@ -59,7 +153,9 @@ export class PacingChallengeUserProvider implements UserProvider {
       this.users.push(aiUser);
     }
     this.users.forEach((user, index) => {
-      user.setId(index);
+      if(user.getId() < 0) {
+        user.setId(index);
+      }
     });
   }
 
@@ -77,10 +173,12 @@ export class PacingChallengeUserProvider implements UserProvider {
 export default class PacingChallengeRace extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
-  
+  transitionedOut: false,
+
 }) {
   // normal class body definition here
-  _map:PacingChallengeMap|null = null;
+  pickedMapName = '';
+  _map:PacingChallengeShortMap|null = null;
   _userProvider:PacingChallengeUserProvider|null = null;
   _raceState:RaceState|null = null;
   pctZeroTo100 = 0;
@@ -88,8 +186,9 @@ export default class PacingChallengeRace extends Controller.extend({
   ticks = 0;
   startingSpeedJoules = 0;
 
-  _setup(params:{pct:string}) {
+  _setup(params:{pct:string, map:string}) {
 
+    this.set('transitionedOut', false);
     const pctAsFloat = parseFloat(params.pct);
     if(pctAsFloat < 0 || pctAsFloat > 200) {
       throw new Error("Effort level out of range");
@@ -103,10 +202,10 @@ export default class PacingChallengeRace extends Controller.extend({
 
     const pctZeroToOne = pctAsFloat / 100;
 
-
-    this._map = new PacingChallengeMap();
+    this.set('pickedMapName', params.map);
+    this._map = getPacingChallengeMap(params.map);
     this._userProvider = new PacingChallengeUserProvider(localUser, pctAsFloat / 100, this._map.getLength());
-    this._raceState = new RaceState(this._map, this._userProvider, `Pacing-Challenge-${(pctAsFloat).toFixed(0)}%`);
+    this.set('_raceState', new RaceState(this._map, this._userProvider, `Pacing-Challenge-${(pctAsFloat).toFixed(0)}%`));
     
     // let's figure out how many handicap-seconds are allowed!
     const handicappedPower = DEFAULT_HANDICAP_POWER * pctZeroToOne;
@@ -129,10 +228,12 @@ export default class PacingChallengeRace extends Controller.extend({
     localUser.setDistance(0);
     localUser.setSpeed(expectedSteadyStateSpeedMetersPerSec);
 
+    this.devices.startPowerTimer("pacing-challenge");
     this._tick();
   }
 
   _tick() {
+    console.log("pacing-challenge-race tick");
     const tmNow = new Date().getTime();
     this.incrementProperty("ticks");
     this.devices.tick(tmNow, false);
@@ -161,14 +262,18 @@ export default class PacingChallengeRace extends Controller.extend({
       raceState.stop();
 
       const hsLeft = this.get("handicapSecondsAllowed") - hsUsed;
-      return apiPost('pacing-challenge-result', {
+
+      const submission:PacingChallengeResultSubmission = {
+        mapName: this.get('pickedMapName'),
         "name": localUser.getName(),
         "time": result.totalTimeSeconds,
-        "hsLeft": hsLeft.toFixed(1),
+        "hsLeft": hsLeft,
         "pct": this.get('pctZeroTo100'),
-      }).finally(() => {
+      }
+
+      return apiPost('pacing-challenge-result', submission).finally(() => {
         raceState.stop();
-        this.devices.dumpPwx(new Date().getTime());
+        this.devices.dumpPwx("Pacing-Challenge-Success", new Date().getTime());
         this.transitionToRoute('pacing-challenge');
       });
 
@@ -177,18 +282,24 @@ export default class PacingChallengeRace extends Controller.extend({
     if(hsUsed > this.get('handicapSecondsAllowed')) {
       alert(`You failed!\nYou used ${hsUsed.toFixed(1)} energies before finishing the course.`);
       raceState.stop();
-      this.devices.dumpPwx(new Date().getTime());
+      this.devices.dumpPwx("Pacing-Challenge-Failure", new Date().getTime());
 
       // we done here!
       return this.transitionToRoute('pacing-challenge');
     }
 
 
-    if(!this.isDestroyed) {
+    if(!this.isDestroyed && !this.get('transitionedOut')) {
       setTimeout(() => {
         this._tick();
       }, 200);
+    } else {
+      raceState.stop();
     }
+  }
+
+  notifyTransitionOut() {
+    this.set('transitionedOut', true);
   }
 
   @computed("ticks", "handicapSecondsAllowed")

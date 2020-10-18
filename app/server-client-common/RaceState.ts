@@ -32,12 +32,14 @@ export class RaceState {
     }
     const users = this._userProvider.getUsers(tmNow);
     users.forEach((user) => {
+      
       user.physicsTick(tmNow, this._map, users);
 
       if(user.getUserType() & UserTypeFlags.Ai) {
         
       } else {
         // it's a human!
+        console.log("raceState tick on " + user.getId() + " " + user.getName(), user);
         if(user.isFinished()) {
           // they're finished
         } else {

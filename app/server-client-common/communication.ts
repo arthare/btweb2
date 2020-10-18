@@ -187,6 +187,7 @@ export class S2CNameUpdate {
 }
 
 export interface PacingChallengeResultSubmission {
+  mapName:string;
   pct:number;
   "name": string;
   "time": number;
@@ -306,4 +307,24 @@ export class ServerHttpGameListElement {
 }
 export interface ServerHttpGameList {
   races: ServerHttpGameListElement[];
+}
+
+export interface IWorkoutSample {
+  power:number;
+  tm:number;
+  distance:number;
+  speedMetersPerSec:number;
+  hrm:number;
+}
+
+export interface RaceResultSubmission {
+  rideName: string; // "<rider name> 14990m on <date> and <mapname> doing <activity>"
+  riderName: string; // your rider's name
+  activityName: string;
+  deviceName:string;
+  tmStart: number;
+  tmEnd: number;
+  handicap: number; // your handicap when you rode
+  imageBase64: string; // your full-res rider image.  This is used to uniquely identify the user
+  samples: IWorkoutSample[];
 }

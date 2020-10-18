@@ -7,6 +7,20 @@
       <p>Tip: Powering up uphills and coasting downhills is wise.</p>
     {{/vertical-align}}
   </div>
+
+  <div class="index__activity explanation">
+    {{#vertical-align class="index__activity--text"}}
+      <p>Pacing Mode now offers different maps</p>
+      <p>
+        <button class="pacing-mode" disabled={{pickedHills1}} {{action 'pickMap' 'hills1'}}>Hills 1 (classic)</button>
+        <button class="pacing-mode" disabled={{pickedHills2}} {{action 'pickMap' 'hills2'}}>Hills 2</button>
+        <button class="pacing-mode" disabled={{pickedFlat}} {{action 'pickMap' 'flat'}}>Flat</button>
+        <button class="pacing-mode" disabled={{pickedLong}} {{action 'pickMap' 'long'}}>15km</button>
+      </p>
+    {{/vertical-align}}
+  </div>
+  {{mini-map race=pickedMap}}
+
   <div class="index__activity 100" {{action 'start' 125}}>
     {{#vertical-align class="index__activity--text"}}
       <p>125% Effort</p>
