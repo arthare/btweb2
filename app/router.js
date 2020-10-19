@@ -44,6 +44,7 @@ Router.map(function() {
   this.route('hrm-control');
   this.route('pacing-challenge');
   this.route('pacing-challenge-race', {path:'/pacing-challenge-race/:pct'});
+  this.route('results');
 });
 
 export default Router;

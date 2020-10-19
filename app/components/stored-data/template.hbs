@@ -29,3 +29,6 @@
 {{#if yourImage}}
   <p class="stored-data__p">Click <a href='#' {{action 'downloadImg'}}>here</a> to download your image if you want to set up other devices to save/load as that user.  Just use that image as your user image on the other device.</p>
 {{/if}}
+{{#if yourmd5}}
+  <p class="stored-data__p">You can always view your results with <a href='https://tourjs.ca/results?md5={{yourmd5}}'>this link</a>.  You can share that link to other devices as well.</p>
+{{/if}}
