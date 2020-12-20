@@ -39,7 +39,7 @@ export class RaceState {
         
       } else {
         // it's a human!
-        console.log("raceState tick on " + user.getId() + " " + user.getName(), user);
+        //console.log("raceState tick on " + user.getId() + " " + user.getName(), user);
         if(user.isFinished()) {
           // they're finished
         } else {

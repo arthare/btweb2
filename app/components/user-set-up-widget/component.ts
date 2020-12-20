@@ -2,11 +2,13 @@ import Component from '@ember/component';
 import Ember from 'ember';
 import { computed } from '@ember/object';
 import Devices from 'bt-web2/services/devices';
+import md5 from 'ember-md5';
 
 export interface UserSetupParameters {
   name:string;
   handicap:number;
   imageBase64:string|null;
+  bigImageMd5:string|null;
 }
 
 export const USERSETUP_KEY_IMAGE = "user-set-up:lastImage";
@@ -29,7 +31,20 @@ function handleFileSelect(this:UserSetUp, evt:any) {
     reader.onload = ((theFile) => {
       return (e:any) => {
         // Render thumbnail.
-        this.setImage(e.target.result, false);
+
+        const b64 = e.target.result;
+        let appropriateSizeImagePromise = Promise.resolve(b64);
+        if(b64.length > 4*1024*1024) {
+          // this image is too damn big
+          console.log("image from camera is too large " + (b64.length/1024).toFixed(0) + "kb, need to downsize");
+          appropriateSizeImagePromise = resizeImage(b64, 1024, 1024);
+        } else {
+          // this image is fine
+        }
+
+        return appropriateSizeImagePromise.then((b64Smaller) => {
+          this.setImage(b64Smaller, false);
+        })
       };
     })(f);
 
@@ -95,6 +110,7 @@ export default class UserSetUp extends Component.extend({
   actions: { 
     done() {
       const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
+      const bigImageBase64 = localStorage.getItem(USERSETUP_KEY_IMAGE);
       let imageBase64 = null;
       if(displayImage) {
         imageBase64 = displayImage.src;
@@ -107,6 +123,7 @@ export default class UserSetUp extends Component.extend({
         name: this.userName,
         handicap: parseFloat(this.userHandicap),
         imageBase64: imageBase64,
+        bigImageMd5: md5(bigImageBase64),
       })
     }
 
@@ -141,9 +158,10 @@ export default class UserSetUp extends Component.extend({
   setImage(base64:string, recursed:boolean) {
 
     if(!recursed) {
-      console.log("setting ", base64.substr(0, 100), " with length ", base64.length, " to localstorage");
+      console.log("setting ", base64.substr(0, 100), " with length ", base64.length, "and md5 ", md5(base64), " to localstorage");
       localStorage.setItem(USERSETUP_KEY_IMAGE, base64);
     }
+    
 
     const img:HTMLImageElement = document.createElement('img');
     img.onload = () => {

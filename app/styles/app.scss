@@ -44,6 +44,10 @@ body {
     margin-left: auto;
     margin-right: auto;
   }
+  &__hill-adjust {
+    padding: 8px;
+    font-size: 32px;
+  }
   &__user-status {
     position: fixed;
     top: 100vh;

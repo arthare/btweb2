@@ -9,6 +9,7 @@ export default class UserSetUp extends Controller.extend({
 
   actions: {
     onAddedUser(user:UserSetupParameters) {
+      console.log("set-up-user done adding user with md5 ", user.bigImageMd5);
       this.devices.addUser(user);
       this.transitionToRoute('index');
     }

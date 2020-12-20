@@ -6,6 +6,7 @@ import { ConnectedDeviceInterface, PowerDataDistributor, BTDeviceState } from 'b
 import { UserDisplay } from 'bt-web2/server-client-common/User';
 import { computed } from '@ember/object';
 import Connection from 'bt-web2/services/connection';
+import md5 from 'ember-md5';
 
 
 export class FakeDevice extends PowerDataDistributor {
@@ -32,7 +33,7 @@ export class FakeDevice extends PowerDataDistributor {
   getDeviceTypeDescription():string {
     return "Fake Device";
   }
-  updateSlope(tmNow: number): Promise<boolean> {
+  updateSlope(tmNow: number, ftmsPct:number): Promise<boolean> {
     return Promise.resolve(false);
   }
   updateErg(tmNow: number, watts: number): Promise<boolean> {
@@ -74,6 +75,7 @@ export default class Application extends Controller.extend({
     }
   }),
 
+
   actions: {
     connectDevice() {
       const canDoBluetooth = this.get('canDoBluetooth');
@@ -84,6 +86,12 @@ export default class Application extends Controller.extend({
         getDeviceFactory().findPowermeter().then((device:ConnectedDeviceInterface) => {
           this.devices.setLocalUserDevice(device, DeviceFlags.AllButHrm);
         });
+      }
+    },
+    hideThis() {
+      const userInfo = document.querySelector('.application__user-info');
+      if(userInfo) {
+        window.scrollTo(0, userInfo?.scrollHeight);
       }
     },
     connectHrm() {
@@ -102,11 +110,15 @@ export default class Application extends Controller.extend({
       getDeviceFactory().findPowermeter(true).then((device:ConnectedDeviceInterface) => {
         this.devices.setLocalUserDevice(device, DeviceFlags.AllButHrm);
       })
+    },
+    ftmsAdjust(amt:number) {
+      this.devices.ftmsAdjust(amt);
     }
   }
 }) {
   // normal class body definition here
 
+  myRidersVersion = 0;
   _tick() {
     const hasLocalUser = !!this.devices.getLocalUser();
     const hasBluetoothDevice = this.devices.isLocalUserDeviceValid();
@@ -117,18 +129,21 @@ export default class Application extends Controller.extend({
     }
     this.incrementProperty('frame');
 
-    if(!hasBluetoothDevice) {
-      fetch('http://localhost:63939/device-list').then(() => {
-        this.set('hasPlugins', true);
-      }, (failure) => {
-        this.set('hasPlugins', false);
-      })
-    }
-
-
+    this.incrementProperty('myRidersVersion');
     setTimeout(() => this._tick(), 2000);
   }
 
+  @computed("myRidersVersion")
+  get userInfo():string {
+    const hasLocalUser = this.devices.getLocalUser();
+    if(hasLocalUser) {
+      const image = hasLocalUser.getImage();
+      if(image) {
+        return `<a href="/results?md5=${hasLocalUser.getBigImageMd5()}">your results link</a>`;
+      }
+    }
+    return '';
+  }
   start() {
 
     if(window.location.hostname === 'localhost') {

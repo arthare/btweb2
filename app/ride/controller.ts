@@ -22,7 +22,7 @@ export default class Ride extends Controller.extend({
 
   actions: {
     doneAddingUser(user:UserSetupParameters) {
-      console.log("done adding user", arguments);
+      console.log("done adding user", user, " with md5 ", user.bigImageMd5);
       this.devices.addUser(user);
       (<any>this)._setup(this.get('_gameId'));
     }

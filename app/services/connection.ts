@@ -1,5 +1,5 @@
 import Service from '@ember/service';
-import { ClientToServerUpdate, C2SBasicMessage, S2CBasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate, S2CRaceStateUpdate, CurrentRaceState, S2CFinishUpdate, S2CImageUpdate}  from 'bt-web2/server-client-common/communication';
+import { ClientToServerUpdate, C2SBasicMessage, S2CBasicMessage, BasicMessageType, ClientConnectionResponse, ClientConnectionRequest, S2CNameUpdate, S2CPositionUpdate, S2CRaceStateUpdate, CurrentRaceState, S2CFinishUpdate, S2CImageUpdate, ClientToServerChat, S2CChatUpdate}  from 'bt-web2/server-client-common/communication';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { User } from 'bt-web2/server-client-common/User';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
@@ -116,6 +116,18 @@ export default class Connection extends Service.extend({
     this.set('_lastServerRaceState', bm.raceState);
     if(this._raceState) {
       switch(bm.type) {
+        case BasicMessageType.S2CClientChat:
+        {
+          console.log("chat receiv")
+          const update:S2CChatUpdate = <S2CChatUpdate>bm.payload;
+          console.log("chat: ", update);
+          const fromUser = this.devices.getUser(update.fromId);
+          if(fromUser) {
+            console.log(fromUser.getName() + " said " + update.chat);
+            fromUser.setChat(tmNow, update.chat);
+          }
+          break;
+        }
         case BasicMessageType.S2CNameUpdate:
 
           const update:S2CNameUpdate = <S2CNameUpdate>bm.payload;
@@ -169,7 +181,7 @@ export default class Connection extends Service.extend({
           this._imageSources.set(imageUpdate.id, imageUpdate.imageBase64);
           if(user) {
             console.log("received an image for ", user.getName());
-            user.setImage(imageUpdate.imageBase64);
+            user.setImage(imageUpdate.imageBase64, null);
           }
 
           break;
@@ -217,6 +229,28 @@ export default class Connection extends Service.extend({
   getUserName(userId:number):string {
     const user = this.devices.getUser(userId);
     return user && user.getName() || "Unknown";
+  }
+
+  chat(chat:string) {
+
+    if(this._ws) {
+      const localUser = this.devices.getLocalUser();
+      if(localUser) {
+        if(this._gameId) {
+          const msgChat:ClientToServerChat = {
+            chat,
+            gameId:this._gameId,
+            userId:localUser.getId(),
+          }
+          const wrapper:C2SBasicMessage = {
+            type: BasicMessageType.ClientToServerChat,
+            payload: msgChat,
+          };
+          console.log("sending chat from user ", localUser.getId());
+          this._ws.send(JSON.stringify(wrapper));
+        }
+      }
+    }
   }
 
   @computed("_lastServerRaceState")

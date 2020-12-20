@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS } from '../app/server-client-common/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../app/server-client-common/communication';
 import { assert2 } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
 import { User, UserTypeFlags } from '../app/server-client-common/User';
@@ -298,7 +298,7 @@ wss.on('connection', (wsConnection) => {
       if(thisConnectionGameId.startsWith("battleship://")) {
         // nothing to do
       } else {
-        const game = races.get(thisConnectionGameId);
+        const game:ServerGame = races.get(thisConnectionGameId);
         if(!game) {
           // this game has almost certainly ended
           return;
@@ -317,6 +317,31 @@ wss.on('connection', (wsConnection) => {
 
     if(stillConnected) {
       setTimeout(sendUpdate, 250);
+    }
+  }
+
+  const broadcastMessage = (tmNow:number, fromUser:ServerUser, messageType:BasicMessageType, msg:any) => {
+    if(thisConnectionGameId !== null && thisConnectionUserId !== null) {
+
+      const game = races.get(thisConnectionGameId);
+      if(!game) {
+        // this game has almost certainly ended
+        return;
+      }
+
+      const users:ServerUser[] = game.userProvider.getUsers(tmNow);
+
+      users.forEach((user:ServerUser) => {
+        if(user.getId() !== fromUser.getId() && !(user.getUserType() & UserTypeFlags.Ai)) {
+          // ok, we gotta repeat this message to this user
+          const ws = user.getWebSocket();
+          if(ws) {
+            console.log("sent chat to ", user.getName(), user.getId());
+            sendResponse(user, tmNow, user.getWebSocket() as any, messageType, game, msg);
+          }
+        }
+      });
+
     }
   }
 
@@ -361,12 +386,22 @@ wss.on('connection', (wsConnection) => {
           let speedToAssign = 0.5;
           if(allUsers.length > 0) {
             allUsers.sort((a,b) => a.getDistance() < b.getDistance() ? -1 : 1);
-            const deadLastUser = allUsers[0];
+
+            let deadLastUser = allUsers[0];
+
+            // if someone has previously disconnected, let's not chuck their reconnect attempt next
+            // to their coasting corpse
+            for(var x = 0;x < allUsers.length; x++) {
+              if(allUsers[x].getLastPower() > 0 && allUsers[x].getMsSinceLastPacket(tmNow) < 1000) {
+                deadLastUser = allUsers[x];
+              }
+            }
+            
             distanceToAssign = deadLastUser.getDistance();
             speedToAssign = deadLastUser.getSpeed();
           }
           
-          newId = game.addUser(tmNow, payload);
+          newId = game.addUser(tmNow, payload, wsConnection as any);
           const newUser = selectedUser = game.getUser(newId);
           newUser.setDistance(distanceToAssign);
           newUser.setSpeed(speedToAssign);
@@ -405,6 +440,21 @@ wss.on('connection', (wsConnection) => {
         if(!startedSendUpdate) {
           startedSendUpdate = true;
           sendUpdate();
+        }
+        break;
+      }
+      case BasicMessageType.ClientToServerChat:
+      {
+        // I guess we'll tell all the other clients about this
+        const payload:ClientToServerChat = <ClientToServerChat>bm.payload;
+        const game = races.get(payload.gameId);
+        if(game) {
+          const user = game.getUser(payload.userId);
+          if(user && 
+            !(user.getUserType() & UserTypeFlags.Ai)) {
+            console.log("user ", user.getName(), " said ", payload.chat);
+            broadcastMessage(tmNow, user, BasicMessageType.S2CClientChat, { fromId: user.getId(), chat: payload.chat});
+          }
         }
         break;
       }

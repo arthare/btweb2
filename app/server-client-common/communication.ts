@@ -22,12 +22,20 @@ export enum BasicMessageType {
   S2CFinishUpdate,
   S2CImageUpdate,
   BattleshipMessage,
+  S2CClientChat,
+  ClientToServerChat,
 }
 
 export enum CurrentRaceState {
   PreRace,
   Racing,
   PostRace,
+}
+
+export interface ClientToServerChat {
+  chat: string;
+  gameId:string;
+  userId:number;
 }
 
 export interface C2SBasicMessage {
@@ -142,6 +150,7 @@ export interface ClientConnectionRequest {
   accountId:string;
   riderHandicap:number;
   gameId:string;
+  bigImageMd5:string|null;
 } 
 export interface ClientConnectionResponse {
   yourAssignedId:number; // given your name/account combo, here's an id for your rider
@@ -162,6 +171,11 @@ export class S2CImageUpdate {
 
   id:number;
   imageBase64:string;
+}
+
+export interface S2CChatUpdate {
+  fromId: number;
+  chat: string;
 }
 export class S2CNameUpdate {
 
@@ -325,6 +339,6 @@ export interface RaceResultSubmission {
   tmStart: number;
   tmEnd: number;
   handicap: number; // your handicap when you rode
-  imageBase64: string; // your full-res rider image.  This is used to uniquely identify the user
   samples: IWorkoutSample[];
+  bigImageMd5: string;
 }

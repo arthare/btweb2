@@ -2,6 +2,7 @@ import Route from '@ember/routing/route';
 import { USERSETUP_KEY_IMAGE, USERSETUP_KEY_NAME, USERSETUP_KEY_HANDICAP } from 'bt-web2/components/user-set-up-widget/component';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
+import md5 from 'ember-md5';
 
 export default class Application extends Route.extend({
   // anything which *must* be merged to prototype here
@@ -26,6 +27,7 @@ export default class Application extends Route.extend({
         name:name,
         handicap:parseInt(handicap),
         imageBase64:image,
+        bigImageMd5: md5(image),
       })
 
 

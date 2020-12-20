@@ -20,8 +20,15 @@
       </div>
     </div>
     <div class="hrm-control__button-row">
-      <button class="hrm-control__button" {{action 'upTarget'}}>Bpm Up</button><br>
-      <button class="hrm-control__button" {{action 'downTarget'}}>Bpm Down</button><br>
+      <button class="hrm-control__button" {{action 'downTarget' 5}}><i class="fas fa-heart hrm-control__heart down5" ></i> -5</button><br>
+      <button class="hrm-control__button" {{action 'downTarget' 1}}><i class="fas fa-heart hrm-control__heart down1"></i> -1</button><br>
+      <button class="hrm-control__button" {{action 'upTarget' 1}}><i class="fas fa-heart hrm-control__heart up1"></i> +1</button><br>
+      <button class="hrm-control__button" {{action 'upTarget' 5}}><i class="fas fa-heart hrm-control__heart up5"></i> +5</button><br>
+    </div>
+    <div class="hrm-control__button-row">
+      <button class="hrm-control__button" {{action 'gainAdjust' -1}}>Aggro - 1</button><br>
+      {{gain}}
+      <button class="hrm-control__button" {{action 'gainAdjust' 1}}>Aggro + 1</button><br>
     </div>
     <br><br>
     <button class="hrm-control__download" {{action 'downloadFile'}}>Download PWX</button>

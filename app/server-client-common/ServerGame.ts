@@ -14,18 +14,24 @@ export class ServerUser extends User {
   _usersIveBeenSentImagesFor:Set<number> = new Set();
 
   _spanAverages:Map<number,SpanAverage> = new Map<number, SpanAverage>();
+  _wsConnection:WebSocket|null;
 
-  constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
+  constructor(name:string, massKg:number, handicap:number, typeFlags:number, wsConnection:WebSocket|null) {
     super(name, massKg, handicap, typeFlags);
 
     this._tmLastFinishUpdate = -1;
     this._tmLastNameSent = -1;
     this._tmLastImageUpdate = -1;
+    this._wsConnection = wsConnection;
 
     const minutesForSpans = [5,10,20,30,45,60];
     minutesForSpans.forEach((minutes) => {
       this._spanAverages.set(minutes, new SpanAverage(minutes*60));
     })
+  }
+
+  getWebSocket():WebSocket|null {
+    return this._wsConnection;
   }
 
   hasBeenSentImageFor(userId:number) {
@@ -143,7 +149,7 @@ export class ServerUserProvider implements UserProvider {
   constructor() {
     this.users = [];
   }
-  getUsers(tmNow:number): User[] {
+  getUsers(tmNow:number): ServerUser[] {
     return this.users.filter((user) => {
       return user.getMsSinceLastPacket(tmNow) < 300000 ||  // either this user is still obviously connected
              user.isFinished() ||
@@ -153,17 +159,23 @@ export class ServerUserProvider implements UserProvider {
   getUser(id:number):ServerUser|null {
     return this.users.find((user) => user.getId() === id) || null;
   }
-  addUser(ccr:ClientConnectionRequest, userTypeFlags?:UserTypeFlags):number {
+  addUser(ccr:ClientConnectionRequest, wsConnection:WebSocket|null, userTypeFlags?:UserTypeFlags):number {
 
     if(!userTypeFlags) {
       userTypeFlags = 0;
     }
 
     let newId = userIdCounter++;
-    const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags);
+    const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags, wsConnection);
+    if(user.getUserType() & UserTypeFlags.Ai) {
+      assert2(wsConnection === null);
+    } else {
+      assert2(wsConnection !== null);
+    }
+
     if(ccr.imageBase64) {
       console.log("user ", ccr.riderName, " has an image!");
-      user.setImage(ccr.imageBase64);
+      user.setImage(ccr.imageBase64, ccr.bigImageMd5);
     }
     user.setId(newId);
     this.users.push(user);
@@ -276,7 +288,8 @@ export class ServerGame {
         riderHandicap: aiStrength*aiStrengthBoost,
         gameId:gameId,
         imageBase64: null,
-      }, UserTypeFlags.Ai);
+        bigImageMd5: null,
+      }, null, UserTypeFlags.Ai);
 
       this._aiBrains.set(aiId, aiBrain);
     }
@@ -320,9 +333,9 @@ export class ServerGame {
     this._stopped = true;
     this.raceState.stop();
   }
-  public addUser(tmNow:number, ccr:ClientConnectionRequest):number {
+  public addUser(tmNow:number, ccr:ClientConnectionRequest, wsConnection:WebSocket|null):number {
     // they've added a user.  So we want to perhaps manage the game start to tip it towards starting soon.
-    let newId = this.userProvider.addUser(ccr);
+    let newId = this.userProvider.addUser(ccr, wsConnection);
 
     const user = this.userProvider.getUser(newId);
     if(user && this._lastRaceStateMode === CurrentRaceState.PostRace) {

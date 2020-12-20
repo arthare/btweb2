@@ -41,7 +41,7 @@ export interface ConnectedDeviceInterface {
   // resolve(true) -> device successfully updated
   // resolve(false) -> device not updated for rate-limiting reasons or other benign issues
   // reject -> device not updated because something is messed up
-  updateSlope(tmNow:number):Promise<boolean>; 
+  updateSlope(tmNow:number, ftmsPct:number):Promise<boolean>; 
   updateErg(tmNow:number, watts:number):Promise<boolean>;
   updateResistance(tmNow:number, pct:number):Promise<boolean>;
 }
@@ -72,7 +72,7 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   abstract getState():BTDeviceState;
   abstract name():string;
   abstract updateErg(tmNow:number, watts:number):Promise<boolean>;
-  abstract updateSlope(tmNow:number):Promise<boolean>;
+  abstract updateSlope(tmNow:number, ftmsPct:number):Promise<boolean>;
   abstract updateResistance(tmNow:number, pct:number):Promise<boolean>;
 
   public setPowerRecipient(who: FnPowerReceipient): void {
@@ -191,7 +191,7 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     });
   }
   _tmLastSlopeUpdate:number = 0;
-  updateSlope(tmNow:number):Promise<boolean> {
+  updateSlope(tmNow:number, ftmsPct:number):Promise<boolean> {
 
 
     const dtMs = tmNow - this._tmLastSlopeUpdate;
@@ -206,7 +206,7 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     }
 
 
-    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
+    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
     console.log("updating FTMS device with slope " + slopeInWholePercent.toFixed(1) + '%');
     const charOut = new DataView(new ArrayBuffer(7));
     charOut.setUint8(0, 0x11); // setIndoorBikesimParams
@@ -344,7 +344,7 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
 
 
 export class BluetoothCpsDevice extends BluetoothDeviceShared {
-  updateSlope(tmNow: number):Promise<boolean> {
+  updateSlope(tmNow: number, ftmsPct:number):Promise<boolean> {
     // powermeters don't have slope adjustment, dummy!
     return Promise.resolve(false);
   }
@@ -406,7 +406,7 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
   }
 
   _tmLastSlopeUpdate:number = 0;
-  updateSlope(tmNow:number):Promise<boolean> {
+  updateSlope(tmNow:number, ftmsPct:number):Promise<boolean> {
    // we're a kickr!  despite launching as the "open source" trainer, our protocol does
    // not appear to be public.  Therefore, I'm going to send hills as resistance levels
    // since I can't figure out how to reliably do the sim-mode commands.
@@ -435,7 +435,7 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
 
     const minSlope = -10;
     const maxSlope = 10; // if we ever peg the kickr at max slope, you basically can't turn the pedals
-    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent();
+    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
 
     const offset = slopeInWholePercent - minSlope;
     const span = maxSlope - minSlope;

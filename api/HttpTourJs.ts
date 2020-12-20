@@ -121,6 +121,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
 
   app.get('/user-ride-result', (req:core.Request, res:core.Response) => {
     setCorsHeaders(req, res);
+    res.setHeader('Cache-Control', 'no-store');
     if(req.query.imageMd5 && req.query.riderName && req.query.tmStart) {
       req.query.tmStart = parseInt(req.query.tmStart);
       
@@ -145,6 +146,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   });
   app.get('/user-ride-results', (req:core.Request, res:core.Response) => {
     setCorsHeaders(req, res);
+    res.setHeader('Cache-Control', 'no-store');
     if(req.query.imageMd5) {
       const fileName = `../rider-db-${req.query.imageMd5}.json`;
       if(fs.existsSync(fileName)) {
@@ -155,6 +157,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
           let rides = userDb[key];
           rides.results = rides.results.map((ride) => {
             ride.samples = [];
+            delete (ride as any).imageBase64;
             return ride;
           })
           rides.results.sort((a, b) => {
@@ -176,9 +179,10 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     return postStartup(req, res).then((postInput:RaceResultSubmission) => {
       setCorsHeaders(req, res);
 
+      delete (postInput as any).imageBase64;
+
       // we will key off of their image.  If they own the high-res source image, then they can access the data for all rider names ridden with that image.
-      const toHash = postInput.imageBase64;
-      const userKey = md5(toHash);
+      const userKey = postInput.bigImageMd5;
       
       const fileName = `../rider-db-${userKey}.json`;
       let userTotal:UserResultDb;
@@ -195,6 +199,12 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
         // double submission
       } else {
         riderTotal.results.push(postInput);
+
+        riderTotal.results = riderTotal.results.map((res) => {
+          delete (res as any).imageBase64; // get rid of any old data with images in it, because it makes our result DB HUGE
+          return res;
+        })
+
         userTotal[postInput.riderName] = riderTotal;
 
         fs.writeFileSync(fileName, JSON.stringify(userTotal));

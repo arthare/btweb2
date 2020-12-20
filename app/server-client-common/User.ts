@@ -115,6 +115,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _name:string;
   private _lastSlopeWholePercent:number = 0;
   private _imageBase64:string|null = null;
+  private _bigImageMd5:string|null = null;
 
   private _lastT:number = 0;
   private _speed:number = 0;
@@ -128,6 +129,9 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _tmDrafteeCycle:number = 0;
   private _lastElevation:number = 0;
 
+  private _lastChat:string = '';
+  private _lastChatTime:number = 0;
+
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
     this._massKg = massKg;
@@ -140,6 +144,23 @@ export class User extends UserDataRecorder implements SlopeSource {
   protected setHandicap(watts:number) {
     assert2(watts >= this._handicap, "you should only increase handicaps, not tank them");
     this._handicap = watts;
+  }
+
+  setChat(tmNow:number, chat:string) {
+    this._lastChat = chat;
+    this._lastChatTime = tmNow;
+  }
+  getLastChat(tmNow:number):{tmWhen:number, chat:string}|null {
+
+    const timeAgo = tmNow - this._lastChatTime;
+    if(timeAgo > 10000) {
+      return null;
+    }
+
+    return {
+      tmWhen: this._lastChatTime,
+      chat: this._lastChat,
+    }
   }
 
   getLastElevation():number {
@@ -184,6 +205,9 @@ export class User extends UserDataRecorder implements SlopeSource {
   }
   getImage():string|null {
     return this._imageBase64;
+  }
+  getBigImageMd5():string|null {
+    return this._bigImageMd5;
   }
 
   getUserType():number {
@@ -382,13 +406,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
   }
 
-  setImage(imageBase64:string) {
+  setImage(imageBase64:string, bigImageMd5:string|null) {
     assert2(imageBase64.startsWith('data:'));
     if(this.getUserType() & UserTypeFlags.Ai) {
       // I don't want to store images for hundreds of AI characters
       this._imageBase64 = null;
     } else {
       this._imageBase64 = imageBase64;
+      this._bigImageMd5 = bigImageMd5;
     }
   }
 

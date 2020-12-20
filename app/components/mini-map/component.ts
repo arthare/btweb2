@@ -70,7 +70,7 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
     ctx.strokeStyle = ai_color;
     ctx.beginPath();
     aiPositions.forEach((positionPct) => {
-      assert2(positionPct >= -0.001 && positionPct <= 1.001);
+      assert2(positionPct >= -0.001 && positionPct <= 1.01);
       ctx.moveTo(positionPct*w, 0);
       ctx.lineTo(positionPct*w, h);
     })
@@ -81,14 +81,14 @@ export function drawMinimap(canvas:HTMLCanvasElement, elevations:number[], w:num
     ctx.lineWidth = 2.0;
     ctx.beginPath();
     humanPositions.forEach((positionPct) => {
-      assert2(positionPct >= 0 && positionPct <= 1.0);
+      assert2(positionPct >= 0 && positionPct <= 1.01);
       ctx.moveTo(positionPct*w, 0);
       ctx.lineTo(positionPct*w, h);
     })
     ctx.stroke();
   }
   if(localPositionPct) {
-    assert2(localPositionPct >= 0 && localPositionPct <= 1.0);
+    assert2(localPositionPct >= 0 && localPositionPct <= 1.01);
     ctx.strokeStyle = local_color;
     ctx.lineWidth = 3.0;
     ctx.beginPath();

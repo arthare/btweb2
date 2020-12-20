@@ -90,12 +90,18 @@ export default class Devices extends Service.extend({
   goodUpdates = 0;
   badUpdates = 0;
 
+  ftmsLevel = 100;
+
   _powerCounters:Map<string,PowerTimer> = new Map<string,PowerTimer>();
   
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
     this.devices.push(device);
     console.log("added a device to device man: ", this.devices);
+  }
+
+  ftmsAdjust(amt:number) {
+    this.incrementProperty('ftmsLevel', amt);
   }
 
   clearUsers() {
@@ -112,7 +118,7 @@ export default class Devices extends Service.extend({
     const tmNow = new Date().getTime();
     const newUser = new User("Unknown User " + pos.id, DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER, UserTypeFlags.Remote);
     if(image) {
-      newUser.setImage(image);
+      newUser.setImage(image, null);
     }
     newUser.setId(pos.id);
     newUser.absorbPositionUpdate(tmNow, pos);
@@ -131,7 +137,7 @@ export default class Devices extends Service.extend({
 
     this.workoutSaver = new WorkoutFileSaver(newUser, new Date().getTime());
     if(user.imageBase64) {
-      newUser.setImage(user.imageBase64);
+      newUser.setImage(user.imageBase64, user.bigImageMd5);
     }
     this.users.push(newUser);
     this.incrementProperty('ridersVersion');
@@ -257,6 +263,7 @@ export default class Devices extends Service.extend({
         imageBase64: userImage || '',
         samples,
         deviceName: this.get('deviceDescription'),
+        bigImageMd5: user.getBigImageMd5() || '',
       }
 
       dumpRaceResultToPWX(submission);
@@ -323,7 +330,7 @@ export default class Devices extends Service.extend({
     });
 
     this.devices.forEach((device) => {
-      device.updateSlope(tmNow).then((good:boolean) => {
+      device.updateSlope(tmNow, this.ftmsLevel / 100).then((good:boolean) => {
         if(good) {
           this.incrementProperty('goodUpdates');
         } else {

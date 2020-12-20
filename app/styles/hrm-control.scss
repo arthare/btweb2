@@ -1,3 +1,9 @@
+@keyframes pulse-red-color {
+  0% {color: red;}
+  50% {color: darkred;}
+  100% {color: red;}
+}
+
 .hrm-control {
   &__super-container {
     background-color: black;
@@ -15,6 +21,7 @@
   &__button-row {
     display: flex;
     flex-direction: row;
+    margin-top: 24px;
   }
   &__data-row {
     width: 100%;
@@ -25,6 +32,25 @@
   &__data-key {
     flex: 0 0 140px;
     font-size: 24px;
+  }
+  &__heart {
+    color: red;
+    animation-name: pulse-red-color;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+
+    &.down5 {
+      animation-duration: 4s;
+    }
+    &.down1 {
+      animation-duration: 2s;
+    }
+    &.up1 {
+      animation-duration: 1s;
+    }
+    &.up5 {
+      animation-duration: 0.5s;
+    }
   }
   &__data-value {
     flex: 1 1 0px;

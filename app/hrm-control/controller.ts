@@ -11,20 +11,23 @@ export default class HrmControl extends Controller.extend({
   lastBpm: 0,
   targetHandicap: 75,
   targetBpm: 150,
-
+  gain: 100,
 
   actions: {
-    upTarget() {
-      this.incrementProperty('targetBpm');
+    upTarget(amount:number) {
+      this.incrementProperty('targetBpm', amount);
     },
-    downTarget() {
-      this.decrementProperty('targetBpm');
+    downTarget(amount:number) {
+      this.decrementProperty('targetBpm', amount);
     },
     upErg() {
       this.incrementProperty('targetHandicap');
     },
     downErg() {
       this.decrementProperty('targetHandicap');
+    },
+    gainAdjust(amount:number) {
+      this.incrementProperty('gain', amount);
     },
     downloadFile() {
       this.devices.dumpPwx("HRM-Control", new Date().getTime());
@@ -63,6 +66,8 @@ export default class HrmControl extends Controller.extend({
       this.set('lastBpm', lastBpm);
 
       console.log("tick");
+      const gainFactor = this.get('gain') / 100;
+
       if(lastBpm > 0 && lastWatts > 0) {
         // ok, so we know their lastBpm (in lastBpm), and we know their targetBpm (in targetBpm).
         // we probably need to adjust targetErg up or down based on the delta
@@ -74,10 +79,10 @@ export default class HrmControl extends Controller.extend({
 
           // clamp it to a max of 10bpm error - this way when you initially get on the bike with a HR of 60 it doesn't shoot way the hell up
           error = Math.min(10, error);
-          handicapsPerSecToAdjust = 0.025*(Math.min(10, error));
+          handicapsPerSecToAdjust = gainFactor*0.025*(Math.min(10, error));
         } else {
           // we're too high.  bring things down fairly quickly.
-          handicapsPerSecToAdjust = 0.065*(error);
+          handicapsPerSecToAdjust = gainFactor*0.065*(error);
         }
   
         let newTargetHandicap = targetHandicap + handicapsPerSecToAdjust*dt;

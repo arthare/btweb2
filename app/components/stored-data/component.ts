@@ -30,9 +30,14 @@ export default class StoredData extends Component.extend({
     if(this.get('override')) {
       return this.get('override');
     } else {
-      const imgBase64 = this.get('yourImage')
-      const md5Result = md5(imgBase64);
-      return md5Result;
+      const user = this.devices.getLocalUser();
+      if(user && user.getBigImageMd5()) {
+        return user.getBigImageMd5();
+      } else {
+        const imgBase64 = this.get('yourImage')
+        const md5Result = md5(imgBase64);
+        return md5Result;
+      }
     }
   }),
   observeImage: Ember.observer('devices.ridersVersion', function(this:StoredData) {
@@ -55,6 +60,9 @@ export default class StoredData extends Component.extend({
     const myReqNumber = this.get('imageUpdateCount');
     
     apiGet('user-ride-results', arg).then((rideResults:{[key:string]:RaceResultSubmission[]}) => {
+      if(this.isDestroyed) {
+        return;
+      }
       this.set('triedToGetData', true);
       if(myReqNumber === this.get('imageUpdateCount')) {
         // ok, there hasn't been a new request since we spawned this one
@@ -69,6 +77,8 @@ export default class StoredData extends Component.extend({
         this.set('riders', riders);
       }
     }).finally(() => {
+      if(this.isDestroyed) return;
+
       this.set('triedToGetData', true);
     })
   }),
@@ -78,8 +88,8 @@ export default class StoredData extends Component.extend({
 
       assert2(targetRide.samples.length === 0, "we're expecting the parameter here to be a basic ride.  we need to ask the server for the whole thing");
 
-      const imgBase64 = this.get('yourImage')
-      const md5Result = this.get('override') || md5(imgBase64);
+      const yourMd5 = this.get('yourmd5')
+      const md5Result = this.get('override') || yourMd5;
       const arg = {tmStart: targetRide.tmStart, riderName: targetRide.riderName, imageMd5: md5Result};
 
       return apiGet('user-ride-result', arg).then((fullResult:RaceResultSubmission) => {

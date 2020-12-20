@@ -42,7 +42,7 @@ export class TestPowermeter extends PowerDataDistributor {
     hasHrm(): boolean {
         return false;
     }
-    updateSlope(tmNow:number): Promise<boolean> {
+    updateSlope(tmNow:number, ftmsPct:number): Promise<boolean> {
       return Promise.resolve(false);
     }
     updateErg(tmNow: number, watts:number): Promise<boolean> {
@@ -107,7 +107,7 @@ class PluginDevice extends PowerDataDistributor {
   updateErg(tmNow: number, watts:number): Promise<boolean> {
     return Promise.resolve(false);
   }
-  updateSlope(tmNow: number): Promise<boolean> {
+  updateSlope(tmNow: number, ftmsPct:number): Promise<boolean> {
     // we're not currently capable of this
     if(this._sendingSlope) {
       return Promise.resolve(false); // let's not queue up a bunch of slope-sends
@@ -192,7 +192,7 @@ class BluetoothHrmDevice extends BluetoothDeviceShared {
   public updateErg(tmNow: number, watts:number): Promise<boolean> {
     return Promise.resolve(false);
   }
-  public updateSlope(tmNow:number):Promise<boolean> {
+  public updateSlope(tmNow:number, ftmsPct:number):Promise<boolean> {
     return Promise.resolve(false);
   }
   public updateResistance(tmNow:number, pct:number):Promise<boolean> {

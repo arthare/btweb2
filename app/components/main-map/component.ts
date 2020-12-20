@@ -246,6 +246,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
     let borderColor = 'black';
     let sz = 2;
     let nameToDraw;
+    let chatToDraw:null|{chat:string,tmWhen:number} = null;
     if(isLocal && isHuman) {
       sz = 3;
       fillColor = 'white';
@@ -256,6 +257,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
       fillColor = human_color;
       borderColor = 'black';
       nameToDraw = user.getName();
+      chatToDraw = user.getLastChat(tmNow);
     } else {
       // ai
       sz = 2;
@@ -316,6 +318,7 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           outlineColor = 'green';
         }
 
+
         if(handicapRatio > 1.6) {
           xShift = Math.random() * 0.6;
           yShift = Math.random() * 0.6;
@@ -340,6 +343,21 @@ function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:nu
           ctx.translate(sz*1.25,0);
         }
 
+        if(chatToDraw) {
+          const secondsSinceChat = (tmNow - chatToDraw.tmWhen) / 1000;
+          const chatSize = 3*((Math.log(secondsSinceChat) - secondsSinceChat + 7.7) / 6.7);
+          let oldFont = ctx.font;
+          let oldStrokeStyle = ctx.strokeStyle;
+
+          ctx.strokeStyle = 'black';
+          ctx.font = `${chatSize}px Arial`;
+          ctx.strokeText(chatToDraw.chat, 0, -chatSize);
+          ctx.fillText(chatToDraw.chat, 0, -chatSize);
+
+          ctx.strokeStyle = oldStrokeStyle;
+          ctx.font = oldFont;
+
+        }
         ctx.strokeText(nameToDraw, 0, 0);
         ctx.fillText(nameToDraw, 0, 0);
 
