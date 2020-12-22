@@ -14,25 +14,34 @@ import {
 import { BleError, BleManager, Device, ScanMode } from 'react-native-ble-plx';
 import { State } from 'react-native-gesture-handler';
 import ComponentButton from './ComponentButton';
+import ComponentDeviceNav from './ComponentDeviceNav';
+import { DeviceContext } from './UtilsBle';
+import { isHrm, isPowermeter, isTrainer } from './UtilsBleBase';
+
+const SEARCH_FLAGS_PM = 1;
+const SEARCH_FLAGS_TRAINER = 2;
+const SEARCH_FLAGS_HRM = 4;
+
+
+export const DeviceContextInstance = React.createContext<DeviceContext>(new DeviceContext());
 
 const ManagerBluetooth = (props:{children:any}) => {
 
   let [bleManager, setBleManager] = useState<BleManager|null>(null);
   let [bleState, setBleState] = useState<string>('');
   let [blePermissionsValid, setBlePermissionsValid] = useState<boolean>(false);
-  let [selectedPowermeter, setSelectedPowermeter] = useState<Device|null>(null);
+  let [deviceCtx, setDeviceCtx] = useState<DeviceContext>(new DeviceContext());
 
   // searching
   let [searchResults, setSearchResults] = useState<Device[]>([]);
   let [lastDeviceDetected, setLastDeviceDetected] = useState<Device|null>(null);
+  let [searchingFlags, setSearchingFlags] = useState<number>(0);
 
-  const navStyle = {
-    minHeight: 32,
-    justifyContent: 'center' as any,
-    paddingLeft: 16,
-    flex: 0,
-    flexDirection: 'row' as any,
-  }
+
+  const isSearchingPowermeter = searchingFlags & SEARCH_FLAGS_PM;
+  const isSearchingTrainer = searchingFlags & SEARCH_FLAGS_TRAINER;
+  const isSearchingHrm = searchingFlags & SEARCH_FLAGS_HRM;
+
 
 
   useEffect(() => {
@@ -54,6 +63,7 @@ const ManagerBluetooth = (props:{children:any}) => {
     // react to permissions state changing
     const manager = new BleManager();
     setBleManager(manager);
+    
 
     manager.onStateChange((state) => {
       console.log("state = ", state);
@@ -99,25 +109,59 @@ const ManagerBluetooth = (props:{children:any}) => {
   }, [lastDeviceDetected])
 
 
-
-  const onPickPowermeter = () => {
+  const onStartScan = (uuidFilter:string, searchFlags:number) => {
+    
     setSearchResults([]);
-    bleManager?.startDeviceScan(['1818'],{scanMode:ScanMode.Balanced}, (err, newDevice) => onDeviceDetected(err, newDevice, '1818'));
-  }
-  const onPickTrainer = () => {
-    setSearchResults([]);
-    bleManager?.startDeviceScan(['1826'],null, (err, newDevice) => onDeviceDetected(err, newDevice, '1826'));
-  }
-  const onPickHrm = () => {
-    setSearchResults([]);
-    bleManager?.startDeviceScan(['180d'],null, (err, newDevice) => onDeviceDetected(err, newDevice, '180d'));
+    setSearchingFlags(searchFlags);
+    bleManager?.connectedDevices([uuidFilter]).then((connectedDevices) => {
+      console.log("there are ", connectedDevices.length, " devices already connected");
+      connectedDevices.forEach((dev) => onDeviceDetected(null, dev, uuidFilter));
+    })
+    bleManager?.startDeviceScan([uuidFilter],{scanMode:ScanMode.Balanced}, (err, newDevice) => onDeviceDetected(err, newDevice, uuidFilter));
   }
 
-  const onFinishScan = (fnSet:(dev:Device)=>void, arg:Device) => {
-    console.log("they're picking ", arg.name, " for ", fnSet.name)
-    fnSet(arg); // update the device they've told us to
+  const onSearchPowermeter = () => {
+    onStartScan('1818', SEARCH_FLAGS_PM);
+  }
+  const onSearchTrainer = () => {
+    onStartScan('1826', SEARCH_FLAGS_TRAINER);
+  }
+  const onSearchHrm = () => {
+    onStartScan('180d', SEARCH_FLAGS_HRM);
+  }
+
+  const onPickPowermeter = (device:Device) => {
+    deviceCtx.setPowermeter(device);
+  }
+  const onPickTrainer = (device:Device) => {
+    deviceCtx.setTrainer(device);
+  }
+  const onPickHrm = (device:Device) => {
+    deviceCtx.setHrm(device);
+  }
+
+
+  const onFinishScan = (selectedDevice:Device|null) => {
     bleManager?.stopDeviceScan();
     setSearchResults([]);
+    setSearchingFlags(0);
+    setLastDeviceDetected(null);
+
+    if(!selectedDevice || !selectedDevice.serviceUUIDs || !Array.isArray(selectedDevice.serviceUUIDs)) {
+      return;
+    }
+    // we need to figure out where this device should go.
+    selectedDevice.serviceUUIDs.forEach((uuid) => {
+      if(isPowermeter(uuid) && isSearchingPowermeter) {
+        onPickPowermeter(selectedDevice);
+      }
+      if(isTrainer(uuid) && isSearchingTrainer) {
+        onPickTrainer(selectedDevice)
+      }
+      if(isHrm(uuid) && isSearchingHrm) {
+        onPickHrm(selectedDevice)
+      }
+    })
   }
 
   const requestLocation = () => {
@@ -144,35 +188,22 @@ const ManagerBluetooth = (props:{children:any}) => {
   const bleReady = bleState === 'PoweredOn';
   return (
     <>
-      <View style={navStyle}>
-        {!blePermissionsValid && (
-          <ComponentButton title="Location Services Required" onPress={requestLocation}></ComponentButton>
+      <DeviceContextInstance.Provider value={deviceCtx}>
+        <ComponentDeviceNav {...{deviceContext: deviceCtx, requestLocation, bleReady, blePermissionsValid, onSearchPowermeter, onSearchHrm, onSearchTrainer}} />
+
+        {searchingFlags !== 0 && (
+          <View>
+            <ComponentButton onPress={() => onFinishScan(null)} title="Cancel Search" />
+            {searchResults.length > 0 && searchResults.map((searchResult, index) => {
+              return <ComponentButton key={index} onPress={() => onFinishScan(searchResult)} title={searchResult.name || "Unknown Device"} />
+            })}
+            {searchResults.length <= 0 && (
+              <Text>Searching...</Text>
+            )}
+          </View>
         )}
-        {blePermissionsValid && (<>
-          {!bleReady && (
-            <Text>Turn On Bluetooth</Text>
-          )}
-          {bleReady && (
-            <ComponentButton title="PM" onPress={onPickPowermeter} />
-          )}
-          {bleReady && (
-            <ComponentButton title="Trainer" onPress={onPickTrainer} />
-          )}
-          {bleReady && (
-            <ComponentButton title="HRM" onPress={onPickHrm} />
-          )}
-
-        </>)}
-      </View>
-
-      {searchResults.length > 0 && (
-        <View>
-          {searchResults.map((searchResult, index) => {
-            return <ComponentButton key={index} onPress={() => onFinishScan(setSelectedPowermeter, searchResult)} title={searchResult.name || "Unknown Device"} />
-          })}
-        </View>
-      )}
-      {searchResults.length <= 0 && props.children}
+        {searchingFlags === 0 && props.children}
+      </DeviceContextInstance.Provider>
     </>
   );
 };

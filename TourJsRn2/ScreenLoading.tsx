@@ -10,13 +10,13 @@ import {
   StatusBar,
 } from 'react-native';
 
-const BoilerPlate = () => {
+const ScreenLoading = () => {
 
   return (
     <>
-      <Text>Boilerplate</Text>
+      <Text>Loading...</Text>
     </>
   );
 };
 
-export default BoilerPlate;
+export default ScreenLoading;
