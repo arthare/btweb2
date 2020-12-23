@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,10 +17,13 @@ import ComponentButton from './ComponentButton';
 import ComponentDeviceNav from './ComponentDeviceNav';
 import { DeviceContext } from './UtilsBle';
 import { isHrm, isPowermeter, isTrainer } from './UtilsBleBase';
+import * as RootNavigation from './RootNavigation';
+import ComponentPlayerSetup from './ComponentPlayerSetup';
 
 const SEARCH_FLAGS_PM = 1;
 const SEARCH_FLAGS_TRAINER = 2;
 const SEARCH_FLAGS_HRM = 4;
+const SEARCH_FLAGS_PLAYER_DATA = 8;
 
 
 export const DeviceContextInstance = React.createContext<DeviceContext>(new DeviceContext());
@@ -36,7 +39,6 @@ const ManagerBluetooth = (props:{children:any}) => {
   let [searchResults, setSearchResults] = useState<Device[]>([]);
   let [lastDeviceDetected, setLastDeviceDetected] = useState<Device|null>(null);
   let [searchingFlags, setSearchingFlags] = useState<number>(0);
-
 
   const isSearchingPowermeter = searchingFlags & SEARCH_FLAGS_PM;
   const isSearchingTrainer = searchingFlags & SEARCH_FLAGS_TRAINER;
@@ -139,6 +141,9 @@ const ManagerBluetooth = (props:{children:any}) => {
   const onPickHrm = (device:Device) => {
     deviceCtx.setHrm(device);
   }
+  const onSetupPlayer = () => {
+    setSearchingFlags(SEARCH_FLAGS_PLAYER_DATA);
+  }
 
 
   const onFinishScan = (selectedDevice:Device|null) => {
@@ -184,14 +189,19 @@ const ManagerBluetooth = (props:{children:any}) => {
     })
   }
 
+  const onPlayerChangeDone = () => {
+    // nothing to do
+    setSearchingFlags(0);
+  }
+
   console.log("search results ", searchResults);
   const bleReady = bleState === 'PoweredOn';
   return (
     <>
       <DeviceContextInstance.Provider value={deviceCtx}>
-        <ComponentDeviceNav {...{deviceContext: deviceCtx, requestLocation, bleReady, blePermissionsValid, onSearchPowermeter, onSearchHrm, onSearchTrainer}} />
+        <ComponentDeviceNav {...{deviceContext: deviceCtx, onSetupPlayer, requestLocation, bleReady, blePermissionsValid, onSearchPowermeter, onSearchHrm, onSearchTrainer}} />
 
-        {searchingFlags !== 0 && (
+        {( searchingFlags & ~SEARCH_FLAGS_PLAYER_DATA) !== 0 && (
           <View>
             <ComponentButton onPress={() => onFinishScan(null)} title="Cancel Search" />
             {searchResults.length > 0 && searchResults.map((searchResult, index) => {
@@ -202,6 +212,11 @@ const ManagerBluetooth = (props:{children:any}) => {
             )}
           </View>
         )}
+        {(searchingFlags & SEARCH_FLAGS_PLAYER_DATA) ? (
+          <View style={{backgroundColor:'green'}}>
+            <ComponentPlayerSetup onDone={onPlayerChangeDone} />
+          </View>
+        ) : <></>}
         {searchingFlags === 0 && props.children}
       </DeviceContextInstance.Provider>
     </>

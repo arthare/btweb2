@@ -8,7 +8,7 @@
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -23,11 +23,13 @@ const Stack = createStackNavigator();
 
 import ScreenDeviceSetup from './ScreenDeviceSetup';
 import ScreenHome from './ScreenHome';
-import ScreenPlayerSetup from './ScreenPlayerSetup';
+import { PlayerSetup, PlayerSetupInstance } from './ComponentPlayerSetup';
 import ScreenHrmControl from './ScreenHrmControl';
 import ManagerBluetooth from './ManagerBluetooth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScreenLoading from './ScreenLoading';
+import { navigationRef } from './RootNavigation';
+import ComponentPlayerSetup from './ComponentPlayerSetup';
 
 enum LoadingStatus {
   LoadingData,
@@ -48,15 +50,18 @@ const App = () => {
     Orientation.lockToLandscape();
   }, []);
 
+  let playerSetup = useContext(PlayerSetupInstance);
+
   let [loadingStatus, setLoadingStatus] = useState<LoadingStatus>(LoadingStatus.LoadingData);
   let [storedData, setStoredData] = useState<StoredData|null>(null);
-  useEffect(() => {
-    AsyncStorage.getItem('app.tsx/stored-data').then((data:string|null) => {
+
+  function checkLoadStatus() {
+    AsyncStorage.getItem(PlayerSetup.PLAYER_DATA_KEY).then((data:string|null) => {
       if(data) {
         try {
-            const parsed = JSON.parse(data);
-            setStoredData(parsed);
-            setLoadingStatus(LoadingStatus.Loaded);
+          const parsed:StoredData = JSON.parse(data);
+          playerSetup.setPlayerData(parsed.name, parsed.handicap, parsed.rawPictureBase64);
+          setLoadingStatus(LoadingStatus.Loaded);
         } catch(e) {
           setLoadingStatus(LoadingStatus.NoData);
         }
@@ -66,25 +71,30 @@ const App = () => {
     }, (noData) => {
       setLoadingStatus(LoadingStatus.NoData);
     })
+  }
+  useEffect(() => {
+    checkLoadStatus();
+
+    playerSetup.on('playerDataChange', () => {
+      console.log("app: player setup done", playerSetup.playerData);
+      setStoredData(playerSetup.playerData);
+    })
   }, []);
+
+
 
   const screenHome = (
     <Stack.Screen
       name="ScreenHome"
+      key="ScreenHome"
       component={ScreenHome}
       options={{ title: 'Welcome' }}
-    />
-  )
-  const screenPlayerSetup = (
-    <Stack.Screen
-      name="ScreenPlayerSetup"
-      component={ScreenPlayerSetup}
-      options={{ title: 'Player Setup' }}
     />
   )
   const hrmControl = (
     <Stack.Screen
       name="ScreenHrmControl"
+      key="ScreenHrmControl"
       component={ScreenHrmControl}
       options={{ title: 'Player Setup' }}
     />
@@ -92,6 +102,7 @@ const App = () => {
   const screenLoading = (
     <Stack.Screen
       name="ScreenLoading"
+      key="ScreenLoading"
       component={ScreenLoading}
       options={{ title: 'Loading...' }}
     />
@@ -100,27 +111,37 @@ const App = () => {
   function getScreensToShow() {
     switch(loadingStatus) {
       case LoadingStatus.NoData:
-        return ([screenPlayerSetup]);
+        return ([screenHome]);
       case LoadingStatus.Loaded:
-        return ([screenHome, screenPlayerSetup, hrmControl]);
+        return ([screenHome, hrmControl]);
       case LoadingStatus.LoadingData:
         return ([screenLoading]);
       default:
         debugger;
     }
   }
+
+  const onDonePlayerSetup = () => {
+    checkLoadStatus();
+  }
+
   const screensToShow = getScreensToShow();
 
   return (
     <>
       <StatusBar barStyle="dark-content" hidden={true} />
-      <NavigationContainer>
-        <ManagerBluetooth>
-          <Stack.Navigator headerMode="none">
-            {screensToShow}
-          </Stack.Navigator>
-        </ManagerBluetooth>
-      </NavigationContainer>
+      {loadingStatus !== LoadingStatus.Loaded && (
+        <ComponentPlayerSetup onDone={onDonePlayerSetup} />
+      )}
+      {loadingStatus === LoadingStatus.Loaded && (
+        <NavigationContainer ref={navigationRef}>
+          <ManagerBluetooth>
+            <Stack.Navigator headerMode="none">
+              {screensToShow}
+            </Stack.Navigator>
+          </ManagerBluetooth>
+        </NavigationContainer>
+      )}
     </>
   );
 };

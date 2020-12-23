@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { EventEmitter } from 'events';
 import React, { useContext, useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -11,6 +13,7 @@ import {
   TextInput,
   PermissionsAndroid,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import { StoredData } from './App';
 import ComponentButton from './ComponentButton';
@@ -19,13 +22,36 @@ import happyFaceB64 from './ScreenPlayerSetup-HappyFace';
 // require'd because this doesn't have any @types/ and I'm trying to keep this project free ot errors
 const ReactNativeImagePicker = require('react-native-image-picker'); // https://github.com/react-native-image-picker/react-native-image-picker#options
 
-export class PlayerSetup {
+export class PlayerSetup extends EventEmitter {
   playerData:StoredData;
 
+  static PLAYER_DATA_KEY = "PlayerSetup::playerData";
+
   constructor(playerData:StoredData) {
+    super();
+    console.log("instantiated with player data ", playerData);
     this.playerData = playerData;
   }
 
+  setPlayerData(name:string, handicap:number, imageBase64:string):Promise<any> {
+    const before = JSON.stringify(this.playerData);
+    this.playerData = {
+      ...this.playerData,
+      name,
+      handicap: handicap,
+      rawPictureBase64: imageBase64,
+    }
+    const after = JSON.stringify(this.playerData);
+
+    if(after !== before) {
+      return AsyncStorage.setItem(PlayerSetup.PLAYER_DATA_KEY, JSON.stringify(this.playerData)).then(() => {
+        console.log("stored player data ", this.playerData);
+        this.emit('playerDataChange', this.playerData);
+      })
+    } else {
+      return Promise.resolve();
+    }
+  }
 }
 
 const defaultPlayerData:StoredData = {
@@ -60,12 +86,20 @@ interface ImagePickerOptions {
   saveToPhotos:boolean;
 }
 
-const ScreenPlayerSetup = () => {
+const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
+
+
 
   const ctx = useContext(PlayerSetupInstance);
+  
+  const defaultImage = {
+    base64: ctx.playerData.rawPictureBase64,
+    type: "image/jpeg",
+  }
+
   let [name, setName] = useState<string>(ctx.playerData.name);
   let [handicap, setHandicap] = useState<string>('' + ctx.playerData.handicap);
-  let [picture, setPicture] = useState<ImagePickerResponseObject|null>(null);
+  let [picture, setPicture] = useState<ImagePickerResponseObject|null>(defaultImage as any);
 
   const inputStyle = {
     height: 40, 
@@ -81,7 +115,14 @@ const ScreenPlayerSetup = () => {
   }
 
   const done = () => {
-
+    // let's store this crap
+    const flHandicap = parseFloat(handicap);
+    if(isFinite(flHandicap) && flHandicap > 25 && picture && picture?.base64) {
+      console.log(name, handicap, picture);
+      ctx.setPlayerData(name, flHandicap, picture.base64).then(() => {
+        props.onDone();
+      })
+    }
   }
 
   const pickImage = () => {
@@ -118,23 +159,24 @@ const ScreenPlayerSetup = () => {
   }
 
   return (
-    <ScrollView>
+    <ScrollView style={{maxWidth: 360, marginLeft: 'auto', marginRight: 'auto'}}>
       <Text>Player Setup: Tell us about yourself.  No signup required.</Text>
 
       <Text style={textStyle}>Name</Text>
       <TextInput value={name} onChangeText={setName} style={inputStyle} />
 
       <Text style={textStyle}>Handicap/FTP</Text>
-      <TextInput value={handicap} onChangeText={setHandicap} style={inputStyle} />
+      <TextInput keyboardType="numeric" value={handicap} onChangeText={setHandicap} style={inputStyle} />
       
-      <Text style={textStyle}>Note: Your ride data will be locked to this image.  So make it good.</Text>
-      {picture && (<Image style={imageStyle} source={imageSource}></Image>)
-      }
-      <ComponentButton title="Select Image" onPress={pickImage}></ComponentButton>
+      <TouchableOpacity onPress={pickImage}>
+        <Text style={textStyle}>Touch here to select your image.</Text>
+        {picture && (<Image style={imageStyle} source={imageSource}></Image>)
+        }
+      </TouchableOpacity>
 
       <ComponentButton title="Save Player Data" onPress={done}></ComponentButton>
     </ScrollView>
   );
 };
 
-export default ScreenPlayerSetup;
+export default ComponentPlayerSetup;

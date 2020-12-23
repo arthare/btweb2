@@ -17,14 +17,10 @@ const BoilerPlate = (props:{navigation:any}) => {
     flexDirection: "row",
   } as any
   const buttonStyle = {
-    flex: 1.0/3.0,
+    flex: 1.0,
     backgroundColor: 'red',
   }
   
-  const deviceSetupStyle = {
-    ...buttonStyle,
-    backgroundColor: 'green',
-  }
   const playerSetupStyle = {
     ...buttonStyle,
     backgroundColor: 'yellow',
@@ -34,12 +30,6 @@ const BoilerPlate = (props:{navigation:any}) => {
     backgroundColor: 'blue',
   }
 
-  const onDeviceSetup = () => {
-    props.navigation.navigate('ScreenDeviceSetup', {name: 'Device Setup'});
-  }
-  const onPlayerSetup = () => {
-    props.navigation.navigate('ScreenPlayerSetup', {name: 'Player Setup'});
-  }
   const onHrmControl = () => {
     props.navigation.navigate('ScreenHrmControl', {name: 'HRM Control'});
   }
@@ -48,8 +38,6 @@ const BoilerPlate = (props:{navigation:any}) => {
     <>
       <View style={rootStyle}>
 
-        <View style={deviceSetupStyle} onTouchEnd={onDeviceSetup}></View>
-        <View style={playerSetupStyle} onTouchEnd={onPlayerSetup}></View>
         <View style={hrmStyle} onTouchEnd={onHrmControl}></View>
 
       </View>
