@@ -3,6 +3,7 @@ import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { computed } from '@ember/object';
 import { User } from 'bt-web2/server-client-common/User';
+import { HeartRateEngine } from 'bt-web2/server-client-common/heart-rate-engine';
 
 export default class HrmControl extends Controller.extend({
   // anything which *must* be merged to prototype here
@@ -12,6 +13,7 @@ export default class HrmControl extends Controller.extend({
   targetHandicap: 75,
   targetBpm: 150,
   gain: 100,
+  hrmEngine: <HeartRateEngine|null>null,
 
   actions: {
     upTarget(amount:number) {
@@ -40,59 +42,36 @@ export default class HrmControl extends Controller.extend({
     console.log("starting hrm control mode");
 
     let tmLast = new Date().getTime();
-    const doTick = () => {
 
-      const tmNow = new Date().getTime();
-      const dt = (tmNow - tmLast) / 1000;
-      tmLast = tmNow;
-      this._tick(tmNow, dt);
-      this.devices.tick(tmNow, false);
-
-      if(!this.isDestroyed) {
-        setTimeout(doTick, 500);
-      }
-    }
-
-    setTimeout(doTick, 500);
-  }
-
-  _tick(tmNow:number, dt:number) {
     const user = this.devices.getLocalUser();
-    const targetBpm = this.get('targetBpm');
-    const targetHandicap = this.get('targetHandicap');
     if(user) {
-      const lastBpm = user.getLastHrm(tmNow);
-      const lastWatts = user.getLastPower();
-      this.set('lastBpm', lastBpm);
-
-      console.log("tick");
-      const gainFactor = this.get('gain') / 100;
-
-      if(lastBpm > 0 && lastWatts > 0) {
-        // ok, so we know their lastBpm (in lastBpm), and we know their targetBpm (in targetBpm).
-        // we probably need to adjust targetErg up or down based on the delta
-
-        let error = targetBpm - lastBpm;
-        let handicapsPerSecToAdjust = 0;
-        if(error > 0) {
-          // we're too low, heartrate wise, so we need to gradually increase the difficulty
-
-          // clamp it to a max of 10bpm error - this way when you initially get on the bike with a HR of 60 it doesn't shoot way the hell up
-          error = Math.min(10, error);
-          handicapsPerSecToAdjust = gainFactor*0.025*(Math.min(10, error));
-        } else {
-          // we're too high.  bring things down fairly quickly.
-          handicapsPerSecToAdjust = gainFactor*0.065*(error);
-        }
+      this.set('hrmEngine', new HeartRateEngine(user.getLastHrm(tmLast)));
   
-        let newTargetHandicap = targetHandicap + handicapsPerSecToAdjust*dt;
-        this._applyTargetErg(user, newTargetHandicap);
-      } else {
-        this._applyTargetErg(user, targetHandicap);
+      const doTick = () => {
+  
+        const tmNow = new Date().getTime();
+        const dt = (tmNow - tmLast) / 1000;
+        tmLast = tmNow;
+        const targetBpm = this.get('targetBpm');
+        let targetHandicap = this.get('targetHandicap');
+        const hrmEngine = this.get('hrmEngine');
+        if(hrmEngine && user) {
+          const {newTargetHandicap} = hrmEngine.tick(user, tmNow, dt, targetBpm, targetHandicap, this.get('gain') / 100);
+          this.set('targetHandicap', newTargetHandicap);
+        }
+        this.devices.tick(tmNow, false);
+  
+        if(!this.isDestroyed) {
+          setTimeout(doTick, 500);
+        }
       }
+      setTimeout(doTick, 500);
+    } else {
+      alert("Somehow we don't have a user");
     }
 
   }
+
 
   _applyTargetErg(user:User, handicap:number) {
     this.devices.setErgMode(handicap * user.getHandicap() / 100);

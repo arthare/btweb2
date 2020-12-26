@@ -1,9 +1,22 @@
 import { Device, BleError, Characteristic } from "react-native-ble-plx";
 import { DeviceContext } from "./UtilsBle";
-import { DataNotifyRecipient, LoadedDevice, UUID_CPS_MEASURE_CHAR, UUID_CPS_SERVICE } from "./UtilsBleBase";
+import { DataNotifyRecipient, LoadedBleDevice, LoadedDevice, LoadedFakeDevice, UUID_CPS_MEASURE_CHAR, UUID_CPS_SERVICE } from "./UtilsBleBase";
 import { Buffer } from 'buffer';
 
-export class LoadedPm extends LoadedDevice {
+
+export class LoadedFakePowermeter extends LoadedFakeDevice {
+  constructor(deviceContext:DeviceContext) {
+    super(deviceContext);
+  }
+  _report() {
+    this.deviceContext.notifyPower(Math.random() * 30 + 120);
+  }
+  name(): string {
+    return "HRM:Fake";
+  }
+}
+
+export class LoadedPm extends LoadedBleDevice {
   constructor(deviceContext:DataNotifyRecipient, device:Device) {
     super(deviceContext, device);
   }
@@ -25,7 +38,7 @@ export class LoadedPm extends LoadedDevice {
   }
 
   onMeasureChange(err:BleError|null, char:Characteristic|null) {
-    this.deviceContext.notifyAnyMessage(this.bleDevice);
+    this.deviceContext.notifyAnyMessage(this);
     if(err || !char) {
       return;
     }

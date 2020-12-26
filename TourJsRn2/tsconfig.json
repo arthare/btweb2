@@ -12,6 +12,7 @@
     "target": "esnext",
     "noImplicitAny": false,
   },
+  
   "exclude": [
     "node_modules",
     "babel.config.js",

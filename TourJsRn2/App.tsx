@@ -21,7 +21,6 @@ import {
 const Orientation = require('react-native-orientation');
 const Stack = createStackNavigator();
 
-import ScreenDeviceSetup from './ScreenDeviceSetup';
 import ScreenHome from './ScreenHome';
 import { PlayerSetup, PlayerSetupInstance } from './ComponentPlayerSetup';
 import ScreenHrmControl from './ScreenHrmControl';
@@ -60,7 +59,7 @@ const App = () => {
       if(data) {
         try {
           const parsed:StoredData = JSON.parse(data);
-          playerSetup.setPlayerData(parsed.name, parsed.handicap, parsed.rawPictureBase64);
+          playerSetup.setPlayerData(parsed.name, parsed.handicap, parsed.rawPictureBase64, true);
           setLoadingStatus(LoadingStatus.Loaded);
         } catch(e) {
           setLoadingStatus(LoadingStatus.NoData);

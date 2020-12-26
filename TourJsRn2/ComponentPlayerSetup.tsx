@@ -15,25 +15,80 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { User, UserTypeFlags } from './common/User';
 import { StoredData } from './App';
 import ComponentButton from './ComponentButton';
 import happyFaceB64 from './ScreenPlayerSetup-HappyFace';
+import { DeviceContextInstance } from './ManagerBluetooth';
 
 // require'd because this doesn't have any @types/ and I'm trying to keep this project free ot errors
 const ReactNativeImagePicker = require('react-native-image-picker'); // https://github.com/react-native-image-picker/react-native-image-picker#options
+
+export class SensorReading {
+  tm: number;
+  value: number;
+
+  constructor(val:number) {
+    this.value = val;
+    this.tm = new Date().getTime();
+  }
+}
+
+export enum TrainerMode {
+  Unknown = '',
+  Erg = 'Erg',
+  Sim = 'Sim',
+  Resistance = 'Resistance',
+}
+
+export class TrainerSensorReading extends SensorReading {
+  lastSlope:number;
+  lastResistance:number;
+  lastErg:number;
+  lastMode:TrainerMode;
+  constructor(val:number) {
+    super(val);
+    this.lastSlope = 0;
+    this.lastResistance = 0;
+    this.lastErg = 0;
+    this.lastMode = TrainerMode.Unknown;
+  }
+}
+
+export interface DataHistorySample {
+  tm:number;
+  hrm:number;
+  power:number;
+  speed:number;
+}
 
 export class PlayerSetup extends EventEmitter {
   playerData:StoredData;
 
   static PLAYER_DATA_KEY = "PlayerSetup::playerData";
 
+  private _user:User;
+  private _locked:boolean;
+  private _history:DataHistorySample[];
+
   constructor(playerData:StoredData) {
     super();
     console.log("instantiated with player data ", playerData);
     this.playerData = playerData;
+    this._locked = false;
+    this._user = new User(this.playerData.name, 80, this.playerData.handicap, UserTypeFlags.Local);
+    this._history = [];
   }
 
-  setPlayerData(name:string, handicap:number, imageBase64:string):Promise<any> {
+  setPlayerDataLock(locked:boolean) {
+    this._locked = locked;
+  }
+
+  setPlayerData(name:string, handicap:number, imageBase64:string, force:boolean):Promise<any> {
+    if(this._locked) {
+      return Promise.resolve();
+    }
+
     const before = JSON.stringify(this.playerData);
     this.playerData = {
       ...this.playerData,
@@ -43,14 +98,30 @@ export class PlayerSetup extends EventEmitter {
     }
     const after = JSON.stringify(this.playerData);
 
-    if(after !== before) {
+    if(after !== before || force) {
+      this._user = new User(this.playerData.name, 80, this.playerData.handicap, UserTypeFlags.Local);
       return AsyncStorage.setItem(PlayerSetup.PLAYER_DATA_KEY, JSON.stringify(this.playerData)).then(() => {
-        console.log("stored player data ", this.playerData);
         this.emit('playerDataChange', this.playerData);
       })
     } else {
       return Promise.resolve();
     }
+  }
+
+  updateLocalUserHistory(tmNow:number) {
+    this._history.push({
+      tm: new Date().getTime(),
+      hrm: this._user.getLastHrm(tmNow),
+      power: this._user.getLastPower(),
+      speed: this._user.getSpeed(),
+    })
+  }
+  getLocalUserHistory(tmSinceWhen:number):DataHistorySample[] {
+    return this._history.filter((hist) => hist.tm > tmSinceWhen);
+  }
+
+  getLocalUser():User {
+    return this._user;
   }
 }
 
@@ -91,7 +162,14 @@ const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
 
 
   const ctx = useContext(PlayerSetupInstance);
+  const deviceCtx = useContext(DeviceContextInstance);
   
+  useEffect(() => {
+    if(ctx && deviceCtx) {
+      deviceCtx.setPlayerSetup(ctx);
+    }
+  }, [ctx, deviceCtx]);
+
   const defaultImage = {
     base64: ctx.playerData.rawPictureBase64,
     type: "image/jpeg",
@@ -119,7 +197,7 @@ const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
     const flHandicap = parseFloat(handicap);
     if(isFinite(flHandicap) && flHandicap > 25 && picture && picture?.base64) {
       console.log(name, handicap, picture);
-      ctx.setPlayerData(name, flHandicap, picture.base64).then(() => {
+      ctx.setPlayerData(name, flHandicap, picture.base64, true).then(() => {
         props.onDone();
       })
     }
@@ -174,7 +252,7 @@ const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
         }
       </TouchableOpacity>
 
-      <ComponentButton title="Save Player Data" onPress={done}></ComponentButton>
+      <ComponentButton title="Save Player Data" onPress={done} onLongPress={()=>{}}></ComponentButton>
     </ScrollView>
   );
 };

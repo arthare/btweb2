@@ -1,8 +1,21 @@
 import { Device, BleError, Characteristic } from "react-native-ble-plx";
-import { UUID_CPS_SERVICE, UUID_HRM_SERVICE, UUID_HRM_MEASURE_CHAR, LoadedDevice, DataNotifyRecipient } from "./UtilsBleBase";
+import { UUID_CPS_SERVICE, UUID_HRM_SERVICE, UUID_HRM_MEASURE_CHAR, LoadedDevice, DataNotifyRecipient, LoadedBleDevice, LoadedFakeDevice } from "./UtilsBleBase";
 import { Buffer } from 'buffer';
+import { DeviceContext } from "./UtilsBle";
 
-export class LoadedHrm extends LoadedDevice {
+export class LoadedFakeHrm extends LoadedFakeDevice {
+  constructor(deviceContext:DeviceContext) {
+    super(deviceContext);
+  }
+  _report() {
+    this.deviceContext.notifyHrm(Math.random() * 30 + 120);
+  }
+  name(): string {
+    return "HRM:Fake";
+  }
+}
+
+export class LoadedHrm extends LoadedBleDevice {
   constructor(deviceContext:DataNotifyRecipient, device:Device) {
     super(deviceContext, device);
   }
@@ -26,7 +39,7 @@ export class LoadedHrm extends LoadedDevice {
   }
 
   onMeasureChange(err:BleError|null, char:Characteristic|null) {
-    this.deviceContext.notifyAnyMessage(this.bleDevice);
+    this.deviceContext.notifyAnyMessage(this);
     if(err || !char) {
       return;
     }

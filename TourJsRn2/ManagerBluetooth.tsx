@@ -10,6 +10,7 @@ import {
   StatusBar,
   Button,
   PermissionsAndroid,
+  PermissionStatus,
 } from 'react-native';
 import { BleError, BleManager, Device, ScanMode } from 'react-native-ble-plx';
 import { State } from 'react-native-gesture-handler';
@@ -19,6 +20,9 @@ import { DeviceContext } from './UtilsBle';
 import { isHrm, isPowermeter, isTrainer } from './UtilsBleBase';
 import * as RootNavigation from './RootNavigation';
 import ComponentPlayerSetup from './ComponentPlayerSetup';
+import { LoadedFakeTrainer } from './UtilsBleTrainer';
+import { LoadedFakeHrm } from './UtilsBleHrm';
+import { LoadedFakePowermeter } from './UtilsBlePm';
 
 const SEARCH_FLAGS_PM = 1;
 const SEARCH_FLAGS_TRAINER = 2;
@@ -26,14 +30,14 @@ const SEARCH_FLAGS_HRM = 4;
 const SEARCH_FLAGS_PLAYER_DATA = 8;
 
 
-export const DeviceContextInstance = React.createContext<DeviceContext>(new DeviceContext());
+export const DeviceContextInstance = React.createContext<DeviceContext>(DeviceContext.create());
 
 const ManagerBluetooth = (props:{children:any}) => {
 
   let [bleManager, setBleManager] = useState<BleManager|null>(null);
   let [bleState, setBleState] = useState<string>('');
   let [blePermissionsValid, setBlePermissionsValid] = useState<boolean>(false);
-  let [deviceCtx, setDeviceCtx] = useState<DeviceContext>(new DeviceContext());
+  let [deviceCtx, setDeviceCtx] = useState<DeviceContext>(DeviceContext.create());
 
   // searching
   let [searchResults, setSearchResults] = useState<Device[]>([]);
@@ -49,7 +53,14 @@ const ManagerBluetooth = (props:{children:any}) => {
   useEffect(() => {
     // startup setup
     PermissionsAndroid.check('android.permission.ACCESS_FINE_LOCATION').then((havePermission) => {
-      setBlePermissionsValid(true);
+      setBlePermissionsValid(havePermission);
+      
+      if(!havePermission) {
+        return PermissionsAndroid.request('android.permission.ACCESS_FINE_LOCATION').then((permStatus:PermissionStatus) => {
+          setBlePermissionsValid(permStatus === 'granted');
+        });
+      }
+      
     });
     
 
@@ -112,14 +123,25 @@ const ManagerBluetooth = (props:{children:any}) => {
 
 
   const onStartScan = (uuidFilter:string, searchFlags:number) => {
-    
-    setSearchResults([]);
-    setSearchingFlags(searchFlags);
-    bleManager?.connectedDevices([uuidFilter]).then((connectedDevices) => {
-      console.log("there are ", connectedDevices.length, " devices already connected");
-      connectedDevices.forEach((dev) => onDeviceDetected(null, dev, uuidFilter));
-    })
-    bleManager?.startDeviceScan([uuidFilter],{scanMode:ScanMode.Balanced}, (err, newDevice) => onDeviceDetected(err, newDevice, uuidFilter));
+    console.log("onStartScan.  Checking permissions");
+    return PermissionsAndroid.check('android.permission.ACCESS_FINE_LOCATION').then((havePermission) => {
+      let permRequest:Promise<any> = Promise.resolve();
+      if(!havePermission) {
+        permRequest = PermissionsAndroid.request('android.permission.ACCESS_FINE_LOCATION')
+      }
+      
+      return permRequest.then(() => {
+        console.log("have permission? ", havePermission);
+        setSearchResults([]);
+        setSearchingFlags(searchFlags);
+        bleManager?.connectedDevices([uuidFilter]).then((connectedDevices) => {
+          console.log("there are ", connectedDevices.length, " devices already connected");
+          connectedDevices.forEach((dev) => onDeviceDetected(null, dev, uuidFilter));
+        })
+        bleManager?.startDeviceScan([uuidFilter],{scanMode:ScanMode.Balanced}, (err, newDevice) => onDeviceDetected(err, newDevice, uuidFilter));
+        setBlePermissionsValid(true);
+      })
+    });
   }
 
   const onSearchPowermeter = () => {
@@ -130,6 +152,16 @@ const ManagerBluetooth = (props:{children:any}) => {
   }
   const onSearchHrm = () => {
     onStartScan('180d', SEARCH_FLAGS_HRM);
+  }
+  const onFakePowermeter = () => {
+    console.log("long press fake pm");
+    deviceCtx.setFakePowermeter(new LoadedFakePowermeter(deviceCtx));
+  }
+  const onFakeHrm = () => {
+    deviceCtx.setFakeHrm(new LoadedFakeHrm(deviceCtx));
+  }
+  const onFakeTrainer = () => {
+    deviceCtx.setFakeTrainer(new LoadedFakeTrainer(deviceCtx));
   }
 
   const onPickPowermeter = (device:Device) => {
@@ -194,18 +226,27 @@ const ManagerBluetooth = (props:{children:any}) => {
     setSearchingFlags(0);
   }
 
-  console.log("search results ", searchResults);
   const bleReady = bleState === 'PoweredOn';
   return (
     <>
       <DeviceContextInstance.Provider value={deviceCtx}>
-        <ComponentDeviceNav {...{deviceContext: deviceCtx, onSetupPlayer, requestLocation, bleReady, blePermissionsValid, onSearchPowermeter, onSearchHrm, onSearchTrainer}} />
+        <ComponentDeviceNav {...{deviceContext: deviceCtx, 
+                                 onSetupPlayer, 
+                                 requestLocation, 
+                                 bleReady, 
+                                 blePermissionsValid, 
+                                 onSearchPowermeter, 
+                                 onSearchHrm, 
+                                 onSearchTrainer,
+                                 onFakePowermeter,
+                                 onFakeHrm,
+                                 onFakeTrainer}} />
 
         {( searchingFlags & ~SEARCH_FLAGS_PLAYER_DATA) !== 0 && (
           <View>
-            <ComponentButton onPress={() => onFinishScan(null)} title="Cancel Search" />
+            <ComponentButton onPress={() => onFinishScan(null)} title="Cancel Search" onLongPress={()=>{}} />
             {searchResults.length > 0 && searchResults.map((searchResult, index) => {
-              return <ComponentButton key={index} onPress={() => onFinishScan(searchResult)} title={searchResult.name || "Unknown Device"} />
+              return <ComponentButton key={index} onPress={() => onFinishScan(searchResult)} title={searchResult.name || "Unknown Device"} onLongPress={()=>{}} />
             })}
             {searchResults.length <= 0 && (
               <Text>Searching...</Text>
@@ -213,7 +254,7 @@ const ManagerBluetooth = (props:{children:any}) => {
           </View>
         )}
         {(searchingFlags & SEARCH_FLAGS_PLAYER_DATA) ? (
-          <View style={{backgroundColor:'green'}}>
+          <View>
             <ComponentPlayerSetup onDone={onPlayerChangeDone} />
           </View>
         ) : <></>}
