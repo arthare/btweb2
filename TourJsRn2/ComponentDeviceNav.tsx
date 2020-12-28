@@ -7,8 +7,85 @@ import {
 import { StoredData } from './App';
 import ComponentButton from './ComponentButton';
 import { PlayerSetup, PlayerSetupInstance, SensorReading, TrainerMode, TrainerSensorReading } from './ComponentPlayerSetup';
-import { DeviceContext } from './UtilsBle';
+import { DeviceContext, STATUS_CONNECTED, STATUS_DISCONNECTED, STATUS_HEALTHY, STATUS_UNHEALTHY, STATUS_UNUSED, WhichStatus } from './UtilsBle';
 import * as RootNavigation from './RootNavigation.js';
+
+class DeviceStatus {
+  tmLast:number;
+  tmLastLeftSwap:number;
+  lastLeft:boolean;
+  lastFlag:number;
+
+  constructor() {
+    this.tmLast = new Date().getTime();
+    this.tmLastLeftSwap = this.tmLast;
+    this.lastLeft = true;
+    this.lastFlag = STATUS_UNUSED;
+  }
+
+  update(flags:number) {
+    const tmNow = new Date().getTime();
+    this.tmLast = tmNow;
+    if(tmNow - this.tmLastLeftSwap > 500) {
+      this.lastLeft = !this.lastLeft;
+      this.tmLastLeftSwap = tmNow;
+    }
+    this.lastFlag = flags;
+    console.log("update: ", this.lastLeft);
+  }
+
+  getStyle():{style:any,textStyle:any} {
+    if(this.lastFlag & STATUS_DISCONNECTED) {
+      // we only ever hit disconnected when something WAS connected, so make this big and red to attract the user's attention
+      return { 
+        style: {
+          'borderWidth': 4,
+          'borderColor': 'red',
+        },
+        textStyle: {},
+      }
+    } else if(this.lastFlag & STATUS_UNHEALTHY) {
+      return { 
+        style: {
+          'borderWidth': 4,
+          'borderColor': 'yellow',
+        },
+        textStyle: {
+          'color': 'black',
+        }
+      }
+    } else if(this.lastFlag & STATUS_HEALTHY) {
+      // if we're healthy, just keep alternating border colors to let the user know we're good
+      return {
+        style: {
+          'borderWidth': 2,
+          'borderColor': this.lastLeft ? 'lightgreen' : 'green',
+        },
+        textStyle: {}
+      }
+    } else if(this.lastFlag & STATUS_CONNECTED) {
+      // connected but not "healthy"?  this means we're in the process of connecting.  hopefully we'll get data soon
+      return {
+        style: {
+          'backgroundColor': 'yellow',
+        },
+        textStyle: {
+          'color': 'black',
+        }
+      }
+    } else {
+      return {
+        style: {},
+        textStyle: {},
+      }
+    }
+  }
+}
+type DeviceStatusMap = {
+  pmStatus: DeviceStatus;
+  trainerStatus: DeviceStatus;
+  hrmStatus:DeviceStatus;
+}
 
 const ComponentDeviceNav = (props:{deviceContext:DeviceContext, 
                                    blePermissionsValid:boolean, 
@@ -22,12 +99,19 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
                                    onFakePowermeter:()=>void,
                                    onFakeTrainer:()=>void}) => {
 
+  const defaultDeviceStatus = {
+    pmStatus: new DeviceStatus(),
+    trainerStatus: new DeviceStatus(),
+    hrmStatus: new DeviceStatus(),
+  }
+
   let playerCtx = useContext<PlayerSetup>(PlayerSetupInstance);
 
   let [lastPower, setLastPower] = useState<SensorReading|null>(null);
   let [lastHrm, setLastHrm] = useState<SensorReading|null>(null);
   let [playerData, setPlayerData] = useState<StoredData>(playerCtx.playerData);
   let [lastTrainer, setLastTrainer] = useState<TrainerSensorReading|null>(null);
+  let [lastDeviceChange, setLastDeviceChange] = useState<DeviceStatusMap>(defaultDeviceStatus);
 
   const navStyle = {
     minHeight: 32,
@@ -35,12 +119,26 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
     paddingLeft: 16,
     flex: 0,
     flexDirection: 'row' as any,
+    opacity: 1.0,
   }
+
   useEffect(() => {
     // set up listeners to the device context
+
+    const handleChange = (which:WhichStatus) => {
+      let oldVal = lastDeviceChange[which] || new DeviceStatus();
+      oldVal.update(props.deviceContext.getDeviceFlags(which));
+      const updated = {
+        ...lastDeviceChange,
+      }
+      updated[which] = oldVal;
+      setLastDeviceChange(updated);
+    }
+
     props.deviceContext.addEventListener('power', setLastPower);
     props.deviceContext.addEventListener('trainer', setLastTrainer);
     props.deviceContext.addEventListener('hrm', setLastHrm);
+    props.deviceContext.addEventListener('change', handleChange);
 
     let handlePlayerChange = () => {
 
@@ -54,6 +152,7 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
       props.deviceContext.removeEventListener('power', setLastPower);
       props.deviceContext.removeEventListener('trainer', setLastTrainer);
       props.deviceContext.removeEventListener('hrm', setLastHrm);
+      props.deviceContext.removeEventListener('change', handleChange);
       playerCtx.off('playerDataChange', handlePlayerChange);
     }
   }, []);
@@ -99,9 +198,9 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
         )}
         {props.bleReady && (<>
           <ComponentButton title={`Name: ${playerData.name}\nHandicap: ${playerData.handicap}W`} onPress={props.onSetupPlayer} onLongPress={()=>{}} />
-          <ComponentButton title={pmTitle} onPress={props.onSearchPowermeter} onLongPress={props.onFakePowermeter} />
-          <ComponentButton title={trainerTitle} onPress={props.onSearchTrainer} onLongPress={props.onFakeTrainer} />
-          <ComponentButton title={hrmTitle} onPress={props.onSearchHrm} onLongPress={props.onFakeHrm} />
+          <ComponentButton {...lastDeviceChange.pmStatus.getStyle()}      title={pmTitle} onPress={props.onSearchPowermeter} onLongPress={props.onFakePowermeter} />
+          <ComponentButton {...lastDeviceChange.trainerStatus.getStyle()} title={trainerTitle} onPress={props.onSearchTrainer} onLongPress={props.onFakeTrainer} />
+          <ComponentButton {...lastDeviceChange.hrmStatus.getStyle()}     title={hrmTitle} onPress={props.onSearchHrm} onLongPress={props.onFakeHrm} />
         </>)}
 
       </>)}

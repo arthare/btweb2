@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-const ComponentButton = (props:{title:string, onPress:any, onLongPress:any}) => {
+const ComponentButton = (props:{title:string, onPress:any, onLongPress:any, style?:any, textStyle?:any}) => {
 
   const style = {
     justifyContent: 'center' as any,
@@ -33,11 +33,15 @@ const ComponentButton = (props:{title:string, onPress:any, onLongPress:any}) => 
     },
     elevation: 2,
     borderRadius: 8,
+
+    ...props.style,
   }
 
   const textStyle = {
     color: 'white',
     fontSize: 18,
+    
+    ...props.textStyle,
   }
 
   let [tmStart, setTmStart] = useState(0);

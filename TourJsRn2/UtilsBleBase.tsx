@@ -1,4 +1,4 @@
-import { Device, Subscription } from "react-native-ble-plx";
+import { BleError, Device, Subscription } from "react-native-ble-plx";
 import { TrainerSensorReading } from "./ComponentPlayerSetup";
 import { DeviceContext } from "./UtilsBle";
 
@@ -34,6 +34,7 @@ export interface DataNotifyRecipient {
   notifyTrainer:(trainer:TrainerSensorReading)=>void;
   notifyHrm:(bpm:number)=>void;
   notifyCadence:(cadence:number)=>void;
+  notifyDeviceDisconnection:(device:LoadedDevice)=>void;
 }
 
 export abstract class LoadedDevice {
@@ -81,6 +82,10 @@ export abstract class LoadedBleDevice extends LoadedDevice {
     super(deviceContext);
     this.deviceContext = deviceContext;
     this.bleDevice = device;
+
+    this.bleDevice.onDisconnected((bleError:BleError | null, device:Device) => {
+      this.deviceContext.notifyDeviceDisconnection(this);
+    })
   }
 
   close() {

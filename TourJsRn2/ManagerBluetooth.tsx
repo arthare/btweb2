@@ -226,6 +226,16 @@ const ManagerBluetooth = (props:{children:any}) => {
     setSearchingFlags(0);
   }
 
+  const styleAbsoluteOverlay = {
+    position: 'absolute' as any,
+    backgroundColor: 'white' as any,
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+    opacity: 0.95,
+    top: 40,
+  }
+
   const bleReady = bleState === 'PoweredOn';
   return (
     <>
@@ -242,8 +252,9 @@ const ManagerBluetooth = (props:{children:any}) => {
                                  onFakeHrm,
                                  onFakeTrainer}} />
 
+        {props.children}
         {( searchingFlags & ~SEARCH_FLAGS_PLAYER_DATA) !== 0 && (
-          <View>
+          <View style={styleAbsoluteOverlay}>
             <ComponentButton onPress={() => onFinishScan(null)} title="Cancel Search" onLongPress={()=>{}} />
             {searchResults.length > 0 && searchResults.map((searchResult, index) => {
               return <ComponentButton key={index} onPress={() => onFinishScan(searchResult)} title={searchResult.name || "Unknown Device"} onLongPress={()=>{}} />
@@ -254,11 +265,10 @@ const ManagerBluetooth = (props:{children:any}) => {
           </View>
         )}
         {(searchingFlags & SEARCH_FLAGS_PLAYER_DATA) ? (
-          <View>
+          <View style={styleAbsoluteOverlay}>
             <ComponentPlayerSetup onDone={onPlayerChangeDone} />
           </View>
         ) : <></>}
-        {searchingFlags === 0 && props.children}
       </DeviceContextInstance.Provider>
     </>
   );

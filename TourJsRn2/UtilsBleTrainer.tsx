@@ -131,7 +131,6 @@ export class LoadedTrainerFtms extends LoadedBleTrainer {
       if(flags & AVERAGE_POWER) {
         pos += 2;
       }
-
       this._emitSensorData();
     }
   }

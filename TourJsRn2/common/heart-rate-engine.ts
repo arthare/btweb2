@@ -28,7 +28,7 @@ export class HeartRateEngine {
   }
 
   tick(user:User, tmNow:number, dt:number, targetBpm:number, targetHandicap:ZeroToOneIsh, gainFactor:ZeroToOneIsh):{newTargetHandicap:ZeroToOne} {
-    if(dt > 10) {
+    if(dt > 1) {
       // dt too big, let's not do anything crazy here
       return {newTargetHandicap: targetHandicap};
     }
@@ -48,12 +48,13 @@ export class HeartRateEngine {
 
           // clamp it to a max of 10bpm error - this way when you initially get on the bike with a HR of 60 it doesn't shoot way the hell up
           error = Math.min(10, error);
-          handicapsPerSecToAdjust = gainFactor.val*0.025*(Math.min(10, error));
+          handicapsPerSecToAdjust = gainFactor.val*0.00025*(Math.min(10, error));
         } else {
           // we're too high.  bring things down fairly quickly.
-          handicapsPerSecToAdjust = gainFactor.val*0.065*(error);
+          handicapsPerSecToAdjust = gainFactor.val*0.00065*(error);
         }
   
+        console.log("handicaps/s to adjust: ", handicapsPerSecToAdjust, "dt = ", dt, " starting ", targetHandicap.val, "gain ", gainFactor.val);
         let newTargetHandicap = targetHandicap.val + handicapsPerSecToAdjust*dt;
         return {newTargetHandicap: new ZeroToOneIsh(newTargetHandicap)};
       } else {
