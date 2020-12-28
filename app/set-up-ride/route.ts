@@ -1,6 +1,6 @@
 import Route from '@ember/routing/route';
 import ENV from 'bt-web2/config/environment';
-import { ServerHttpGameList, ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
+import { apiPostInternal, ServerHttpGameList, ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
 
 export function apiGet(endPoint:string, data?:any):Promise<any> {
   const apiRoot:string = ENV.apiRoot;
@@ -19,17 +19,7 @@ export function apiGet(endPoint:string, data?:any):Promise<any> {
 }
 export function apiPost(endPoint:string, data?:any):Promise<any> {
   const apiRoot:string = ENV.apiRoot;
-  const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
-
-  return fetch(apiRoot + slash + endPoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: data && JSON.stringify(data),
-  }).then((response) => {
-    return response.json();
-  })
+  return apiPostInternal(apiRoot, endPoint, data);
 }
 
 export function refreshRaceList() {

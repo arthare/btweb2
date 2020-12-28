@@ -47,7 +47,7 @@ export class WorkoutFileSaver {
 }
 
 export function samplesToPWX(name:string, submission:RaceResultSubmission) {
-  let lines:string[] = [];
+  let lines = [];
   lines.push(`<?xml version="1.0"?>`);
   lines.push(`<pwx xmlns="http://www.peaksware.com/PWX/1/0" creator="Golden Cheetah" xsi:schemaLocation="http://www.peaksware.com/PWX/1/0 http://www.peaksware.com/PWX/1/0/pwx.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">`);
   lines.push(`<workout>`);

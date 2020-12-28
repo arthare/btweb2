@@ -119,21 +119,21 @@ export class DeviceContext implements DataNotifyRecipient {
 
   setFakePowermeter(dev:LoadedFakeDevice) {
     this.pmDevice = dev;
-    return this._connectWithFlags('pmStatus', this.pmDevice.connect)
+    return this._connectWithFlags(dev, 'pmStatus', this.pmDevice.connect)
   }
   setFakeHrm(dev:LoadedFakeDevice) {
     this.hrmDevice = dev;
-    return this._connectWithFlags('hrmStatus', this.hrmDevice.connect);
+    return this._connectWithFlags(dev, 'hrmStatus', this.hrmDevice.connect);
   }
   setFakeTrainer(dev:LoadedFakeDevice) {
     this.trainerDevice = dev;
     this.trainerControls = dev as unknown as TrainerControls;
-    return this._connectWithFlags('trainerStatus', this.trainerDevice.connect);
+    return this._connectWithFlags(dev, 'trainerStatus', this.trainerDevice.connect);
   }
 
   setPowermeter(device:Device) {
 
-    return this._connectWithFlags('pmStatus', () => {
+    return this._connectWithFlags(this, 'pmStatus', () => {
       let shutdownPromise:Promise<any> = Promise.resolve();
       if(this.pmDevice) {
         shutdownPromise = this.pmDevice.close();
@@ -146,7 +146,7 @@ export class DeviceContext implements DataNotifyRecipient {
   }
   setTrainer(device:Device) {
 
-    return this._connectWithFlags('trainerStatus', () => {
+    return this._connectWithFlags(this, 'trainerStatus', () => {
       let shutdownPromise:Promise<any> = Promise.resolve();
       if(this.trainerDevice) {
         console.log("we have set up trainerDevice.close()");
@@ -176,7 +176,7 @@ export class DeviceContext implements DataNotifyRecipient {
   }
   setHrm(device:Device) {
 
-    return this._connectWithFlags('hrmStatus', () => {
+    return this._connectWithFlags(this, 'hrmStatus', () => {
       let shutdownPromise:Promise<any> = Promise.resolve();
       if(this.hrmDevice) {
         shutdownPromise = this.hrmDevice.close();
@@ -291,9 +291,9 @@ export class DeviceContext implements DataNotifyRecipient {
     this[key] = newValue;
     this.emit('change', key);
   }
-  private _connectWithFlags(key:WhichStatus, fnConnect:()=>Promise<any>) {
+  private _connectWithFlags(thisArg:any, key:WhichStatus, fnConnect:()=>Promise<any>) {
     this._updateFlags(key, STATUS_CONNECTING);
-    return fnConnect().finally(() => {
+    return fnConnect.apply(thisArg).finally(() => {
       this._updateFlags(key, STATUS_CONNECTED);
     })
   }

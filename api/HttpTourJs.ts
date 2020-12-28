@@ -176,7 +176,9 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.end();
   })
   app.post('/submit-ride-result', (req:core.Request, res:core.Response) => {
+    console.log("submit ride result hit");
     return postStartup(req, res).then((postInput:RaceResultSubmission) => {
+      console.log("submit ride result got post ", postInput);
       setCorsHeaders(req, res);
 
       delete (postInput as any).imageBase64;
@@ -209,6 +211,9 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
 
         fs.writeFileSync(fileName, JSON.stringify(userTotal));
       }
+      res.writeHead(200, 'ok', {"Content-Type": "application/json"});
+      res.write(JSON.stringify(`https://tourjs.ca/results?md5=${postInput.bigImageMd5}`));
+      res.end();
     });
   });
 

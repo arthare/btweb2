@@ -20,6 +20,8 @@ import { StoredData } from './App';
 import ComponentButton from './ComponentButton';
 import happyFaceB64 from './ScreenPlayerSetup-HappyFace';
 import { DeviceContextInstance } from './ManagerBluetooth';
+import { IWorkoutSample } from './common/communication';
+import md5 from 'md5';
 
 // require'd because this doesn't have any @types/ and I'm trying to keep this project free ot errors
 const ReactNativeImagePicker = require('react-native-image-picker'); // https://github.com/react-native-image-picker/react-native-image-picker#options
@@ -55,13 +57,6 @@ export class TrainerSensorReading extends SensorReading {
   }
 }
 
-export interface DataHistorySample {
-  tm:number;
-  hrm:number;
-  power:number;
-  speed:number;
-}
-
 export class PlayerSetup extends EventEmitter {
   playerData:StoredData;
 
@@ -69,7 +64,8 @@ export class PlayerSetup extends EventEmitter {
 
   private _user:User;
   private _locked:boolean;
-  private _history:DataHistorySample[];
+  private _history:IWorkoutSample[];
+  private _activityName:string = "Unstarted";
 
   constructor(playerData:StoredData) {
     super();
@@ -80,8 +76,15 @@ export class PlayerSetup extends EventEmitter {
     this._history = [];
   }
 
-  setPlayerDataLock(locked:boolean) {
+  setPlayerDataLock(locked:boolean, activityName:string) {
     this._locked = locked;
+    this._activityName = activityName;
+  }
+  isLocked():boolean {
+    return this._locked;
+  }
+  getActivityName():string {
+    return this._activityName;
   }
 
   setPlayerData(name:string, handicap:number, imageBase64:string, force:boolean):Promise<any> {
@@ -100,6 +103,13 @@ export class PlayerSetup extends EventEmitter {
 
     if(after !== before || force) {
       this._user = new User(this.playerData.name, 80, this.playerData.handicap, UserTypeFlags.Local);
+
+      const dataUri = `data:image/jpeg;${imageBase64}`;
+      console.log("about to md5 things");
+      const imageMd5 = md5(dataUri);
+      console.log("md5'd things!", imageMd5);
+
+      this._user.setImage(dataUri, imageMd5);
       return AsyncStorage.setItem(PlayerSetup.PLAYER_DATA_KEY, JSON.stringify(this.playerData)).then(() => {
         this.emit('playerDataChange', this.playerData);
       })
@@ -113,10 +123,11 @@ export class PlayerSetup extends EventEmitter {
       tm: new Date().getTime(),
       hrm: this._user.getLastHrm(tmNow),
       power: this._user.getLastPower(),
-      speed: this._user.getSpeed(),
+      speedMetersPerSec: this._user.getSpeed(),
+      distance: this._user.getDistance(),
     })
   }
-  getLocalUserHistory(tmSinceWhen:number):DataHistorySample[] {
+  getLocalUserHistory(tmSinceWhen:number):IWorkoutSample[] {
     return this._history.filter((hist) => hist.tm > tmSinceWhen);
   }
 

@@ -3,12 +3,16 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
+  PermissionsAndroid,
+  Linking,
 } from 'react-native';
 import { StoredData } from './App';
 import ComponentButton from './ComponentButton';
 import { PlayerSetup, PlayerSetupInstance, SensorReading, TrainerMode, TrainerSensorReading } from './ComponentPlayerSetup';
 import { DeviceContext, STATUS_CONNECTED, STATUS_DISCONNECTED, STATUS_HEALTHY, STATUS_UNHEALTHY, STATUS_UNUSED, WhichStatus } from './UtilsBle';
 import * as RootNavigation from './RootNavigation.js';
+import { RaceResultSubmission } from './common/communication';
+import {apiPostInternal} from './common/communication';
 
 class DeviceStatus {
   tmLast:number;
@@ -31,7 +35,6 @@ class DeviceStatus {
       this.tmLastLeftSwap = tmNow;
     }
     this.lastFlag = flags;
-    console.log("update: ", this.lastLeft);
   }
 
   getStyle():{style:any,textStyle:any} {
@@ -185,7 +188,55 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
     hrmTitle = lastHrm.value.toFixed(0) + 'bpm';
   }
 
+  const onDownloadPwx = () => {
+    // let's just post to the TourJS server
+    const user = playerCtx.getLocalUser();
+    const samples = playerCtx.getLocalUserHistory(0);
 
+    let ixLastNonzeroPower = samples.length - 1;
+    while(ixLastNonzeroPower > 0 && samples[ixLastNonzeroPower].power <= 0) {
+      ixLastNonzeroPower--;
+    }
+
+    let deviceName = '';
+    if(props.deviceContext.pmDevice) {
+      deviceName += `PM ${props.deviceContext.pmDevice.name()}`
+    }
+    if(props.deviceContext.trainerDevice) {
+      deviceName += `Trainer ${props.deviceContext.trainerDevice.name()}`
+    }
+    if(props.deviceContext.hrmDevice) {
+      deviceName += `HRM ${props.deviceContext.hrmDevice.name()}`
+    }
+
+    const strStart = new Date(samples[0].tm).toLocaleString();
+    const strEnd = new Date(samples[ixLastNonzeroPower].tm).toLocaleString();
+    const activityName = "TourJS-Android";
+    const submission:RaceResultSubmission = {
+      rideName: `${user.getName()} doing ${activityName} from ${strStart} to ${strEnd}`,
+      riderName: user.getName(),
+      tmStart: samples[0].tm,
+      tmEnd: samples[ixLastNonzeroPower].tm,
+      activityName,
+      handicap: user.getHandicap(),
+      samples,
+      deviceName,
+      bigImageMd5: user.getBigImageMd5() || '',
+    }
+    if(submission.bigImageMd5) {
+      return apiPostInternal('https://tourjs.ca/tourjs-api', 'submit-ride-result', submission).then((urlToHit:string) => {
+        Linking.canOpenURL(urlToHit).then((supported) => {
+          if(supported) {
+            Linking.openURL(urlToHit);
+          }
+        })
+      }, (failure) => {
+        console.log("submission failure");
+        debugger;
+      })
+    }
+
+  }
 
   return (
     <View style={navStyle}>
@@ -201,6 +252,10 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
           <ComponentButton {...lastDeviceChange.pmStatus.getStyle()}      title={pmTitle} onPress={props.onSearchPowermeter} onLongPress={props.onFakePowermeter} />
           <ComponentButton {...lastDeviceChange.trainerStatus.getStyle()} title={trainerTitle} onPress={props.onSearchTrainer} onLongPress={props.onFakeTrainer} />
           <ComponentButton {...lastDeviceChange.hrmStatus.getStyle()}     title={hrmTitle} onPress={props.onSearchHrm} onLongPress={props.onFakeHrm} />
+          
+          {playerCtx.isLocked() && playerCtx.getLocalUser()?.getBigImageMd5() && (
+            <ComponentButton title="PWX" onPress={onDownloadPwx} onLongPress={()=>{}} />
+          )}
         </>)}
 
       </>)}

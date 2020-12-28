@@ -56,7 +56,7 @@ export abstract class LoadedFakeDevice extends LoadedDevice {
     this._timeout = null;
   }
   connect(): Promise<any> {
-    this._timeout = setTimeout(() => this._reportTimer());
+    this._timeout = setTimeout(() => this._reportTimer(), 750);
     return Promise.resolve();
   }
   close(): Promise<any> {

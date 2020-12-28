@@ -63,7 +63,6 @@ const ScreenHrmControl = () => {
 
       setLastTargetPower(pwr);
       setLastTargetHandicap(newTargetHandicap.val * 100);
-      console.log("new handicap: ", newTargetHandicap.val);
       setUpdateCount(updateCount + 1);
       //paintFrame();
     }
@@ -87,7 +86,6 @@ const ScreenHrmControl = () => {
         ctx.resetTransform();
         ctx.scale(canvas.width / 90, -(canvas.height / (maxBpm - minBpm)));
         ctx.translate(-minMsAgo/1000, -(maxBpm));
-        console.log(canvas.height);
         ctx.fillStyle = 'black';
         ctx.fillRect(minMsAgo/1000, minBpm, 90, maxBpm-minBpm);
 
@@ -130,7 +128,7 @@ const ScreenHrmControl = () => {
   
 
   useEffect(() => {
-    playerSetup.setPlayerDataLock(true);
+    playerSetup.setPlayerDataLock(true, "HRM-Mode");
     // we need to subscribe to HRM changes
     deviceCtx.addEventListener('hrm', setLastBpm);
     deviceCtx.addEventListener('power', setLastPower);
@@ -138,7 +136,7 @@ const ScreenHrmControl = () => {
     return function cleanup() {
       cancelAnimationFrame(animRequest as any);
       animRequest = null;
-      playerSetup.setPlayerDataLock(false);
+      playerSetup.setPlayerDataLock(false, "");
       deviceCtx.removeEventListener('hrm', setLastBpm);
       deviceCtx.removeEventListener('power', setLastPower);
     }

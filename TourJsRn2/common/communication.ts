@@ -120,6 +120,21 @@ export class S2CFinishUpdate {
   times: number[];
 }
 
+export function apiPostInternal(apiRoot:string, endPoint:string, data?:any):Promise<any> {
+  const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
+  const final = apiRoot + slash + endPoint;
+  return fetch(apiRoot + slash + endPoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data && JSON.stringify(data),
+  }).then((response) => {
+    console.log("raw response = ", response.headers, response);
+    
+    return response.json();
+  })
+}
 
 export class ServerMapDescription {
   constructor(map:RideMapElevationOnly) {

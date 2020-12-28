@@ -54,7 +54,6 @@ export class HeartRateEngine {
           handicapsPerSecToAdjust = gainFactor.val*0.00065*(error);
         }
   
-        console.log("handicaps/s to adjust: ", handicapsPerSecToAdjust, "dt = ", dt, " starting ", targetHandicap.val, "gain ", gainFactor.val);
         let newTargetHandicap = targetHandicap.val + handicapsPerSecToAdjust*dt;
         return {newTargetHandicap: new ZeroToOneIsh(newTargetHandicap)};
       } else {
