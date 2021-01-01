@@ -9,6 +9,7 @@ import { S2CPositionUpdate, S2CNameUpdate } from "./communication";
 export interface UserProvider {
   getUsers(tmNow:number):User[];
   getUser(id:number):User|null;
+  getLocalUser():User|null;
 }
 
 export class RaceState {

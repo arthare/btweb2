@@ -10,13 +10,14 @@ import {
   StatusBar,
 } from 'react-native';
 
-const ComponentKeyValue = (props:{keyStyle:any, valueStyle:any, keyTitle:string, valueTitle:string}) => {
+const ComponentKeyValue = (props:{containerStyle?:any, keyStyle:any, valueStyle:any, keyTitle:string, valueTitle:string}) => {
 
   const containerStyle = {
     flexDirection: 'row' as any,
     width: '100%',
     borderWidth: 1,
     
+    ...props.containerStyle,
   }
   const keyStyle = {
     ...props.keyStyle,

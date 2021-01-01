@@ -29,6 +29,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScreenLoading from './ScreenLoading';
 import { navigationRef } from './RootNavigation';
 import ComponentPlayerSetup from './ComponentPlayerSetup';
+import { useKeepAwake } from '@sayem314/react-native-keep-awake';
+import ScreenRaceSelection from './ScreenRaceSelection';
 
 enum LoadingStatus {
   LoadingData,
@@ -56,6 +58,7 @@ const App = () => {
 
   function checkLoadStatus() {
     AsyncStorage.getItem(PlayerSetup.PLAYER_DATA_KEY).then((data:string|null) => {
+      console.log("checing player data ", data);
       if(data) {
         try {
           const parsed:StoredData = JSON.parse(data);
@@ -95,7 +98,15 @@ const App = () => {
       name="ScreenHrmControl"
       key="ScreenHrmControl"
       component={ScreenHrmControl}
-      options={{ title: 'Player Setup' }}
+      options={{ title: 'HRM Control' }}
+    />
+  )
+  const raceSelection = (
+    <Stack.Screen
+      name="ScreenRaceSelection"
+      key="ScreenRaceSelection"
+      component={ScreenRaceSelection}
+      options={{ title: 'Race Selection' }}
     />
   )
   const screenLoading = (
@@ -112,7 +123,7 @@ const App = () => {
       case LoadingStatus.NoData:
         return ([screenHome]);
       case LoadingStatus.Loaded:
-        return ([screenHome, hrmControl]);
+        return ([screenHome, hrmControl, raceSelection]);
       case LoadingStatus.LoadingData:
         return ([screenLoading]);
       default:
@@ -125,6 +136,8 @@ const App = () => {
   }
 
   const screensToShow = getScreensToShow();
+
+  useKeepAwake();
 
   return (
     <>

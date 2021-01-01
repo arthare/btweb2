@@ -89,9 +89,6 @@ export default class Ride extends Controller.extend({
           this.devices.dumpPwx("Online-Race", tmNow);
           this.set('hasSentPwx', true);
         }
-
-        window.pending.lastPhysics = user.getDistance();
-        window.tick(tmNow);
       }
     }
     this.devices.tick(tmNow, true);
@@ -102,7 +99,7 @@ export default class Ride extends Controller.extend({
     this.incrementProperty('frame');
   }
 
-  @computed("devices.ridersVersion", "connection.updateVersion")
+  @computed("devices.ridersVersion", "connection._updateVersion")
   get localRidersPreRace(): UserDisplay[] {
     if (!this._raceState) {
       return [];
@@ -115,7 +112,7 @@ export default class Ride extends Controller.extend({
       return localUser.getDisplay(this._raceState);
     })
   }
-  @computed("devices.ridersVersion", "connection.updateVersion")
+  @computed("devices.ridersVersion", "connection._updateVersion")
   get nonLocalHumans(): UserDisplay[] {
     if (!this._raceState) {
       return [];
@@ -128,7 +125,7 @@ export default class Ride extends Controller.extend({
       return localUser.getDisplay(this._raceState);
     })
   }
-  @computed("devices.ridersVersion", "connection.updateVersion")
+  @computed("devices.ridersVersion", "connection._updateVersion")
   get ais(): UserDisplay[] {
     if (!this._raceState) {
       return [];

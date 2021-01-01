@@ -89,8 +89,10 @@ export class PlayerSetup extends EventEmitter {
 
   setPlayerData(name:string, handicap:number, imageBase64:string, force:boolean):Promise<any> {
     if(this._locked) {
+      console.log("setting player data not possible: locked ");
       return Promise.resolve();
     }
+    console.log(name, handicap, force);
 
     const before = JSON.stringify(this.playerData);
     this.playerData = {
@@ -263,7 +265,7 @@ const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
         }
       </TouchableOpacity>
 
-      <ComponentButton title="Save Player Data" onPress={done} onLongPress={()=>{}}></ComponentButton>
+      <ComponentButton title="Save Player Data" onPress={done} onLongPress={done}></ComponentButton>
     </ScrollView>
   );
 };

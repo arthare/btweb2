@@ -221,8 +221,8 @@ export default class Devices extends Service.extend({
     this.devices.push(device);
   }
 
-  getLocalUser():User|undefined {
-    return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
+  getLocalUser():User|null {
+    return this.users.find((user) => user.getUserType() & UserTypeFlags.Local) || null;
   }
 
   isLocalUserDeviceValid() {
@@ -260,7 +260,6 @@ export default class Devices extends Service.extend({
         tmEnd: samples[ixLastNonzeroPower].tm,
         activityName,
         handicap: user.getHandicap(),
-        imageBase64: userImage || '',
         samples,
         deviceName: this.get('deviceDescription'),
         bigImageMd5: user.getBigImageMd5() || '',

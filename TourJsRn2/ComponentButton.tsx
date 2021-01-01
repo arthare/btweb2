@@ -40,7 +40,7 @@ const ComponentButton = (props:{title:string, onPress:any, onLongPress:any, styl
   const textStyle = {
     color: 'white',
     fontSize: 18,
-    
+
     ...props.textStyle,
   }
 
@@ -61,7 +61,6 @@ const ComponentButton = (props:{title:string, onPress:any, onLongPress:any, styl
   const endPress = (forceLong?:boolean) => {
     const tmNow = new Date().getTime();
     const elapsed = tmNow - tmStart;
-    console.log("elapsed: ", elapsed, tmNow, tmStart);
 
     if(tmStart < 0) {
       // this press is already handled;

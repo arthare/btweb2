@@ -141,7 +141,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     this._lastT = new Date().getTime() / 1000.0;
   }
 
-  protected setHandicap(watts:number) {
+  public setHandicap(watts:number) {
     assert2(watts >= this._handicap, "you should only increase handicaps, not tank them");
     this._handicap = watts;
   }

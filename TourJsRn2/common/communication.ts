@@ -4,6 +4,7 @@ import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
 import { BattleshipGameTurn, BattleshipApplyMove } from "./battleship-game";
+import { RideMapHandicap } from "./RideMapHandicap";
 
 export enum PORTS {
   TOURJS_WEBSOCKET_PORT = 8080,
@@ -120,6 +121,20 @@ export class S2CFinishUpdate {
   times: number[];
 }
 
+export function apiGetInternal(apiRoot:string, endPoint:string, data?:any) {
+  const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
+
+  let queries = '?';
+  for(var key in data) {
+    queries += key + '=' + encodeURIComponent(data[key]) + '&';
+  }
+
+  return fetch(apiRoot + slash + endPoint + queries, {
+    method: 'GET',
+  }).then((response) => {
+    return response.json();
+  })
+}
 export function apiPostInternal(apiRoot:string, endPoint:string, data?:any):Promise<any> {
   const slash = endPoint[0] === '/' || apiRoot[apiRoot.length - 1] === '/' ? '' : '/';
   const final = apiRoot + slash + endPoint;
@@ -356,4 +371,299 @@ export interface RaceResultSubmission {
   handicap: number; // your handicap when you rode
   samples: IWorkoutSample[];
   bigImageMd5: string;
+}
+
+export default class ConnectionManager {
+  _timeout:any = 0;
+  _ws:WebSocket|null = null;
+  _raceState:RaceState|null = null;
+  _gameId:string = '';
+  _lastServerRaceState:S2CRaceStateUpdate|null = null;
+  raceResults:S2CFinishUpdate|null = null;
+  _lastTimeStamp = 0;
+  _imageSources:Map<number,string> = new Map();
+  _userProvider:UserProvider|null = null;
+  _networkUpdateCount = 0;
+
+  _onLocalHandicapChange:(newHandicap:number)=>void;
+  _onLastServerRaceStateChange:(connectionManager:ConnectionManager, raceState:RaceState|null, state:S2CRaceStateUpdate)=>void;
+  _onNetworkUpdateComplete:(count:number)=>void;
+  _notifyNewClient:(client:S2CPositionUpdateUser, image:string|null)=>void;
+  
+  constructor(onLocalHandicapChange:(newHandicap:number)=>void,
+              onLastServerRaceStateChange:(connectionManager:ConnectionManager, raceState:RaceState|null, state:S2CRaceStateUpdate)=>void,
+              onNetworkUpdateComplete:(count:number)=>void,
+              notifyNewClient:(client:S2CPositionUpdateUser, image:string|null)=>void) {
+    this._onLocalHandicapChange = onLocalHandicapChange;
+    this._onLastServerRaceStateChange = onLastServerRaceStateChange;
+    this._onNetworkUpdateComplete = onNetworkUpdateComplete;
+    this._notifyNewClient = notifyNewClient
+  }
+
+  _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
+    const oldOnMessage = ws.onmessage;
+    return new Promise<ClientConnectionResponse>((resolve, reject) => {
+      ws.onmessage = (msg:WebSocketMessageEvent) => {
+        try {
+          const basicMessage:S2CBasicMessage = JSON.parse(msg.data);
+          assert2(basicMessage.type === BasicMessageType.ClientConnectionResponse);
+          this._lastServerRaceState = basicMessage.raceState;
+          this._onLastServerRaceStateChange(this, this._raceState, this._lastServerRaceState);
+
+          const payload:ClientConnectionResponse = <ClientConnectionResponse>basicMessage.payload;
+          resolve(payload);
+        } catch(e) {
+          debugger;
+          reject(e);
+        }
+      };
+
+      
+
+      // ok, we've got our listener set up
+      const connect:ClientConnectionRequest = {
+        riderName: user.getName(),
+        imageBase64: user.getImage(),
+        bigImageMd5: user.getBigImageMd5(),
+        accountId: accountId,
+        riderHandicap: user.getHandicap(),
+        gameId: gameId,
+      }
+      const bm:C2SBasicMessage = {
+        payload: connect,
+        type: BasicMessageType.ClientConnectionRequest,
+      }
+      ws.send(JSON.stringify(bm));
+    }).then((ccr:ClientConnectionResponse) => {
+      ws.onmessage = oldOnMessage;
+      return ccr;
+    })
+  }
+
+  connect(wsUrl:string, userProvider:UserProvider, gameId:string, accountId:string, user:User):Promise<RaceState> {
+    return new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        resolve(ws);
+      }
+      ws.onerror = (err) => {
+        reject(err);
+        ws.close();
+        debugger;
+      }
+    }).then((ws:WebSocket) => {
+      if(!user) {
+        throw new Error("You don't have a user, how do you expect to connect?");
+      }
+      return this._performStartupNegotiate(ws, user, accountId, gameId).then((ccr:ClientConnectionResponse) => {
+        user.setId(ccr.yourAssignedId);
+
+        this._userProvider = userProvider;
+        const map = new RideMapHandicap(ccr.map);
+        const raceState = new RaceState(map, userProvider, gameId);
+        this._raceState = raceState;
+        this._ws = ws;
+        this._gameId = gameId;
+        ws.onmessage = (event:WebSocketMessageEvent) => this._onMsgReceived(event);
+        return this._raceState;
+      })
+    }).then((raceState:RaceState) => {
+      this.scheduleNetworkTick();
+      return raceState;
+    })
+    
+  }
+
+  _onMsgReceived(event:WebSocketMessageEvent) {
+    const tmNow = new Date().getTime();
+
+    let bm:S2CBasicMessage;
+    try {
+      bm = JSON.parse(event.data);
+    } catch(e) {
+      throw new Error("Invalid message received: " + event.data);
+    }
+    if(bm.timeStamp <= this._lastTimeStamp) {
+      console.log("bouncing a message because it's earlier or same-time as the last one we got");
+      return;
+    } else if(!isFinite(bm.timeStamp)) {
+      return;
+    }
+    console.log("got a websocket message that said ", bm);
+    this._lastTimeStamp = bm.timeStamp;
+
+    this._lastServerRaceState = bm.raceState;
+    this._onLastServerRaceStateChange(this, this._raceState, this._lastServerRaceState);
+    if(this._raceState && this._userProvider) {
+      switch(bm.type) {
+        case BasicMessageType.S2CClientChat:
+        {
+          console.log("chat receiv")
+          const update:S2CChatUpdate = <S2CChatUpdate>bm.payload;
+          console.log("chat: ", update);
+          const fromUser = this._userProvider.getUser(update.fromId);
+          if(fromUser) {
+            console.log(fromUser.getName() + " said " + update.chat);
+            fromUser.setChat(tmNow, update.chat);
+          }
+          break;
+        }
+        case BasicMessageType.S2CNameUpdate:
+
+          const update:S2CNameUpdate = <S2CNameUpdate>bm.payload;
+          const localUser = this._userProvider.getLocalUser();
+          if(localUser) {
+            update.ids.forEach((id, index) => {
+              const newHandicap = update.userHandicaps[index];
+              if(id === localUser.getId() && 
+                 isFinite(newHandicap) && 
+                 newHandicap > localUser.getHandicap()) {
+                // they've updated our user's handicap!  good for them for getting a PB!
+                // let's store their new handicap so they don't have to remember to update it...
+                console.log("the server has updated our user's handicap to ", newHandicap.toFixed(1));
+
+                this._onLocalHandicapChange(newHandicap);
+              }
+            })
+
+          }
+
+          this._raceState.absorbNameUpdate(tmNow, bm.payload);
+          break;
+        case BasicMessageType.S2CPositionUpdate:
+        {
+          // let's make sure that the user provider knows about all these users
+          const posUpdate:S2CPositionUpdate = bm.payload;
+          posUpdate.clients.forEach((client) => {
+            if(this._userProvider) {
+              const hasIt = this._userProvider.getUser(client.id);
+              if(!hasIt) {
+  
+                const image = this._imageSources.get(client.id) || null;
+  
+                this._notifyNewClient(client, image);
+              }
+            }
+          })
+          
+
+          this._raceState.absorbPositionUpdate(bm.timeStamp, bm.payload);
+          break;
+        }
+        case BasicMessageType.S2CImageUpdate:
+        {
+          const imageUpdate:S2CImageUpdate = bm.payload;
+          const user = this._raceState.getUserProvider().getUser(imageUpdate.id);
+          this._imageSources.set(imageUpdate.id, imageUpdate.imageBase64);
+          if(user) {
+            console.log("received an image for ", user.getName());
+            user.setImage(imageUpdate.imageBase64, null);
+          }
+
+          break;
+        }
+        case BasicMessageType.ServerError:
+          assert2(false);
+          break;
+        case BasicMessageType.ClientConnectionResponse:
+          assert2(false);
+          break;
+        case BasicMessageType.S2CFinishUpdate:
+          this.raceResults = bm.payload;
+          break;
+      }
+      this._onNetworkUpdateComplete(this._networkUpdateCount++);
+    } else {
+      debugger;
+      this._ws?.close();
+      clearTimeout(this._timeout);
+      this._timeout = null;
+      this._raceState = null;
+    }
+    
+  }
+
+  get preRace():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.PreRace) || false;
+  }
+  get racing():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.Racing) || false;
+  }
+  get postRace():boolean {
+    return (this._lastServerRaceState && this._lastServerRaceState.state === CurrentRaceState.PostRace) || false;
+  }
+  get msOfStart():number {
+    return (this._lastServerRaceState && this._lastServerRaceState.tmOfNextState) || 0;
+  }
+
+  disconnect() {
+    this._timeout = null;
+    clearTimeout(this._timeout);
+
+
+    if(this._ws) {
+      this._ws.onmessage = () => {};
+      this._ws.close();
+    }
+    this._raceState = null;
+  }
+
+  getUserName(userId:number):string {
+    if(this._userProvider) {
+      const user = this._userProvider.getUser(userId);
+      return user && user.getName() || "Unknown";
+    } else {
+      return "Unknown";
+    }
+  }
+
+  chat(chat:string) {
+
+    if(this._ws && this._userProvider) {
+      const localUser = this._userProvider.getLocalUser();
+      if(localUser) {
+        if(this._gameId) {
+          const msgChat:ClientToServerChat = {
+            chat,
+            gameId:this._gameId,
+            userId:localUser.getId(),
+          }
+          const wrapper:C2SBasicMessage = {
+            type: BasicMessageType.ClientToServerChat,
+            payload: msgChat,
+          };
+          console.log("sending chat from user ", localUser.getId());
+          this._ws.send(JSON.stringify(wrapper));
+        }
+      }
+    }
+  }
+
+  tick() {
+    if(this._ws && this._raceState) {
+      // ok, we gotta send our game state back to the main server
+      
+      const update = new ClientToServerUpdate(this._raceState);
+      const wrapper:C2SBasicMessage = {
+        type: BasicMessageType.ClientToServerUpdate,
+        payload: update,
+      };
+      this._ws.send(JSON.stringify(wrapper));
+      this.scheduleNetworkTick();
+    }
+  }
+
+  getRaceState():RaceState {
+    if(this._raceState) {
+      return this._raceState;
+    } else {
+      throw new Error("We don't have a game state!");
+    }
+  }
+
+  scheduleNetworkTick() {
+    this._timeout = setTimeout(() => {
+      this.tick();
+    }, 250);
+  }
 }

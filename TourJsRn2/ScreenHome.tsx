@@ -16,7 +16,7 @@ import { DeviceContextInstance } from './ManagerBluetooth';
 const imageMechHeart = require('./data/mech-heart.png');
 const imageRaceMode = require('./data/race.jpg');
 
-const BoilerPlate = (props:{navigation:any}) => {
+const ScreenHome = (props:{navigation:any}) => {
 
   const deviceCtx = useContext(DeviceContextInstance);
   
@@ -57,6 +57,9 @@ const BoilerPlate = (props:{navigation:any}) => {
   const onHrmControl = () => {
     props.navigation.navigate('ScreenHrmControl', {name: 'HRM Control'});
   }
+  const onRaceMode = () => {
+    props.navigation.navigate('ScreenRaceSelection', {name: 'Racing'});
+  }
 
   const tmNow = new Date().getTime();
   const enableHrmMode = lastHrm && lastTrainer && (tmNow - lastHrm.tm) < 3000 && (tmNow - lastTrainer.tm) < 3000;
@@ -88,11 +91,11 @@ const BoilerPlate = (props:{navigation:any}) => {
                               resizeMode="cover" 
                               enabled={!!enableRaceMode}
                               disableReason={disableRaceReason}
-                              onPress={onHrmControl} />
+                              onPress={onRaceMode} />
 
       </View>
     </>
   );
 };
 
-export default BoilerPlate;
+export default ScreenHome;

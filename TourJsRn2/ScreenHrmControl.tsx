@@ -25,6 +25,70 @@ let tmLastUpdate = 0;
 let rafs = 0;
 let frames = 0;
 let animRequest:number|null = null;
+
+const paintFrame = (canvas, canvasReady, ctx, targetBpm, playerSetup) => {
+  if(canvas && canvasReady && ctx) {
+    const tmNow = new Date().getTime();
+
+    const maxBpm = 190;
+    const minBpm = 40;
+    const minMsAgo = -90000;
+    const maxMsAgo = 10000;
+    const tmSpan = maxMsAgo - minMsAgo;
+    const lastHrm = playerSetup.getLocalUserHistory(tmNow - tmSpan);
+
+    ctx.resetTransform();
+    ctx.scale(canvas.width / 90, -(canvas.height / (maxBpm - minBpm)));
+    ctx.translate(-minMsAgo/1000, -(maxBpm));
+    ctx.fillStyle = 'black';
+    ctx.fillRect(minMsAgo/1000, minBpm, 90, maxBpm-minBpm);
+
+    { // drawing horizontal lines
+      for(var x = 40; x < 190; x+=10) {
+        if(x >= 160) {
+          ctx.strokeStyle = '#844';
+        } else {
+          ctx.strokeStyle = '#444';
+        }
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([0.5,1.5]);
+        ctx.beginPath();
+        ctx.moveTo(minMsAgo/1000, x);
+        ctx.lineTo(maxMsAgo/1000, x);
+        ctx.stroke();
+      }
+    }
+    { // drawing target line
+      ctx.strokeStyle = 'white';
+      ctx.setLineDash([1,1]);
+      ctx.beginPath();
+      ctx.moveTo(minMsAgo/1000, targetBpm);
+      ctx.lineTo(maxMsAgo/1000, targetBpm);
+      ctx.stroke();
+    }
+    if(lastHrm.length >= 2) {
+      // let's draw a line!
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'red';
+      const tmLeft:number = tmNow - tmSpan;
+      ctx.beginPath();
+      lastHrm.forEach((hist, index) => {
+        const sAgo = (hist.tm - tmNow)/1000;
+        const pctX = (hist.tm - tmLeft) / tmSpan;
+
+        if(index === 0) {
+          ctx.moveTo(sAgo, hist.hrm);
+        } else {
+          ctx.lineTo(sAgo, hist.hrm);
+        }
+      });
+      ctx.stroke();
+    }
+  }
+  
+}
+
+
 const ScreenHrmControl = () => {
 
   const deviceCtx = useContext(DeviceContextInstance);
@@ -66,58 +130,12 @@ const ScreenHrmControl = () => {
       setUpdateCount(updateCount + 1);
       //paintFrame();
     }
-  }, [lastBpm, lastPower, hrmEngine])
+  }, [lastBpm, lastPower, hrmEngine, targetBpm])
 
   const handleRaf = () => {
 
-
-    const paintFrame = () => {
-      const curCanvas = canvas;
-      if(curCanvas && canvasReady && ctx) {
-        const tmNow = new Date().getTime();
-    
-        const maxBpm = 190;
-        const minBpm = 40;
-        const minMsAgo = -90000;
-        const maxMsAgo = 10000;
-        const tmSpan = maxMsAgo - minMsAgo;
-        const lastHrm = playerSetup.getLocalUserHistory(tmNow - tmSpan);
-
-        ctx.resetTransform();
-        ctx.scale(canvas.width / 90, -(canvas.height / (maxBpm - minBpm)));
-        ctx.translate(-minMsAgo/1000, -(maxBpm));
-        ctx.fillStyle = 'black';
-        ctx.fillRect(minMsAgo/1000, minBpm, 90, maxBpm-minBpm);
-
-        ctx.strokeStyle = 'white';
-        ctx.setLineDash([1,1]);
-        ctx.beginPath();
-        ctx.moveTo(minMsAgo/1000, targetBpm);
-        ctx.lineTo(maxMsAgo/1000, targetBpm);
-        ctx.stroke();
-        if(lastHrm.length >= 2) {
-          // let's draw a line!
-          ctx.setLineDash([]);
-          ctx.strokeStyle = 'red';
-          const tmLeft:number = tmNow - tmSpan;
-          ctx.beginPath();
-          lastHrm.forEach((hist, index) => {
-            const sAgo = (hist.tm - tmNow)/1000;
-            const pctX = (hist.tm - tmLeft) / tmSpan;
-    
-            if(index === 0) {
-              ctx.moveTo(sAgo, hist.hrm);
-            } else {
-              ctx.lineTo(sAgo, hist.hrm);
-            }
-          });
-          ctx.stroke();
-        }
-        
-      }
-    }
     frames++;
-    paintFrame();
+    paintFrame(canvas, canvasReady, ctx, targetBpm, playerSetup);
     rafs++;
     assert2(rafs === frames);
     if(animRequest !== null) {
@@ -152,7 +170,8 @@ const ScreenHrmControl = () => {
   }, [lastBpm])
 
   const delta = (change:number) => {
-    setTargetBpm(Math.max(40, targetBpm + change));
+    const newValue = Math.max(40, targetBpm + change);
+    setTargetBpm(newValue);
   }
 
   const textStyle = {
@@ -173,10 +192,20 @@ const ScreenHrmControl = () => {
   }
 
   useEffect(() => {
+    // something that materially affects the animation has changed.
+    // need to cancel current animation sequence and start a new one with a fresh closure
+    if(animRequest !== null) {
+      // cancel the old one
+      console.log("canceling old animation sequence");
+      cancelAnimationFrame(animRequest);
+      animRequest = null;
+    }
+
     if(canvas && canvasReady && ctx && animRequest === null) {
       animRequest = (requestAnimationFrame(handleRaf));
+      console.log("started new anim sequence ", animRequest);
     }
-  }, [canvas, canvasReady, ctx]);
+  }, [canvas, canvasReady, ctx, targetBpm]);
 
   return (
     <>

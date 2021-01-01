@@ -40,35 +40,6 @@
     <script>
     
       $(document).on('keyup keydown', function(e){window.shifted = e.shiftKey} );
-      window.localLocations = [];
-      var tmNow = new Date().getTime();
-
-      window.pending = {
-        tmNow: tmNow,
-        tmOfPend: tmNow,
-        lastNetwork: 0,
-        lastPhysics: 0,
-        lastDraw: 0,
-      };
-      window.tick = (tmOfPend) => {
-        window.pending.tmOfPend = tmOfPend;
-        window.pending.tmNow = new Date().getTime();
-        window.localLocations.push(Object.assign({}, window.pending));
-      }
-      window.dump = () => {
-        var ret = window.localLocations.map((line) => {
-          var cols = [
-            line.tmNow,
-            line.tmOfPend,
-            line.lastDraw,
-            line.lastNetwork,
-            line.lastPhysics,
-          ];
-          return cols.join('\t');
-        });
-        var joined = ret.join('\n');
-        console.log(joined);
-      }
     </script>
     <script src="https://kit.fontawesome.com/d8b18df8ff.js" crossorigin="anonymous"></script>
   </body>

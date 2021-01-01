@@ -29,9 +29,6 @@ declare global {
   interface Window {
     _: any,
     assert2: Function;
-    localLocations: DebugLocation[];
-    pending:DebugLocation;
-    tick: (tmOfPend:number)=>void;
     gifler: Function;
   }
 
