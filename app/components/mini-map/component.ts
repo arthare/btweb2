@@ -44,10 +44,7 @@ export default class MiniMap extends Component.extend({
                    elevations, 
                    w, 
                    h, 
-                   minElevSpan: race.getLength()*0.01,
-                  ai_color,
-                  human_color,
-                  local_color});
+                   minElevSpan: race.getLength()*0.01,});
 
     const png = canvas.toDataURL();
     const img = this.element.querySelector('img');

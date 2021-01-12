@@ -14,6 +14,7 @@ import { RaceState, UserProvider } from '../common/RaceState';
 import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserTypeFlags } from '../common/User';
 import { formatSecondsHms } from '../common/Utils';
 import { PlayerSetup, PlayerSetupInstance } from '../ComponentPlayerSetup';
+import ComponentRaceDisplay from './ComponentRaceDisplay';
 
 class ReactPlayerProvider implements UserProvider {
 
@@ -129,7 +130,7 @@ const ComponentRaceScreen = (props:{race:ServerHttpGameListElement}) => {
       case CurrentRaceState.Racing:
         return (
           <>
-            <Text>Race is underway</Text>
+            <ComponentRaceDisplay raceState={raceState} />
           </>
         )
         break;

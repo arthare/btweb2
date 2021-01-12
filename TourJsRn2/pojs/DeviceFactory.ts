@@ -1,7 +1,5 @@
 import { ConnectedDeviceInterface, BTDeviceState, PowerDataDistributor, CadenceRecipient, HrmRecipient, BluetoothFtmsDevice, BluetoothCpsDevice, BluetoothKickrDevice, BluetoothDeviceShared } from "./WebBluetoothDevice";
 import { getFtms, monitorCharacteristic, writeToCharacteristic, getCps, getKickrService, serviceUuids, deviceUtilsNotifyConnect, getHrm } from "./DeviceUtils";
-import { FakeDevice } from "bt-web2/application/controller";
-import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate, PluginMode } from "bt-web2/server-client-common/PluginCommunication";
 
 export interface DeviceFactory {
     findPowermeter(byPlugin?:boolean):Promise<ConnectedDeviceInterface>;

@@ -1,17 +1,18 @@
-import { RideMapElevationOnly } from "bt-web2/server-client-common/RideMap";
 import { Decoration } from "./DecorationItems";
 import { DecorationFactory, Layer } from "./DecorationFactory";
+import {GCanvasView, GImage} from '@flyskywhy/react-native-gcanvas';
+import { RideMapElevationOnly } from "./RideMap";
 
-export class DecorationState {
-  private _decorations:Map<Layer,Decoration[]>;
-  private _factory:DecorationFactory;
+export class DecorationState<TImageType, TContextType> {
+  private _decorations:Map<Layer,Decoration<TContextType>[]>;
+  private _factory:DecorationFactory<TImageType, TContextType>;
   private _map:RideMapElevationOnly;
   private _lastRight:number = 0;
 
-  private _images:{[key:string]:HTMLImageElement} = {};
+  private _images:{[key:string]:TImageType} = {};
 
-  constructor(map:RideMapElevationOnly, factory:DecorationFactory) {
-    this._decorations = new Map<Layer, Decoration[]>();
+  constructor(map:RideMapElevationOnly, factory:DecorationFactory<TImageType, TContextType>, fnCreateImage:()=>any) {
+    this._decorations = new Map<Layer, Decoration<TContextType>[]>();
     
     Object.keys(Layer).forEach((layer) => {
       this._decorations.set(<Layer><unknown>layer, []);
@@ -20,10 +21,10 @@ export class DecorationState {
     this._map = map;
 
     const imageNames:{[key:string]:string} = {
-      "heart": "/assets/heart.png",
+      "heart": "./data/heart.png",
     }
     for(var key in imageNames) {
-      const el = document.createElement('img');
+      const el = fnCreateImage();
       el.onload = () => {
         this._images[key] = el;
       }
@@ -34,7 +35,7 @@ export class DecorationState {
     }
   }
 
-  public getImage(key:string):HTMLImageElement|null {
+  public getImage(key:string):TImageType|null {
     if(this._images[key]) {
       return this._images[key];
     }
@@ -68,7 +69,7 @@ export class DecorationState {
     }
     this._lastRight = windowRight;    
   }
-  public draw(ctx:CanvasRenderingContext2D, layer:Layer) {
+  public draw(ctx:TContextType, layer:Layer) {
     const rg = this._decorations.get(layer);
     if(rg) {
       rg.forEach((dec) => {

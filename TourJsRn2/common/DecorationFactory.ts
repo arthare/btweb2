@@ -1,6 +1,5 @@
 import { DecorationPosition, Decoration, DecorationBase, MovingDecoration } from "./DecorationItems";
-import { RideMapElevationOnly, RideMap } from "bt-web2/server-client-common/RideMap";
-import ENV from 'bt-web2/config/environment';
+import { RideMapElevationOnly } from "./RideMap";
 
 export enum Layer {
   FarScenery = "FarScenery", // mountains, distant forests
@@ -39,14 +38,14 @@ function randRange(min:number, max:number) {
   return Math.random()*(max-min) + min;
 }
 
-export class LoadedDecoration extends ConfiggedDecoration {
-  private _img:HTMLImageElement[]|null = null;
-  constructor(raw:ConfiggedDecoration, img:HTMLImageElement[]) {
+export class LoadedDecoration<TImageType, TContextType> extends ConfiggedDecoration {
+  private _img:TImageType[]|null = null;
+  constructor(raw:ConfiggedDecoration, img:TImageType[]) {
     super(raw);
     this._img = img;
   }
 
-  public generateDecoration(rightSideOfScreen:number, rideMap:RideMapElevationOnly):Decoration|null {
+  public generateDecoration(rightSideOfScreen:number, rideMap:RideMapElevationOnly):Decoration<TContextType>|null {
     if(!this._img) {
       return null;
     }
@@ -76,10 +75,10 @@ export class LoadedDecoration extends ConfiggedDecoration {
         x: randRange(this.minSpeed.x, this.maxSpeed.x),
         y: randRange(this.minSpeed.y, this.maxSpeed.y),
       };
-      return new MovingDecoration(pos, speed, dims, imgToUse);
+      return new MovingDecoration<TImageType,TContextType>(pos, speed, dims, imgToUse);
     } else {
       // we don't have speed specification, so we're a stopped decoration
-      return new DecorationBase(pos, dims, imgToUse);
+      return new DecorationBase<TImageType, TContextType>(pos, dims, imgToUse);
     }
   }
 }
@@ -89,55 +88,17 @@ export interface ThemeConfig {
   decorationSpecs: ConfiggedDecoration[];
 }
 
-function flipImage(img:HTMLImageElement):HTMLImageElement {
-  const canvas = document.createElement('canvas');
+export class DecorationFactory<TImageType, TContextType> {
+  _availableDecorations:LoadedDecoration<TImageType, TContextType>[];
 
-  canvas.width  = img.width  ;
-  canvas.height = img.height ;
-  var newCtx = canvas.getContext('2d') ;
-  if(newCtx) {
-    newCtx.save      () ;
-    newCtx.translate ( img.width / 2, img.height / 2) ;
-    newCtx.rotate  (Math.PI);
-    newCtx.drawImage ( img, - img.width / 2, - img.height / 2) ; 
-    newCtx.restore   () ;
-  }
-
-  const outImage = document.createElement('img');
-  outImage.src = canvas.toDataURL();
-  return outImage;
-}
-
-export class DecorationFactory {
-  _availableDecorations:LoadedDecoration[];
-
-  constructor(themeConfig:ThemeConfig) {
+  constructor() {
     this._availableDecorations = [];
-
-    themeConfig.decorationSpecs.forEach((decSpec) => {
-
-      let cNeededToLoad = decSpec.imageUrl.length;
-      let cLoaded = 0;
-      let imageElements:HTMLImageElement[] = [];
-      decSpec.imageUrl.forEach((imgUrl) => {
-        const img = document.createElement('img');
-        img.onload = () => {
-          // we're loaded!  this is now a loaded decoration
-          imageElements.push(flipImage(img));
-          cLoaded++;
-          if(cLoaded === cNeededToLoad) {
-            this._availableDecorations.push(new LoadedDecoration(decSpec, imageElements));
-          }
-        }
-        img.src = ENV.rootURL + imgUrl;
-      })
-    })
   }
 
-  generateNewDecorations(layer:Layer, dt:number, metersPerSec:number, rightSideOfScreen:number, rideMap:RideMapElevationOnly):Decoration[] {
+  generateNewDecorations(layer:Layer, dt:number, metersPerSec:number, rightSideOfScreen:number, rideMap:RideMapElevationOnly):Decoration<TContextType>[] {
 
     const metersTravelled = dt * metersPerSec;
-    let generatedDecorations:Decoration[] = [];
+    let generatedDecorations:Decoration<TContextType>[] = [];
     this._availableDecorations.forEach((decSpec) => {
 
       if(decSpec.layer === layer) {

@@ -145,7 +145,7 @@ export class PaintFrameState {
   public loadingAi = false;
 }
 
-export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, dtSeconds:number, raceState:RaceState, paintState:PaintFrameState) {
+export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, dtSeconds:number, raceState:RaceState, paintState:PaintFrameState, fnCreateImage:()=>any) {
   const users = raceState.getUserProvider().getUsers(tmNow);
 
   if(!paintState.defaultAiImage && !paintState.loadingAi) {
@@ -155,28 +155,8 @@ export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, d
     const aiSrc = ['assets/cyclist-spritesheet.webp'];
     const whichOne = aiSrc[Math.floor(Math.random()*aiSrc.length) % aiSrc.length];
     
-    const imgAi = document.createElement('img');
+    const imgAi = fnCreateImage();
     imgAi.onload = () => {
-
-      // now we have to divvy this up into 8 actual images
-      let subImages = [];
-      for(var x = 0;x < 8; x++) {
-        const myCanvas = document.createElement('canvas');
-        const myImage = document.createElement('img');
-        myCanvas.width = 111;
-        myCanvas.height = 117;
-        const ctx = myCanvas.getContext('2d');
-        if(ctx) {
-          ctx.drawImage(imgAi, 0, x*117, 111, 117, 0, 0, 111, 117);
-          myImage.src = myCanvas.toDataURL('png');
-          subImages.push(myImage);
-        }
-        
-
-      }
-
-      paintState.defaultAiImage = subImages;
-      paintState.loadingAi = false;
     }
     imgAi.src = rootResourceUrl + whichOne;
   }
@@ -220,7 +200,7 @@ export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, d
       
       if(paintUser && imageBase64) {
         paintUser.loadingImage = true;
-        const img = document.createElement('img');
+        const img = fnCreateImage();
         img.onload = () => {
           paintUser.loadingImage = false;
           paintUser.image = [img];
@@ -231,11 +211,10 @@ export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, d
   }
 }
 
-export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
+export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TContextType, raceState:RaceState, time:number, decorationState:DecorationState<TImageType,TContextType>, dt:number, paintState:PaintFrameState) {
   // ok, all we have to do is paint the map!  How hard can it be?
 
   const tmNow = new Date().getTime();
-  const ctx = canvas.getContext('2d');
   if(!ctx) {
     return;
   }

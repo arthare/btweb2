@@ -12,21 +12,13 @@ import {
 import { RaceState } from '../common/RaceState';
 import {GCanvasView, GImage} from '@flyskywhy/react-native-gcanvas';
 import { CanvasRenderingContext2D } from 'react-native-canvas';
+import { doPaintFrameStateUpdates, paintCanvasFrame, PaintFrameState } from '../common/drawing';
+import { DecorationFactory } from '../common/DecorationFactory';
+import { DecorationState } from '../common/DecorationState';
+import { defaultThemeConfig } from '../common/drawing-constants';
+import { ReactDecorationFactory } from '../common/DecorationFactoryReact';
 
 let animRequest:number|null = null;
-
-const paintFrame = (raceState:RaceState, canvas:GCanvasView, canvasReady:boolean, ctx:CanvasRenderingContext2D) => {
-  console.log("painting frame");
-  ctx.fillStyle = Math.random() > 0.5 ? 'red' : 'green';
-  ctx.fillRect(0,0,100,100);
-
-
-
-  // if our frame-drawing sequence hasn't been canceled, then run it again!
-  if(animRequest !== null) {
-    animRequest = requestAnimationFrame(() => paintFrame(raceState, canvas, canvasReady, ctx));
-  }
-}
 
 const ComponentRaceDisplay = (props:{raceState:RaceState}) => {
 
@@ -34,6 +26,10 @@ const ComponentRaceDisplay = (props:{raceState:RaceState}) => {
   let [ctx, setCtx] = useState<any>(null);
   let [canvasReady, setCanvasReady] = useState<boolean>(false);
   
+  let [decorationFactory, setDecorationFactory] = useState<DecorationFactory<GImage,any>>(new ReactDecorationFactory(defaultThemeConfig));
+  let [decorationState, setDecorationState] = useState<DecorationState<GImage, any>>(new DecorationState<GImage, any>(props.raceState.getMap(), decorationFactory, ()=>new GImage()));
+  let [paintState, setPaintState] = useState<PaintFrameState>(new PaintFrameState());
+
   let initCanvas = (canvas) => {
     setCanvas(canvas);
   }
@@ -45,6 +41,7 @@ const ComponentRaceDisplay = (props:{raceState:RaceState}) => {
 
   useEffect(() => {
     
+
     return function cleanup() {
       if(animRequest !== null) {
         cancelAnimationFrame(animRequest as any);
@@ -64,9 +61,40 @@ const ComponentRaceDisplay = (props:{raceState:RaceState}) => {
     }
 
     if(canvas && canvasReady && ctx && animRequest === null) {
-      animRequest = requestAnimationFrame(() => paintFrame(props.raceState, canvas, canvasReady, ctx));
+      
+      let lastTime = 0;
+      let frame = 0;
+      const handleAnimationFrame = (time:number) => {
+        frame++;
+        if(props.raceState) {
+          
+          let dt = 0;
+          if(lastTime) {
+            dt = (time - lastTime) / 1000.0;
+          }
+          lastTime = time;
+
+          const tmNow = new Date().getTime();
+          props.raceState.tick(tmNow);
+
+          const frameMod = 1;
+          if(frame % frameMod == 0) {
+            doPaintFrameStateUpdates("./data/", tmNow, dt*frameMod, props.raceState, paintState, ()=>new GImage());
+          }
+          paintCanvasFrame<GImage, any>(canvas, ctx, props.raceState, time, decorationState, dt, paintState);
+
+          if(animRequest !== null) {
+            animRequest = requestAnimationFrame(handleAnimationFrame);
+          }
+        } else {
+          throw new Error("No race state available?");
+        }
+
+      }
+
+      requestAnimationFrame(handleAnimationFrame);
     }
-  }, [canvas, canvasReady, ctx, props.raceState]);
+  }, [canvas, canvasReady, ctx, props.raceState, paintState, decorationState, decorationFactory]);
 
   return (
     <>
