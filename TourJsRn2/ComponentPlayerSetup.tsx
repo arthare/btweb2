@@ -250,22 +250,24 @@ const ComponentPlayerSetup = (props:{onDone:()=>void}) => {
   }
 
   return (
-    <ScrollView style={{maxWidth: 360, marginLeft: 'auto', marginRight: 'auto'}}>
-      <Text>Player Setup: Tell us about yourself.  No signup required.</Text>
+    <ScrollView style={{width: '100%', padding:8,marginLeft: 'auto', marginRight: 'auto'}}>
+      <View style={{maxWidth: 320, marginLeft: 'auto', marginRight: 'auto'}}>
+        <Text>Player Setup: Tell us about yourself.  No signup required.</Text>
 
-      <Text style={textStyle}>Name</Text>
-      <TextInput value={name} onChangeText={setName} style={inputStyle} />
+        <Text style={textStyle}>Name</Text>
+        <TextInput value={name} onChangeText={setName} style={inputStyle} />
 
-      <Text style={textStyle}>Handicap/FTP</Text>
-      <TextInput keyboardType="numeric" value={handicap} onChangeText={setHandicap} style={inputStyle} />
-      
-      <TouchableOpacity onPress={pickImage}>
-        <Text style={textStyle}>Touch here to select your image.</Text>
-        {picture && (<Image style={imageStyle} source={imageSource}></Image>)
-        }
-      </TouchableOpacity>
+        <Text style={textStyle}>Handicap/FTP</Text>
+        <TextInput keyboardType="numeric" value={handicap} onChangeText={setHandicap} style={inputStyle} />
+        
+        <TouchableOpacity onPress={pickImage}>
+          <Text style={textStyle}>Touch here to select your image.</Text>
+          {picture && (<Image style={imageStyle} source={imageSource}></Image>)
+          }
+        </TouchableOpacity>
 
-      <ComponentButton title="Save Player Data" onPress={done} onLongPress={done}></ComponentButton>
+        <ComponentButton title="Save Player Data" onPress={done} onLongPress={done}></ComponentButton>
+      </View>
     </ScrollView>
   );
 };

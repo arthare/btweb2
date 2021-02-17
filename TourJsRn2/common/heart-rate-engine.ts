@@ -41,6 +41,14 @@ export class HeartRateEngine {
         // ok, so we know their lastBpm (in lastBpm), and we know their targetBpm (in targetBpm).
         // we probably need to adjust targetErg up or down based on the delta
 
+        if(targetHandicap.val > 1) {
+          // if they're above their FTP, then let's modify targetBpm so it only goes up in 5bpm intervals above their current bpm.
+          // this will give a bit of a stair-step pattern to the final target, but will also avoid 400W overshoots if they start at 80bpm and want to target 165bpm
+          const div5 = Math.ceil(lastBpm / 5);
+          const tim5 = div5*5;
+          targetBpm = Math.min(targetBpm, tim5 + 2);
+        }
+
         let error = targetBpm - lastBpm;
         let handicapsPerSecToAdjust = 0;
         if(error > 0) {

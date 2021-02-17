@@ -97,6 +97,7 @@ export class DecorationFactory<TImageType, TContextType> {
 
   generateNewDecorations(layer:Layer, dt:number, metersPerSec:number, rightSideOfScreen:number, rideMap:RideMapElevationOnly):Decoration<TContextType>[] {
 
+    
     const metersTravelled = dt * metersPerSec;
     let generatedDecorations:Decoration<TContextType>[] = [];
     this._availableDecorations.forEach((decSpec) => {

@@ -5,7 +5,6 @@ import { DeviceContext } from "./UtilsBle";
 export const UUID_CPS_SERVICE = '00001818-0000-1000-8000-00805f9b34fb';
 export const UUID_CPS_MEASURE_CHAR = '00002a63-0000-1000-8000-00805f9b34fb';
 
-export const UUID_KICKR_SERVICE = 'a026ee01-0a7d-4ab3-97fa-f1500f9feb8b';
 
 export const UUID_FTMS_SERVICE = '00001826-0000-1000-8000-00805f9b34fb';
 export const UUID_FTMS_FMF = '00002acc-0000-1000-8000-00805f9b34fb';
@@ -16,6 +15,10 @@ export const UUID_FTMS_RESISTANCELEVELRANGE = '00002ad6-0000-1000-8000-00805f9b3
 export const UUID_FTMS_MACHINESTATUS = '00002ada-0000-1000-8000-00805f9b34fb'
 export const UUID_HRM_SERVICE = '0000180d-0000-1000-8000-00805f9b34fb';
 export const UUID_HRM_MEASURE_CHAR = '00002a37-0000-1000-8000-00805f9b34fb';
+
+// KICKR stuff
+export const UUID_KICKR_SERVICE = 'a026ee01-0a7d-4ab3-97fa-f1500f9feb8b';
+export const UUID_KICKR_CONTROLPOINT = 'a026e005-0a7d-4ab3-97fa-f1500f9feb8b';
 
 
 export function isPowermeter(uuid:string) {

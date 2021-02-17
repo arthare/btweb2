@@ -19,6 +19,7 @@ import Canvas from 'react-native-canvas';
 import {GCanvasView, GImage} from '@flyskywhy/react-native-gcanvas';
 import { assert2 } from './common/Utils';
 import setupContextWithTheseCoords from './pojs/setupContextWithTheseCoords';
+import KeyEvent from 'react-native-keyevent';
 
 let frame = 0;
 let tmLastUpdate = 0;
@@ -161,6 +162,24 @@ const ScreenHrmControl = () => {
   }, []);
 
   useEffect(() => {
+    const onKeyDown = (keyEvent) => {
+      console.log(keyEvent.keyCode);
+      if(keyEvent.keyCode === 261) {
+        // karoo2 middle-right button
+        delta(5);
+      } else if(keyEvent.keyCode === 260) {
+        // karoo2 middle-left button
+        delta(-5);
+      }
+    }
+    KeyEvent.onKeyDownListener(onKeyDown);
+
+    return function cleanup() {
+      KeyEvent.removeKeyDownListener();
+    }
+  }, [targetBpm])
+
+  useEffect(() => {
     // when the HRM reading changes, need to feed it to the engine.  if the engine doesn't exist, 
     //paintFrame();
     if(lastBpm && lastBpm.value !== 0 && lastBpm.value < 180 && !hrmEngine) {
@@ -175,10 +194,10 @@ const ScreenHrmControl = () => {
   }
 
   const textStyle = {
-    fontSize:24,
+    fontSize:16,
   };
   const valueStyle = {
-    fontSize: 36,
+    fontSize: 24,
   }
 
   let initCanvas = (canvas) => {
@@ -210,18 +229,12 @@ const ScreenHrmControl = () => {
   return (
     <>
       {hrmEngine && (
-      <View style={{flexDirection: 'row', flex: 1}}>
-        <View style={{flexDirection: 'column', flexBasis: 0, flexGrow: 1, flexShrink: 1, paddingLeft: 8, paddingRight: 8}}>
-          <View style={{flex:0, flexDirection:'row'}}>
-            <ComponentButton title="-5" onPress={()=>delta(-5)} onLongPress={()=>{}} />
-            <ComponentButton title="-1" onPress={()=>delta(-1)} onLongPress={()=>{}} />
-            <ComponentButton title="+1" onPress={()=>delta(1)} onLongPress={()=>{}} />
-            <ComponentButton title="+5" onPress={()=>delta(5)} onLongPress={()=>{}} />
-          </View>
+      <View style={{flexDirection: 'column', flex: 1}}>
+        <View style={{flexDirection: 'column', flexBasis: 'auto', flexGrow: 0, flexShrink: 0, paddingLeft: 0, paddingRight: 0}}>
 
-          <ComponentKeyValue keyStyle={textStyle} valueStyle={valueStyle} keyTitle={"Target bpm"} valueTitle={targetBpm.toFixed(0) + "bpm"} />
+          <ComponentKeyValue keyStyle={textStyle} valueStyle={valueStyle} keyTitle={"Target ♡"} valueTitle={targetBpm.toFixed(0) + "♡"} />
           <ComponentKeyValue keyStyle={textStyle} valueStyle={valueStyle} keyTitle={"Target W"} valueTitle={lastTargetPower.toFixed(0) + "W"} />
-          <ComponentKeyValue keyStyle={textStyle} valueStyle={valueStyle} keyTitle={"Target %W"} valueTitle={lastTargetHandicap.toFixed(0) + "%"} />
+          <ComponentKeyValue keyStyle={textStyle} valueStyle={valueStyle} keyTitle={"Target %"} valueTitle={lastTargetHandicap.toFixed(0) + "%"} />
         </View>
         <GCanvasView style={{flexBasis: 0, flexGrow: 1, flexShrink: 1}}
                      onCanvasCreate={initCanvas}

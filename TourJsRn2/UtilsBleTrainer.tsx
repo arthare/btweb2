@@ -1,8 +1,9 @@
 import { BleError, Characteristic, Device } from "react-native-ble-plx";
 import { TrainerMode, TrainerSensorReading } from "./ComponentPlayerSetup";
 import { DeviceContext } from "./UtilsBle";
-import { LoadedBleDevice, LoadedDevice, LoadedFakeDevice, UUID_FTMS_CONTROLPOINT, UUID_FTMS_INDOORBIKEDATA, UUID_FTMS_MACHINESTATUS, UUID_FTMS_SERVICE } from "./UtilsBleBase";
+import { LoadedBleDevice, LoadedDevice, LoadedFakeDevice, UUID_FTMS_CONTROLPOINT, UUID_FTMS_INDOORBIKEDATA, UUID_FTMS_MACHINESTATUS, UUID_FTMS_SERVICE, UUID_KICKR_CONTROLPOINT } from "./UtilsBleBase";
 import { Buffer } from 'buffer';
+import { LoadedPm } from "./UtilsBlePm";
 
 export interface TrainerControls {
   setTargetWatts(watts:number):void;
@@ -51,7 +52,74 @@ export abstract class LoadedBleTrainer extends LoadedBleDevice implements Traine
   }
 }
 
-export class LoadedTrainerFtms extends LoadedBleTrainer {
+export class LoadedTrainerKickr extends LoadedBleTrainer {
+
+  trainerSensorData:TrainerSensorReading;
+  kickrControlPoint:Characteristic|null = null;
+  tmLast:number = 0;
+  writeInProgress:Promise<any>|null = null;
+
+  constructor(ctx:DeviceContext, device:Device) {
+    super(ctx, device);
+    this.trainerSensorData = new TrainerSensorReading(0);
+  }
+
+  connect():Promise<any> {
+    return super.connect().then((dev:Device) => {
+      return dev.discoverAllServicesAndCharacteristics().then(() => {
+        return dev.services().then((servs) => {
+          const ftms = servs.find((s) => s.uuid === UUID_FTMS_SERVICE);
+          if(ftms) {
+            // woohoo, ftms!
+            return ftms.characteristics().then((chars) => {
+              console.log(chars);
+              this.kickrControlPoint = chars.find((char) => char.uuid === UUID_KICKR_CONTROLPOINT) || null;
+
+              if(this.kickrControlPoint) {
+                return this.bleDevice;
+              } else {
+                throw new Error("Could not find kickr control point");
+              }
+            })
+          }
+
+        })
+      })
+    })
+  }
+
+  setTargetWatts(watts:number) {
+    if(!this.kickrControlPoint) {
+      throw new Error(`ftms control point not connected.  Erg target of ${watts} not written`)
+    }
+
+    const tmNow = new Date().getTime();
+    if(tmNow - this.tmLast < 250 || this.writeInProgress) {
+      // too soon
+      return;
+    }
+    this.tmLast = tmNow;
+
+    const bufOut = Buffer.alloc(3);
+    bufOut.writeUInt8(0x42, 0); // setTargetPower
+    bufOut.writeUInt16LE(watts, 1); // setTargetPower
+
+    return this.writeInProgress = this.kickrControlPoint?.writeWithResponse(bufOut.toString('base64')).then(() => {
+      this.trainerSensorData.lastMode = TrainerMode.Erg;
+      this.trainerSensorData.lastErg = watts;
+      this._emitSensorData();
+      console.log(`wrote erg target of ${watts.toFixed(0)}W`);
+    }).finally(() => {
+      this.writeInProgress = null;
+    })
+  }
+  private _emitSensorData() {
+    this.trainerSensorData.tm = new Date().getTime();
+    this.deviceContext.notifyTrainer(this.trainerSensorData);
+  }
+}
+
+export class LoadedTrainerFtms extends LoadedPm {
 
   indoorBikeData:Characteristic|null = null;
   ftmsStatus:Characteristic|null = null;
@@ -67,7 +135,80 @@ export class LoadedTrainerFtms extends LoadedBleTrainer {
     this.trainerSensorData = new TrainerSensorReading(0);
   }
 
-  onIndoorBike(err:BleError|null, char:Characteristic|null) {
+  connect(): Promise<any> {
+    return super.connect().then((dev:Device) => {
+      return dev.discoverAllServicesAndCharacteristics().then(() => {
+        return dev.services().then((servs) => {
+          const ftms = servs.find((s) => s.uuid === UUID_FTMS_SERVICE);
+          if(ftms) {
+            // woohoo, ftms!
+            return ftms.characteristics().then((chars) => {
+              console.log(chars);
+              this.indoorBikeData = chars.find((char) => char.uuid === UUID_FTMS_INDOORBIKEDATA) || null;
+              this.ftmsStatus = chars.find((char) => char.uuid === UUID_FTMS_MACHINESTATUS) || null;
+              this.ftmsControlPoint = chars.find((char) => char.uuid === UUID_FTMS_CONTROLPOINT) || null;
+
+              if(this.indoorBikeData &&
+                 this.ftmsStatus &&
+                 this.ftmsControlPoint) {
+
+                // whoa!  all found and connected
+                console.log("all trainer components connected");
+                this.addSub(this.indoorBikeData.monitor((err, indoorBikeData) => this._onIndoorBike(err, indoorBikeData)));
+                this.addSub(this.ftmsStatus.monitor((err, ftmsStatus) => this._onFtmsStatus(err, ftmsStatus)));
+                this.addSub(this.ftmsControlPoint.monitor((err, ftmsControlPoint) => this._onFtmsControlPoint(err, ftmsControlPoint)));
+
+
+                return this._takeControl().then(() => {
+                  return this.bleDevice;
+                })
+
+              } else {
+                throw new Error(`Failed to find one of indoorbikedata ${!!this.indoorBikeData}, ftmsStatus ${!!this.ftmsStatus}, or ftmsControlPoint ${!!this.ftmsControlPoint}`);
+              }
+            })
+          } else {
+            throw new Error("Failed to find FTMS");
+          }
+        })
+      })
+    })
+  }
+
+  setTargetWatts(watts:number) {
+    if(!this.ftmsControlPoint) {
+      throw new Error(`ftms control point not connected.  Erg target of ${watts} not written`)
+    }
+
+    const tmNow = new Date().getTime();
+    if(tmNow - this.tmLast < 250 || this.writeInProgress) {
+      // too soon
+      return;
+    }
+    this.tmLast = tmNow;
+
+    const bufOut = Buffer.alloc(3);
+    bufOut.writeUInt8(5, 0); // setTargetPower
+    bufOut.writeUInt16LE(watts, 1); // setTargetPower
+
+    return this.writeInProgress = this.ftmsControlPoint?.writeWithResponse(bufOut.toString('base64')).then(() => {
+      this.trainerSensorData.lastMode = TrainerMode.Erg;
+      this.trainerSensorData.lastErg = watts;
+      this._emitSensorData();
+      console.log(`wrote erg target of ${watts.toFixed(0)}W`);
+    }).finally(() => {
+      this.writeInProgress = null;
+    })
+  }
+
+  
+  //////////////////////////////////////////////
+  //////////////////////////////////////////////
+  //////////////////////////////////////////////
+  //////////////////////////////////////////////
+  // private bits
+  
+  private _onIndoorBike(err:BleError|null, char:Characteristic|null) {
     this.deviceContext.notifyAnyMessage(this);
     
     const base64Value = char?.value;
@@ -134,7 +275,7 @@ export class LoadedTrainerFtms extends LoadedBleTrainer {
       this._emitSensorData();
     }
   }
-  onFtmsStatus(err:BleError|null, char:Characteristic|null) {
+  private _onFtmsStatus(err:BleError|null, char:Characteristic|null) {
     this.deviceContext.notifyAnyMessage(this);
     const base64Value = char?.value;
     console.log("onFtmsStatus ", base64Value);
@@ -145,7 +286,7 @@ export class LoadedTrainerFtms extends LoadedBleTrainer {
   }
 
 
-  onFtmsControlPoint(err:BleError|null, char:Characteristic|null) {
+  private _onFtmsControlPoint(err:BleError|null, char:Characteristic|null) {
     this.deviceContext.notifyAnyMessage(this);
     const base64Value = char?.value;
     if(base64Value) {
@@ -180,78 +321,6 @@ export class LoadedTrainerFtms extends LoadedBleTrainer {
     }
   }
 
-  connect(): Promise<any> {
-    return super.connect().then((dev:Device) => {
-      return dev.discoverAllServicesAndCharacteristics().then(() => {
-        return dev.services().then((servs) => {
-          const ftms = servs.find((s) => s.uuid === UUID_FTMS_SERVICE);
-          if(ftms) {
-            // woohoo, ftms!
-            return ftms.characteristics().then((chars) => {
-              console.log(chars);
-              this.indoorBikeData = chars.find((char) => char.uuid === UUID_FTMS_INDOORBIKEDATA) || null;
-              this.ftmsStatus = chars.find((char) => char.uuid === UUID_FTMS_MACHINESTATUS) || null;
-              this.ftmsControlPoint = chars.find((char) => char.uuid === UUID_FTMS_CONTROLPOINT) || null;
-
-              if(this.indoorBikeData &&
-                 this.ftmsStatus &&
-                 this.ftmsControlPoint) {
-
-                // whoa!  all found and connected
-                console.log("all trainer components connected");
-                this.addSub(this.indoorBikeData.monitor((err, indoorBikeData) => this.onIndoorBike(err, indoorBikeData)));
-                this.addSub(this.ftmsStatus.monitor((err, ftmsStatus) => this.onFtmsStatus(err, ftmsStatus)));
-                this.addSub(this.ftmsControlPoint.monitor((err, ftmsControlPoint) => this.onFtmsControlPoint(err, ftmsControlPoint)));
-
-
-                return this._takeControl().then(() => {
-                  return this.bleDevice;
-                })
-
-              } else {
-                throw new Error(`Failed to find one of indoorbikedata ${!!this.indoorBikeData}, ftmsStatus ${!!this.ftmsStatus}, or ftmsControlPoint ${!!this.ftmsControlPoint}`);
-              }
-            })
-          } else {
-            throw new Error("Failed to find FTMS");
-          }
-        })
-      })
-    })
-  }
-
-  setTargetWatts(watts:number) {
-    if(!this.ftmsControlPoint) {
-      throw new Error(`ftms control point not connected.  Erg target of ${watts} not written`)
-    }
-
-    const tmNow = new Date().getTime();
-    if(tmNow - this.tmLast < 250 || this.writeInProgress) {
-      // too soon
-      return;
-    }
-    this.tmLast = tmNow;
-
-    const bufOut = Buffer.alloc(3);
-    bufOut.writeUInt8(5, 0); // setTargetPower
-    bufOut.writeUInt16LE(watts, 1); // setTargetPower
-
-    return this.writeInProgress = this.ftmsControlPoint?.writeWithResponse(bufOut.toString('base64')).then(() => {
-      this.trainerSensorData.lastMode = TrainerMode.Erg;
-      this.trainerSensorData.lastErg = watts;
-      this._emitSensorData();
-      console.log(`wrote erg target of ${watts.toFixed(0)}W`);
-    }).finally(() => {
-      this.writeInProgress = null;
-    })
-  }
-
-  
-  //////////////////////////////////////////////
-  //////////////////////////////////////////////
-  //////////////////////////////////////////////
-  //////////////////////////////////////////////
-  // private bits
   private _emitSensorData() {
     this.trainerSensorData.tm = new Date().getTime();
     this.deviceContext.notifyTrainer(this.trainerSensorData);

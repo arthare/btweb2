@@ -382,7 +382,9 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
     
     const heartImage = decorationState.getImage("heart");
     { // actually doing the user draw
-      const before = ctx.getTransform();
+      //const before = ctx.getTransform();
+      ctx.save();
+
       const slope = map.getSlopeAtDistance(user.getDistance());
       const angleDegrees = -Math.atan(slope);
 
@@ -412,7 +414,8 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
 
       // ok let's draw a name
       if(displayUser && nameToDraw) {
-        const before2 = ctx.getTransform();
+        //const before2 = ctx.getTransform();
+        ctx.save();
         ctx.font = `${sz}px Arial`;
 
         let xShift = 0;
@@ -471,12 +474,14 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
 
         
 
-        ctx.setTransform(before2);
+        //ctx.setTransform(before2);
+        ctx.restore();
       }
 
       
 
-      ctx.setTransform(before);
+      //ctx.setTransform(before);
+      ctx.restore();
       
       if(user.getUserType() & UserTypeFlags.Local) {
         // a local guy!
@@ -497,10 +502,12 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
           ctx.lineTo(dist+deltaAhead,map.getElevationAtDistance(dist+deltaAhead) - 0.4);
           ctx.stroke();
 
-          const before = ctx.getTransform();
+          ctx.save();
+          ctx.fillStyle = 'white';
+          ctx.font = '4px Arial';
           ctx.scale(1,-1);
           ctx.fillText(wattsSaved.toFixed(0)+'W', (dist+deltaAhead),-(map.getElevationAtDistance(dist+deltaAhead) - 2));
-          ctx.setTransform(before);
+          ctx.restore();
 
         }
       }

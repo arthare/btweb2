@@ -36,7 +36,7 @@ const ComponentImageButton = (props:{style:any, imageSource:any, title:string, o
 
   const textStyle = {
     color: 'white',
-    fontSize: 72,
+    fontSize: 36,
     textAlign: 'center' as any,
     textShadowColor: 'black',
     textShadowOffset: {width: 0, height: 0},

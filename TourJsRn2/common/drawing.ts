@@ -143,6 +143,10 @@ export class PaintFrameState {
 
   public defaultAiImage:HTMLImageElement[]|null = null;
   public loadingAi = false;
+
+  constructor() {
+    console.log("constructing paint frame state");
+  }
 }
 
 export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, dtSeconds:number, raceState:RaceState, paintState:PaintFrameState, fnCreateImage:()=>any) {
@@ -289,10 +293,10 @@ export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TC
   
 
   // time to start drawing!
-  const skyGradient = ctx.createLinearGradient(0,0,w,h);
-  skyGradient.addColorStop(0, "#35D6ed");
-  skyGradient.addColorStop(1, "#c9f6ff");
-  ctx.fillStyle = skyGradient;
+  //const skyGradient = ctx.createLinearGradient(0,0,w,h);
+  //skyGradient.addColorStop(0, "#35D6ed");
+  //skyGradient.addColorStop(1, "#c9f6ff");
+  ctx.fillStyle = '#c9f6ff';
   ctx.fillRect(minDist,userElev - elevSpan / 2,maxDist-minDist,elevSpan);
 
   // draw things that go on top of the sky, but behind the grass
@@ -361,7 +365,8 @@ export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TC
     
     const heartImage = decorationState.getImage("heart");
     { // actually doing the user draw
-      const before = ctx.getTransform();
+      //const before = ctx.getTransform();
+      ctx.save();
       const slope = map.getSlopeAtDistance(user.getDistance());
       const angleDegrees = -Math.atan(slope);
 
@@ -391,7 +396,8 @@ export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TC
 
       // ok let's draw a name
       if(displayUser && nameToDraw) {
-        const before2 = ctx.getTransform();
+        //const before2 = ctx.getTransform();
+        ctx.save();
         ctx.font = `${sz}px Arial`;
 
         let xShift = 0;
@@ -450,12 +456,14 @@ export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TC
 
         
 
-        ctx.setTransform(before2);
+        //ctx.setTransform(before2);
+        ctx.restore();
       }
 
       
 
-      ctx.setTransform(before);
+      //ctx.setTransform(before);
+      ctx.restore();
       
       if(user.getUserType() & UserTypeFlags.Local) {
         // a local guy!
@@ -476,10 +484,10 @@ export function paintCanvasFrame<TImageType,TContextType>(canvas:any, ctx:any|TC
           ctx.lineTo(dist+deltaAhead,map.getElevationAtDistance(dist+deltaAhead) - 0.4);
           ctx.stroke();
 
-          const before = ctx.getTransform();
+          ctx.save();
           ctx.scale(1,-1);
           ctx.fillText(wattsSaved.toFixed(0)+'W', (dist+deltaAhead),-(map.getElevationAtDistance(dist+deltaAhead) - 2));
-          ctx.setTransform(before);
+          ctx.restore();
 
         }
       }

@@ -14,25 +14,27 @@ import {
 const ComponentButton = (props:{title:string, onPress:any, onLongPress:any, style?:any, textStyle?:any}) => {
 
   const style = {
+    
     justifyContent: 'center' as any,
-    margin: 8,
+    margin: 2,
     borderWidth: 1,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 8,
-    paddingRight: 8,
+    padding: 3,
     backgroundColor: '#3498db',
 
     shadowColor: '#2a2a2a',
     shadowOpacity: 0.15,
     shadowRadius: 4,
-    minWidth: 70,
+    minWidth: 35,
     shadowOffset: {
       width: 0,
       height: 2,
     },
     elevation: 2,
     borderRadius: 8,
+
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 35,
 
     ...props.style,
   }

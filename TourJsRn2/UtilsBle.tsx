@@ -5,7 +5,7 @@ import { PlayerSetup, SensorReading, TrainerSensorReading } from "./ComponentPla
 import { DataNotifyRecipient, LoadedDevice, LoadedFakeDevice, UUID_FTMS_SERVICE, UUID_KICKR_SERVICE } from "./UtilsBleBase";
 import { LoadedHrm } from "./UtilsBleHrm";
 import { LoadedPm } from "./UtilsBlePm";
-import { LoadedBleTrainer, LoadedTrainerFtms, TrainerControls } from "./UtilsBleTrainer";
+import { LoadedBleTrainer, LoadedTrainerFtms, LoadedTrainerKickr, TrainerControls } from "./UtilsBleTrainer";
 
 export type WhichStatus = "pmStatus"|"hrmStatus"|"trainerStatus";
 
@@ -43,7 +43,7 @@ function buildTrainerDevice(ctx:DeviceContext, device:Device, retriesRemaining=3
         
         if(kickr) {
           // we found a wahoo kickr.  yay?
-          throw new Error("Kickr not supported yet");
+          return new LoadedTrainerKickr(ctx, device);
         } else if(ftms) {
           return new LoadedTrainerFtms(ctx, device);
         } else {

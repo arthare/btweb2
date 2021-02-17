@@ -20,10 +20,10 @@ import { SimpleElevationMap } from './common/communication';
 const ComponentGameListSummary = (props:{race:ServerHttpGameListElement, onSelect:(which:ServerHttpGameListElement)=>{}}) => {
 
   const containerStyle = {
-    height: '100%',
+    height: 480,
     borderWidth: 2,
     borderColor: 'black',
-    width: '30%',
+    width: '100%',
     paddingTop: 8,
   }
 

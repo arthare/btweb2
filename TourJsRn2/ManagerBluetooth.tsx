@@ -17,7 +17,7 @@ import { State } from 'react-native-gesture-handler';
 import ComponentButton from './ComponentButton';
 import ComponentDeviceNav from './ComponentDeviceNav';
 import { DeviceContext } from './UtilsBle';
-import { isHrm, isPowermeter, isTrainer } from './UtilsBleBase';
+import { isHrm, isPowermeter, isTrainer, UUID_KICKR_SERVICE } from './UtilsBleBase';
 import * as RootNavigation from './RootNavigation';
 import ComponentPlayerSetup from './ComponentPlayerSetup';
 import { LoadedFakeTrainer } from './UtilsBleTrainer';
@@ -93,12 +93,12 @@ const ManagerBluetooth = (props:{children:any}) => {
     console.log("bluetooth state changed ", bleState);
   }, [bleState])
 
-  const onDeviceDetected = (err:BleError|null, newDevice:Device|null, activeFilter:string) => {
+  const onDeviceDetected = (err:BleError|null, newDevice:Device|null, activeFilter:string[]) => {
     console.log("found ", newDevice, " active filter ", activeFilter, searchResults);
     if(!newDevice || !newDevice.serviceUUIDs) {
       return;
     }
-    const matchingUuid = newDevice.serviceUUIDs.find((uuid) => uuid.includes(activeFilter));
+    const matchingUuid = newDevice.serviceUUIDs.find((uuid) => !!activeFilter.find((oneFilter) => uuid.includes(oneFilter)));
     if(matchingUuid) {
       console.log("matching uuid ", matchingUuid);
       setLastDeviceDetected(newDevice);
@@ -122,7 +122,7 @@ const ManagerBluetooth = (props:{children:any}) => {
   }, [lastDeviceDetected])
 
 
-  const onStartScan = (uuidFilter:string, searchFlags:number) => {
+  const onStartScan = (uuidFilter:string[], searchFlags:number) => {
     console.log("onStartScan.  Checking permissions");
     return PermissionsAndroid.check('android.permission.ACCESS_FINE_LOCATION').then((havePermission) => {
       let permRequest:Promise<any> = Promise.resolve();
@@ -134,24 +134,20 @@ const ManagerBluetooth = (props:{children:any}) => {
         console.log("have permission? ", havePermission);
         setSearchResults([]);
         setSearchingFlags(searchFlags);
-        bleManager?.connectedDevices([uuidFilter]).then((connectedDevices) => {
-          console.log("there are ", connectedDevices.length, " devices already connected");
-          connectedDevices.forEach((dev) => onDeviceDetected(null, dev, uuidFilter));
-        })
-        bleManager?.startDeviceScan([uuidFilter],{scanMode:ScanMode.Balanced}, (err, newDevice) => onDeviceDetected(err, newDevice, uuidFilter));
+        bleManager?.startDeviceScan(uuidFilter,{scanMode:ScanMode.LowLatency}, (err, newDevice) => onDeviceDetected(err, newDevice, uuidFilter));
         setBlePermissionsValid(true);
       })
     });
   }
 
   const onSearchPowermeter = () => {
-    onStartScan('1818', SEARCH_FLAGS_PM);
+    onStartScan(['1818'], SEARCH_FLAGS_PM);
   }
   const onSearchTrainer = () => {
-    onStartScan('1826', SEARCH_FLAGS_TRAINER);
+    onStartScan(['1826', UUID_KICKR_SERVICE], SEARCH_FLAGS_TRAINER);
   }
   const onSearchHrm = () => {
-    onStartScan('180d', SEARCH_FLAGS_HRM);
+    onStartScan(['180d'], SEARCH_FLAGS_HRM);
   }
   const onFakePowermeter = () => {
     console.log("long press fake pm");
@@ -230,7 +226,7 @@ const ManagerBluetooth = (props:{children:any}) => {
     position: 'absolute' as any,
     backgroundColor: 'white' as any,
     width: '100%',
-    height: '100%',
+    height: 200,
     zIndex: 1,
     opacity: 0.95,
     top: 40,

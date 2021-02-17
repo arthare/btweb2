@@ -1,7 +1,7 @@
 import { RaceState, UserProvider } from "./RaceState";
-import { User, UserTypeFlags } from "./User";
+import { DEFAULT_HANDICAP_POWER, User, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
-import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
+import { MapBounds, RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
 import { BattleshipGameTurn, BattleshipApplyMove } from "./battleship-game";
 import { RideMapHandicap } from "./RideMapHandicap";
@@ -291,17 +291,35 @@ export function getElevationFromEvenSpacedSamples(meters:number, lengthMeters:nu
 }
 
 // a wrapper class to start translating a ScheduleRacePostRequest into a map we can actually load and ride
-export class SimpleElevationMap extends RideMapPartial {
+export class SimpleElevationMap implements RideMap {
   elevations:number[];
   lengthMeters:number;
   constructor(elevations:number[], lengthMeters:number) {
-    super();
     this.elevations = elevations;
     this.lengthMeters = lengthMeters;
 
     elevations.forEach((elev) => {
       assert2(isFinite(elev));
     })
+  }
+  getPowerTransform(who: User): (power: number) => number {
+    return (power:number) => {
+      return DEFAULT_HANDICAP_POWER*(power / who.getHandicap());
+    }
+  }
+  getBounds(): MapBounds {
+    const ret:MapBounds = {
+      minElev:Math.min(...this.elevations),
+      maxElev:Math.max(...this.elevations),
+      minDist:0,
+      maxDist:this.lengthMeters,
+    }
+    return ret;
+  }
+  getSlopeAtDistance(meters: number): number {
+    const left = this.getElevationAtDistance(meters - 0.5);
+    const right = this.getElevationAtDistance(meters + 0.5);
+    return right - left;
   }
   getElevationAtDistance(meters: number): number {
     const ret = getElevationFromEvenSpacedSamples(meters, this.lengthMeters, this.elevations);

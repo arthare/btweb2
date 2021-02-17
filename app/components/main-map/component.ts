@@ -6,6 +6,7 @@ import { doPaintFrameStateUpdates, paintCanvasFrame, PaintFrameState } from 'bt-
 import { DecorationFactory, Layer, ThemeConfig } from 'bt-web2/server-client-common/DecorationFactory';
 import { DecorationState } from 'bt-web2/server-client-common/DecorationState';
 import ENV from 'bt-web2/config/environment';
+import { defaultThemeConfig } from 'bt-web2/server-client-common/drawing-constants';
 
 
 export default class MainMap extends Component.extend({

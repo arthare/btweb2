@@ -31,6 +31,7 @@ import { navigationRef } from './RootNavigation';
 import ComponentPlayerSetup from './ComponentPlayerSetup';
 import { useKeepAwake } from '@sayem314/react-native-keep-awake';
 import ScreenRaceSelection from './ScreenRaceSelection';
+import ScreenRaceTest from './ScreenRaceTest';
 
 enum LoadingStatus {
   LoadingData,
@@ -47,10 +48,6 @@ export interface StoredData {
 
 const App = () => {
 
-  useEffect(() => {
-    Orientation.lockToLandscape();
-  }, []);
-
   let playerSetup = useContext(PlayerSetupInstance);
 
   let [loadingStatus, setLoadingStatus] = useState<LoadingStatus>(LoadingStatus.LoadingData);
@@ -58,7 +55,6 @@ const App = () => {
 
   function checkLoadStatus() {
     AsyncStorage.getItem(PlayerSetup.PLAYER_DATA_KEY).then((data:string|null) => {
-      console.log("checing player data ", data);
       if(data) {
         try {
           const parsed:StoredData = JSON.parse(data);
@@ -117,13 +113,21 @@ const App = () => {
       options={{ title: 'Loading...' }}
     />
   )
+  const screenRaceTest = (
+    <Stack.Screen
+      name="ScreenRaceTest"
+      key="ScreenRaceTest"
+      component={ScreenRaceTest}
+      options={{ title: 'Loading...' }}
+    />
+  )
 
   function getScreensToShow() {
     switch(loadingStatus) {
       case LoadingStatus.NoData:
         return ([screenHome]);
       case LoadingStatus.Loaded:
-        return ([screenHome, hrmControl, raceSelection]);
+        return ([screenHome, hrmControl]);
       case LoadingStatus.LoadingData:
         return ([screenLoading]);
       default:

@@ -1,8 +1,9 @@
+import { CanvasRenderingContext2D } from "react-native-canvas";
 import { DecorationFactory, LoadedDecoration, ThemeConfig } from "./DecorationFactory";
 
-export class WebDecorationFactory extends DecorationFactory<HTMLImageElement> {
+export class WebDecorationFactory<TImageType,TCanvasType> extends DecorationFactory<TImageType, TCanvasType> {
   
-  constructor(rootResourceUrl:string, themeConfig:ThemeConfig) {
+  constructor(rootResourceUrl:string, themeConfig:ThemeConfig, fnCreateImage:()=>TImageType) {
     super();
     this._availableDecorations = [];
 
@@ -10,23 +11,29 @@ export class WebDecorationFactory extends DecorationFactory<HTMLImageElement> {
 
       let cNeededToLoad = decSpec.imageUrl.length;
       let cLoaded = 0;
-      let imageElements:HTMLImageElement[] = [];
+      let imageElements:TImageType[] = [];
       decSpec.imageUrl.forEach((imgUrl) => {
-        const img = document.createElement('img');
+        const img = fnCreateImage();
         img.onload = () => {
           // we're loaded!  this is now a loaded decoration
+          console.log("loaded ", img.src);
           imageElements.push(this.flipImage(img));
           cLoaded++;
           if(cLoaded === cNeededToLoad) {
-            this._availableDecorations.push(new LoadedDecoration(decSpec, imageElements));
+            this._availableDecorations.push(new LoadedDecoration<TImageType, TCanvasType>(decSpec, imageElements));
           }
         }
+        img.onerror = () => {
+          console.log("failed to load ", img.src);
+        }
+        
         img.src = rootResourceUrl + imgUrl;
+        console.log("trying to load ", img.src);
       })
     })
   }
 
-  private flipImage(img:HTMLImageElement):HTMLImageElement {
+  private flipImage(img:TImageType):TImageType {
     if(typeof document !== 'undefined') {
       const canvas = document.createElement('canvas');
     

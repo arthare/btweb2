@@ -38,42 +38,60 @@ class DeviceStatus {
   }
 
   getStyle():{style:any,textStyle:any} {
+
+    const commonStyle = {
+      borderWidth: 4,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 'auto',
+    }
+    const commonTextStyle = {
+      fontSize: 12,
+      color: 'black' as any,
+    }
+
     if(this.lastFlag & STATUS_DISCONNECTED) {
       // we only ever hit disconnected when something WAS connected, so make this big and red to attract the user's attention
       return { 
         style: {
+          ...commonStyle,
           'borderWidth': 4,
           'borderColor': 'red',
         },
-        textStyle: {},
+        textStyle: {
+          ...commonTextStyle,
+        },
       }
     } else if(this.lastFlag & STATUS_UNHEALTHY) {
       return { 
         style: {
-          'borderWidth': 4,
+          ...commonStyle,
           'borderColor': 'yellow',
         },
         textStyle: {
-          'color': 'black',
+          ...commonTextStyle,
         }
       }
     } else if(this.lastFlag & STATUS_HEALTHY) {
       // if we're healthy, just keep alternating border colors to let the user know we're good
       return {
         style: {
-          'borderWidth': 2,
+          ...commonStyle,
           'borderColor': this.lastLeft ? 'lightgreen' : 'green',
         },
-        textStyle: {}
+        textStyle: {
+          ...commonTextStyle,
+        }
       }
     } else if(this.lastFlag & STATUS_CONNECTED) {
       // connected but not "healthy"?  this means we're in the process of connecting.  hopefully we'll get data soon
       return {
         style: {
+          ...commonStyle,
           'backgroundColor': 'yellow',
         },
         textStyle: {
-          'color': 'black',
+          ...commonTextStyle,
         }
       }
     } else {
@@ -117,11 +135,10 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
   let [lastDeviceChange, setLastDeviceChange] = useState<DeviceStatusMap>(defaultDeviceStatus);
 
   const navStyle = {
+    paddingLeft: 4,
+    paddingRight: 4,
     minHeight: 32,
     justifyContent: 'center' as any,
-    paddingLeft: 16,
-    flex: 0,
-    flexDirection: 'row' as any,
     opacity: 1.0,
   }
 
@@ -165,11 +182,11 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
     pmTitle = lastPower.value.toFixed(0) + 'W';
   }
 
-  let trainerTitle = "+Trainer";
+  let trainerTitle = "+FTMS";
   if(lastTrainer) {
     switch(lastTrainer.lastMode) {
       case TrainerMode.Erg:
-        trainerTitle = `Erg\n${lastTrainer.lastErg.toFixed(0)}W`;
+        trainerTitle = `⛒${lastTrainer.lastErg.toFixed(0)}W`;
         break;
       case TrainerMode.Resistance:
         trainerTitle = `Dumb\n${lastTrainer.lastResistance.toFixed(0)}%`;
@@ -178,14 +195,14 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
         trainerTitle = `Sim\n${lastTrainer.lastSlope.toFixed(1)}`;
         break;
       case TrainerMode.Unknown:
-        trainerTitle = "Connecting...";
+        trainerTitle = "📻...";
         break;
     }
   }
 
   let hrmTitle = "+HRM";
   if(lastHrm) {
-    hrmTitle = lastHrm.value.toFixed(0) + 'bpm';
+    hrmTitle = lastHrm.value.toFixed(0) + '♡';
   }
 
   const onDownloadPwx = () => {
@@ -248,14 +265,18 @@ const ComponentDeviceNav = (props:{deviceContext:DeviceContext,
           <Text>Turn On Bluetooth</Text>
         )}
         {props.bleReady && (<>
-          <ComponentButton title={`Name: ${playerData.name}\nHandicap: ${playerData.handicap}W`} onPress={props.onSetupPlayer} onLongPress={()=>{}} />
-          <ComponentButton {...lastDeviceChange.pmStatus.getStyle()}      title={pmTitle} onPress={props.onSearchPowermeter} onLongPress={props.onFakePowermeter} />
-          <ComponentButton {...lastDeviceChange.trainerStatus.getStyle()} title={trainerTitle} onPress={props.onSearchTrainer} onLongPress={props.onFakeTrainer} />
-          <ComponentButton {...lastDeviceChange.hrmStatus.getStyle()}     title={hrmTitle} onPress={props.onSearchHrm} onLongPress={props.onFakeHrm} />
+          <View style={{flexDirection: 'row', flexGrow:1}}>
+            <ComponentButton style={{flex: 1}} title={`Name: ${playerData.name}\nHandicap: ${playerData.handicap}W`} onPress={props.onSetupPlayer} onLongPress={()=>{}} />
+          </View>
+          <View style={{flex: 1, flexGrow: 0, flexShrink: 0, flexBasis: 40, flexDirection: 'row', backgroundColor: 'red'}}>
+            <ComponentButton {...lastDeviceChange.pmStatus.getStyle()}      title={pmTitle} onPress={props.onSearchPowermeter} onLongPress={props.onFakePowermeter} />
+            <ComponentButton {...lastDeviceChange.trainerStatus.getStyle()} title={trainerTitle} onPress={props.onSearchTrainer} onLongPress={props.onFakeTrainer} />
+            <ComponentButton {...lastDeviceChange.hrmStatus.getStyle()}     title={hrmTitle} onPress={props.onSearchHrm} onLongPress={props.onFakeHrm} />
+            {playerCtx.isLocked() && playerCtx.getLocalUser()?.getBigImageMd5() && (
+              <ComponentButton title="PWX" onPress={onDownloadPwx} onLongPress={()=>{}} />
+            )}
+          </View>
           
-          {playerCtx.isLocked() && playerCtx.getLocalUser()?.getBigImageMd5() && (
-            <ComponentButton title="PWX" onPress={onDownloadPwx} onLongPress={()=>{}} />
-          )}
         </>)}
 
       </>)}

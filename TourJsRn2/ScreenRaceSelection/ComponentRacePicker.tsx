@@ -43,7 +43,7 @@ const ComponentRacePicker = (props:{onPickRace:(which:ServerHttpGameListElement)
         </>
       )}
       {!loading && races && races.races.length > 0 /* nonzero # of races loaded */ && (
-        <ScrollView horizontal={true}>
+        <ScrollView horizontal={false}>
           {races.races.map((race:ServerHttpGameListElement, index) => {
             return (<ComponentGameListSummary key={index} race={race} onSelect={() => props.onPickRace(race)}/>);
           })}

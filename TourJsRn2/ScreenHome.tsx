@@ -85,14 +85,6 @@ const ScreenHome = (props:{navigation:any}) => {
                               disableReason={disableHrmReason}
                               onPress={onHrmControl} />
 
-        <ComponentImageButton title="Race Mode" 
-                              imageSource={imageRaceMode} 
-                              style={raceStyle} 
-                              resizeMode="cover" 
-                              enabled={!!enableRaceMode}
-                              disableReason={disableRaceReason}
-                              onPress={onRaceMode} />
-
       </View>
     </>
   );

@@ -332,7 +332,8 @@ wss.on('connection', (wsConnection) => {
       const users:ServerUser[] = game.userProvider.getUsers(tmNow);
 
       users.forEach((user:ServerUser) => {
-        if(user.getId() !== fromUser.getId() && !(user.getUserType() & UserTypeFlags.Ai)) {
+        const isAi = user.getUserType() & UserTypeFlags.Ai;
+        if(!isAi) {
           // ok, we gotta repeat this message to this user
           const ws = user.getWebSocket();
           if(ws) {

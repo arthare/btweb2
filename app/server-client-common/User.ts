@@ -247,13 +247,20 @@ export class User extends UserDataRecorder implements SlopeSource {
     const draftingFar = 10;
     let closestRider:User|null = null;
     let closestRiderDist:number = 1e30;
+    let closestRiderEffectMod = 1;
 
     otherUsers.forEach((user:User) => {
       const userAhead = user.getDistance() - this.getDistance();
-      if(userAhead >= draftingClose && userAhead <= draftingFar) {
+
+      // user effect mod:
+      // if they're going really fast, then their draft zone will extend up to twice as long at 72km/h.
+      // BUT: the draft impact will be up-to-halved.
+      const userEffectMod = Math.max(1, Math.min(2, user.getSpeed() / 10));
+      if(userAhead >= draftingClose*2 && userAhead <= draftingFar) {
         if(!closestRider || userAhead < closestRiderDist) {
           closestRiderDist = userAhead;
           closestRider = user;
+          closestRiderEffectMod = userEffectMod;
         }
       }
     });
@@ -266,7 +273,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       closestRider.notifyDrafteeThisCycle(tmNow, this.getId());
       const cRidersDraftingLastCycle = Math.max(1, closestRider.getDrafteeCount(tmNow));
 
-      let bestPossibleReduction = 0.33 / cRidersDraftingLastCycle;
+      let bestPossibleReduction = (0.33 / cRidersDraftingLastCycle) / closestRiderEffectMod;
       const pctClose = 1 - bestPossibleReduction;
       const pctFar = 1.0;
       const myPct = (closestRiderDist - draftingClose) / (draftingFar - draftingClose);

@@ -21,7 +21,7 @@ export class DecorationState<TImageType, TContextType> {
     this._map = map;
 
     const imageNames:{[key:string]:string} = {
-      "heart": "./data/heart.png",
+      "heart": "https://www.tourjs.ca/assets/heart-bfcc4ae7b0c81630445aaa622b23bc49.png",
     }
     for(var key in imageNames) {
       const el = fnCreateImage();
