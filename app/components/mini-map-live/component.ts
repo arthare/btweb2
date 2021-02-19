@@ -1,6 +1,6 @@
 import Component from '@ember/component';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { drawMinimap } from '../mini-map/component';
+import { drawMinimap, DrawMinimapParameters } from 'bt-web2/server-client-common/drawing';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { UserTypeFlags } from 'bt-web2/server-client-common/User';
 
@@ -61,7 +61,18 @@ export default class MiniMapLive extends Component.extend({
       const w = this.element.clientWidth;
       const h = this.element.clientHeight;
       requestAnimationFrame(() => {
-        drawMinimap(canvas, elevations, w, h, map.getLength()*0.01, localPosition, humanPositions, aiPositions);
+        const ctx = canvas.getContext('2d');
+        const drawMiniParams:DrawMinimapParameters = {
+          ctx,
+          elevations,
+          w,
+          h,
+          minElevSpan:map.getLength()*0.01,
+          localPositionPct:localPosition,
+          humanPositions,
+          aiPositions,
+        }
+        drawMinimap(drawMiniParams);
       })
 
       

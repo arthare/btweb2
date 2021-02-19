@@ -149,6 +149,9 @@ export class ServerUserProvider implements UserProvider {
   constructor() {
     this.users = [];
   }
+  getLocalUser(): User | null {
+    return null;
+  }
   getUsers(tmNow:number): ServerUser[] {
     return this.users.filter((user) => {
       return user.getMsSinceLastPacket(tmNow) < 300000 ||  // either this user is still obviously connected

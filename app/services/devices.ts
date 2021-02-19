@@ -219,6 +219,14 @@ export default class Devices extends Service.extend({
 
     device.setDeviceFlags(deviceFlags);
     this.devices.push(device);
+    this.incrementProperty('ridersVersion');
+  }
+
+  getHrmDevice():ConnectedDeviceInterface|null {
+    return this.devices.find((dev) => dev.getDeviceFlags() & DeviceFlags.Hrm) || null;
+  }
+  getPowerDevice():ConnectedDeviceInterface|null {
+    return this.devices.find((dev) => dev.getDeviceFlags() & (DeviceFlags.Trainer | DeviceFlags.PowerOnly)) || null;
   }
 
   getLocalUser():User|null {

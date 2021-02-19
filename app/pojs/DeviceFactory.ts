@@ -232,11 +232,63 @@ class TestDeviceFactory implements DeviceFactory {
           throw failure;
         })
       } else {
+
+
+        return navigator.bluetooth.getAvailability().then((available) => {
+          if(!available) {
+            const msg = "It looks like your browser/OS combo doesn't support BLE in the browser.  TourJS is best enjoyed on a Mac with Chrome or Android phone with Chrome.  If it asks for location services, allow them.  If none of that works, try a paid service like Zwift.";
+            alert(msg);
+            throw msg;
+          }
+          
+          const filters = {
+            filters: [
+              {services: ['cycling_power']},
+              {services: ['fitness_machine', 'cycling_power']},
+              {services: [serviceUuids.kickrService, 'cycling_power']},
+            ]
+          }
+          return navigator.bluetooth.requestDevice(filters).then((device) => {
+            if(device.gatt) {
+              return device.gatt.connect();
+            } else {
+              throw new Error("No device gatt?");
+            }
+          }).then((gattServer) => {
+            deviceUtilsNotifyConnect();
+            return gattServer.getPrimaryServices().then((services) => {
+              const ftms = getFtms(services);
+              const cps = getCps(services);
+              const kickr = getKickrService(services);
+
+              if(ftms) {
+                return new BluetoothFtmsDevice(gattServer);
+              } else if(kickr) {
+                return new BluetoothKickrDevice(gattServer);
+              } else if(cps) {
+                return new BluetoothCpsDevice(gattServer);
+              } else {
+                throw new Error("We don't recognize what kind of device this is");
+              }
+            })
+          });
+        })
+
+
+      }
+
+    }
+    findHrm(): Promise<ConnectedDeviceInterface> {
+      return navigator.bluetooth.getAvailability().then((available) => {
+        if(!available) {
+          const msg = "It looks like your browser/OS combo doesn't support BLE in the browser.  TourJS is best enjoyed on a Mac with Chrome or Android phone with Chrome.  If it asks for location services, allow them.  If none of that works, try a paid service like Zwift.";
+          alert(msg);
+          throw msg;
+        }
+        
         const filters = {
           filters: [
-            {services: ['cycling_power']},
-            {services: ['fitness_machine', 'cycling_power']},
-            {services: [serviceUuids.kickrService, 'cycling_power']},
+            {services: ['heart_rate']},
           ]
         }
         return navigator.bluetooth.requestDevice(filters).then((device) => {
@@ -248,47 +300,15 @@ class TestDeviceFactory implements DeviceFactory {
         }).then((gattServer) => {
           deviceUtilsNotifyConnect();
           return gattServer.getPrimaryServices().then((services) => {
-            const ftms = getFtms(services);
-            const cps = getCps(services);
-            const kickr = getKickrService(services);
+            const hrm = getHrm(services);
 
-            if(ftms) {
-              return new BluetoothFtmsDevice(gattServer);
-            } else if(kickr) {
-              return new BluetoothKickrDevice(gattServer);
-            } else if(cps) {
-              return new BluetoothCpsDevice(gattServer);
+            if(hrm) {
+              return new BluetoothHrmDevice(gattServer);
             } else {
               throw new Error("We don't recognize what kind of device this is");
             }
           })
         });
-      }
-
-    }
-    findHrm(): Promise<ConnectedDeviceInterface> {
-      const filters = {
-        filters: [
-          {services: ['heart_rate']},
-        ]
-      }
-      return navigator.bluetooth.requestDevice(filters).then((device) => {
-        if(device.gatt) {
-          return device.gatt.connect();
-        } else {
-          throw new Error("No device gatt?");
-        }
-      }).then((gattServer) => {
-        deviceUtilsNotifyConnect();
-        return gattServer.getPrimaryServices().then((services) => {
-          const hrm = getHrm(services);
-
-          if(hrm) {
-            return new BluetoothHrmDevice(gattServer);
-          } else {
-            throw new Error("We don't recognize what kind of device this is");
-          }
-        })
       });
     }
 }

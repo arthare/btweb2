@@ -405,7 +405,6 @@ export default class ConnectionManager {
       ws.onmessage = (msg:MessageEvent) => {
         try {
           const basicMessage:S2CBasicMessage = JSON.parse(msg.data);
-          window.assert2(basicMessage.type === BasicMessageType.ClientConnectionResponse);
           this._lastServerRaceState = basicMessage.raceState;
           this._onLastServerRaceStateChange();
 

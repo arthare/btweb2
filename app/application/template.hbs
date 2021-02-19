@@ -1,11 +1,4 @@
 <div class="application__container">
-  <div class="application__user-info">
-    {{{userInfo}}} | 
-    <a class="application__hill-adjust" href='#' {{action 'ftmsAdjust' -5}}>[-]</a> 
-    Hills @ {{devices.ftmsLevel}} 
-    <a class="application__hill-adjust" href='#' {{action 'ftmsAdjust' 5}}>[+]</a>
-    <a class="application__hill-adjust" href='#' {{action 'hideThis' 5}}>Hide</a>
-  </div>
   {{outlet}}
 
   <div class="application__device-write" {{action 'connectDevice'}}></div>

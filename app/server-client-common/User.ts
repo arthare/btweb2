@@ -61,11 +61,13 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
 
   public getLastHrm(tmNow:number):number {
     if(tmNow <= this._tmLastHrm + 5000) {
+      console.log("last hrm for "  + this._id + " is " + this._lastHrm);
       return this._lastHrm;
     }
     return 0;
   }
   public getLastPower():number {
+    console.log("last power for "  + this._id + " is " + this._lastPower);
     return this._lastPower;
   }
   setFinishTime(tmNow:number) {
