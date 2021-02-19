@@ -35,10 +35,10 @@ export default class Connection extends Service.extend({
     this.devices.addRemoteUser(client, image);
   }
 
-  connect(targetHost:string, gameId:string, accountId:string, user:User):Promise<RaceState> {
+  connect(targetHost:string, gameId:string, accountId:string, user:User, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
     let url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
 
-    return this._connectManager.connect(url, this.devices, gameId, accountId, user);
+    return this._connectManager.connect(url, this.devices, gameId, accountId, user, fnOnNewRaceState);
   }
 
   disconnect(activityName:string) {

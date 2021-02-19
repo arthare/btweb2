@@ -358,111 +358,110 @@ wss.on('connection', (wsConnection) => {
       return;
     }
     
-    switch(bm.type) {
-      case BasicMessageType.ClientConnectionRequest:
-      {
-        const payload:ClientConnectionRequest = <ClientConnectionRequest>bm.payload;
-        thisConnectionGameId = payload.gameId;
-        const game = races.get(payload.gameId);
-        if(!game) {
-          return sendError(tmNow, game, wsConnection, "Game ID " + payload.gameId +" not found");
-        }
-        // ok, so they want to join this game
-
-        // lets see if this user is maybe already in this game
-        let newId;
-        let selectedUser;
-        if(payload.imageBase64) {
-          const existingUser = selectedUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
-          if(existingUser) {
-            newId = existingUser.getId();
-            console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
+    try {
+      
+      switch(bm.type) {
+        case BasicMessageType.ClientConnectionRequest:
+        {
+          const payload:ClientConnectionRequest = <ClientConnectionRequest>bm.payload;
+          thisConnectionGameId = payload.gameId;
+          const game = races.get(payload.gameId);
+          if(!game) {
+            return sendError(tmNow, game, wsConnection, "Game ID " + payload.gameId +" not found");
           }
-        }
-        
-        if(!newId) {
-          // we didn't find an existing user by any means.  Let's stick this guy at the back of the pack
-          const allUsers = game.userProvider.getUsers(tmNow);
-          let distanceToAssign = 0;
-          let speedToAssign = 0.5;
-          if(allUsers.length > 0) {
-            allUsers.sort((a,b) => a.getDistance() < b.getDistance() ? -1 : 1);
+          // ok, so they want to join this game
 
-            let deadLastUser = allUsers[0];
-
-            // if someone has previously disconnected, let's not chuck their reconnect attempt next
-            // to their coasting corpse
-            for(var x = 0;x < allUsers.length; x++) {
-              if(allUsers[x].getLastPower() > 0 && allUsers[x].getMsSinceLastPacket(tmNow) < 1000) {
-                deadLastUser = allUsers[x];
-              }
+          // lets see if this user is maybe already in this game
+          let newId;
+          let selectedUser;
+          if(payload.imageBase64) {
+            const existingUser = selectedUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
+            if(existingUser) {
+              newId = existingUser.getId();
+              console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
             }
-            
-            distanceToAssign = deadLastUser.getDistance();
-            speedToAssign = deadLastUser.getSpeed();
           }
           
-          newId = game.addUser(tmNow, payload, wsConnection as any);
-          const newUser = selectedUser = game.getUser(newId);
-          newUser.setDistance(distanceToAssign);
-          newUser.setSpeed(speedToAssign);
-        }
-        
+          if(!newId) {
+            // we didn't find an existing user by any means.  Let's stick this guy with the lead AI, which should be in a non-winning position
+            const allUsers = game.userProvider.getUsers(tmNow);
+            let distanceToAssign = 0;
+            let speedToAssign = 0.5;
+            if(allUsers.length > 0) {
+              allUsers.sort((a,b) => a.getDistance() < b.getDistance() ? -1 : 1);
 
-        thisConnectionUserId = newId;
-        assert2(newId >= 0);
-        // and we need to produce a response
+              const aiOnly = allUsers.filter((user) => user.getUserType() & UserTypeFlags.Ai);
+              let deadLastUser = aiOnly[aiOnly.length - 1];
 
-        const ret:ClientConnectionResponse = {
-          yourAssignedId:newId,
-          map: new ServerMapDescription(game.raceState.getMap()),
-        }
-        assert2(selectedUser);
-        if(selectedUser) {
-          return sendResponse(selectedUser, tmNow, wsConnection, BasicMessageType.ClientConnectionResponse, game, ret);
-        }
-      }
-      case BasicMessageType.ClientToServerUpdate:
-      {
-        const tmNow = new Date().getTime();
-        const payload:ClientToServerUpdate = <ClientToServerUpdate>bm.payload;
-        const game = races.get(payload.gameId);
-        const user = game.getUser(payload.userId);
-        if(user) {
-          user.notifyPower(tmNow, payload.lastPower);
-          if(payload.lastHrm) {
-            user.notifyHrm(tmNow, payload.lastHrm);
+              distanceToAssign = deadLastUser.getDistance();
+              speedToAssign = deadLastUser.getSpeed();
+            }
+            
+            newId = game.addUser(tmNow, payload, wsConnection as any);
+            const newUser = selectedUser = game.getUser(newId);
+            newUser.setDistance(distanceToAssign);
+            newUser.setSpeed(speedToAssign);
           }
-          user.notePacket(tmNow);
-        } else {
-          throw new Error("How are we hearing about a user that has never registered?");
-        }
+          
 
-        if(!startedSendUpdate) {
-          startedSendUpdate = true;
-          sendUpdate();
+          thisConnectionUserId = newId;
+          assert2(newId >= 0);
+          // and we need to produce a response
+
+          const ret:ClientConnectionResponse = {
+            yourAssignedId:newId,
+            map: new ServerMapDescription(game.raceState.getMap()),
+          }
+          assert2(selectedUser);
+          if(selectedUser) {
+            return sendResponse(selectedUser, tmNow, wsConnection, BasicMessageType.ClientConnectionResponse, game, ret);
+          }
         }
-        break;
-      }
-      case BasicMessageType.ClientToServerChat:
-      {
-        // I guess we'll tell all the other clients about this
-        const payload:ClientToServerChat = <ClientToServerChat>bm.payload;
-        const game = races.get(payload.gameId);
-        if(game) {
+        case BasicMessageType.ClientToServerUpdate:
+        {
+          const tmNow = new Date().getTime();
+          const payload:ClientToServerUpdate = <ClientToServerUpdate>bm.payload;
+          const game = races.get(payload.gameId);
           const user = game.getUser(payload.userId);
-          if(user && 
-            !(user.getUserType() & UserTypeFlags.Ai)) {
-            console.log("user ", user.getName(), " said ", payload.chat);
-            broadcastMessage(tmNow, user, BasicMessageType.S2CClientChat, { fromId: user.getId(), chat: payload.chat});
+          if(user) {
+            user.notifyPower(tmNow, payload.lastPower);
+            if(payload.lastHrm) {
+              user.notifyHrm(tmNow, payload.lastHrm);
+            }
+            user.notePacket(tmNow);
+          } else {
+            throw new Error("How are we hearing about a user that has never registered?");
           }
-        }
-        break;
-      }
-      case BasicMessageType.ClientConnectionResponse:
-        assert2(false, "The server should NEVER receive this message");
-        break;
 
+          if(!startedSendUpdate) {
+            startedSendUpdate = true;
+            sendUpdate();
+          }
+          break;
+        }
+        case BasicMessageType.ClientToServerChat:
+        {
+          // I guess we'll tell all the other clients about this
+          const payload:ClientToServerChat = <ClientToServerChat>bm.payload;
+          const game = races.get(payload.gameId);
+          if(game) {
+            const user = game.getUser(payload.userId);
+            if(user && 
+              !(user.getUserType() & UserTypeFlags.Ai)) {
+              console.log("user ", user.getName(), " said ", payload.chat);
+              broadcastMessage(tmNow, user, BasicMessageType.S2CClientChat, { fromId: user.getId(), chat: payload.chat});
+            }
+          }
+          break;
+        }
+        case BasicMessageType.ClientConnectionResponse:
+          assert2(false, "The server should NEVER receive this message");
+          break;
+
+      }
+    } catch(e) {
+      debugger; // help!
+      // I guess we'll just try to continue though...
     }
   };
 });

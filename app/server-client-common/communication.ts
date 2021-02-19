@@ -438,7 +438,7 @@ export default class ConnectionManager {
     })
   }
 
-  connect(wsUrl:string, userProvider:UserProvider, gameId:string, accountId:string, user:User):Promise<RaceState> {
+  connect(wsUrl:string, userProvider:UserProvider, gameId:string, accountId:string, user:User, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(wsUrl);
       ws.onopen = () => {
@@ -459,8 +459,9 @@ export default class ConnectionManager {
 
         const tryConnectAgain = () => {
           console.log("attempting reconnect to ", gameId);
-          this.connect(wsUrl, userProvider, gameId, accountId, user).then(() => {
+          this.connect(wsUrl, userProvider, gameId, accountId, user, fnOnNewRaceState).then((newRaceState) => {
             // woohoo, we reconnected!
+            fnOnNewRaceState(newRaceState);
           }, (failure) => {
             console.log("failed in attempted reconnect ", failure);
             // oh well, I guess we will try again.

@@ -21,11 +21,15 @@ export class RaceState {
   private static _mainRaceState:RaceState|null = null;
 
   constructor(map:RideMap, users:UserProvider, gameId:string) {
+    debugger;
     this._map = map;
     this._userProvider = users;
     this._gameId = gameId;
     this._tmUnfinishedHuman = new Date().getTime();
     RaceState._mainRaceState = this;
+  }
+  isOldNews():boolean {
+    return this !== RaceState._mainRaceState;
   }
   stop() {
     this._stopped = true;
@@ -34,7 +38,7 @@ export class RaceState {
     if(this._stopped) {
       return;
     }
-    if(RaceState._mainRaceState !== this) {
+    if(typeof window !== 'undefined' && RaceState._mainRaceState !== this) {
       debugger;
       return;
     }

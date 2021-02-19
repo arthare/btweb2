@@ -49,12 +49,15 @@ export default class Ride extends Controller.extend({
 
     const targetHost = ENV.gameServerHost;
     
-    return this.connection.connect(targetHost, gameId, "TheJoneses", user).then((raceState: RaceState) => {
+    const fnOnNewRaceState = (raceState: RaceState) => {
+      console.log("connected, new race state! ", raceState);
       this.set('_raceState', raceState);
       this.myTimeout = setTimeout(() => this._tick(), 15);
       this.set('hasSentPwx', false);
       return this._raceState;
-    }, (failure: any) => {
+    }
+
+    return this.connection.connect(targetHost, gameId, "TheJoneses", user, fnOnNewRaceState).then(fnOnNewRaceState, (failure: any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);
       if (yn) {
         return this.transitionToRoute('set-up-user');
@@ -75,9 +78,12 @@ export default class Ride extends Controller.extend({
       }
     }
 
-    const raceState = this._raceState;
+    const raceState = this.get('_raceState');
     if (!raceState) {
       throw new Error("Failed to find race state");
+    }
+    if(raceState.isOldNews()) {
+      return;
     }
 
     raceState.tick(tmNow);
