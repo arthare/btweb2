@@ -61,13 +61,11 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
 
   public getLastHrm(tmNow:number):number {
     if(tmNow <= this._tmLastHrm + 5000) {
-      console.log("last hrm for "  + this._id + " is " + this._lastHrm);
       return this._lastHrm;
     }
     return 0;
   }
   public getLastPower():number {
-    console.log("last power for "  + this._id + " is " + this._lastPower);
     return this._lastPower;
   }
   setFinishTime(tmNow:number) {
@@ -245,7 +243,7 @@ export class User extends UserDataRecorder implements SlopeSource {
     let aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
 
 
-    const draftingClose = 2;
+    const draftingClose = 0.1;
     const draftingFar = 10;
     let closestRider:User|null = null;
     let closestRiderDist:number = 1e30;

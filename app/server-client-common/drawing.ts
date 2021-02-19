@@ -233,7 +233,7 @@ export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, d
 
 export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
   // ok, all we have to do is paint the map!  How hard can it be?
-
+  console.log("painting!");
   const tmNow = new Date().getTime();
   const ctx = canvas.getContext('2d');
   if(!ctx) {

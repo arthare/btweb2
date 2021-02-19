@@ -442,12 +442,35 @@ export default class ConnectionManager {
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(wsUrl);
       ws.onopen = () => {
+        console.log("websocket opened!");
         resolve(ws);
       }
       ws.onerror = (err) => {
+        console.log("websocket error");
         reject(err);
         ws.close();
         debugger;
+      }
+
+
+      let reconnectTimeout:any = null;
+      ws.onclose = () => {
+        console.log("websocket closed");
+
+        const tryConnectAgain = () => {
+          console.log("attempting reconnect to ", gameId);
+          this.connect(wsUrl, userProvider, gameId, accountId, user).then(() => {
+            // woohoo, we reconnected!
+          }, (failure) => {
+            console.log("failed in attempted reconnect ", failure);
+            // oh well, I guess we will try again.
+            if(window.location.pathname === `/ride/${gameId}`) {
+              clearTimeout(reconnectTimeout);
+              reconnectTimeout = setTimeout(tryConnectAgain, 1000);
+            }
+          });
+        }
+        reconnectTimeout = setTimeout(tryConnectAgain, 1000);
       }
     }).then((ws:WebSocket) => {
       if(!user) {

@@ -60,24 +60,28 @@ export default class MiniMapLive extends Component.extend({
 
       const w = this.element.clientWidth;
       const h = this.element.clientHeight;
-      requestAnimationFrame(() => {
-        const ctx = canvas.getContext('2d');
-        const drawMiniParams:DrawMinimapParameters = {
-          ctx,
-          elevations,
-          w,
-          h,
-          minElevSpan:map.getLength()*0.01,
-          localPositionPct:localPosition,
-          humanPositions,
-          aiPositions,
-        }
-        drawMinimap(drawMiniParams);
-      })
+      if(!this.isDestroyed) {
+        requestAnimationFrame(() => {
+          const ctx = canvas.getContext('2d');
+          const drawMiniParams:DrawMinimapParameters = {
+            ctx,
+            elevations,
+            w,
+            h,
+            minElevSpan:map.getLength()*0.01,
+            localPositionPct:localPosition,
+            humanPositions,
+            aiPositions,
+          }
+          drawMinimap(drawMiniParams);
+        })
+      }
 
       
     }
 
-    setTimeout(() => this._doFrame(), 250);
+    if(!this.isDestroyed) {
+      setTimeout(() => this._doFrame(), 250);
+    }
   }
 };

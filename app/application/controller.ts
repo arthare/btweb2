@@ -78,8 +78,7 @@ export default class Application extends Controller.extend({
 
   actions: {
     connectDevice() {
-      const canDoBluetooth = this.get('canDoBluetooth');
-      if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
+      if((window.location.search && window.location.search.includes("fake"))) {
         const device = g_fakeDevice = new FakeDevice();
         this.devices.setLocalUserDevice(device, DeviceFlags.All);
       } else {
@@ -95,8 +94,7 @@ export default class Application extends Controller.extend({
       }
     },
     connectHrm() {
-      const canDoBluetooth = this.get('canDoBluetooth');
-      if(!canDoBluetooth || (window.location.search && window.location.search.includes("fake"))) {
+      if((window.location.search && window.location.search.includes("fake"))) {
         const device = g_fakeDevice = new FakeDevice();
         this.devices.setLocalUserDevice(device, DeviceFlags.Hrm);
       } else {

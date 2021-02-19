@@ -18,17 +18,24 @@ export class RaceState {
   private _gameId:string;
   private _tmUnfinishedHuman:number = 0;
   private _stopped:boolean = false;
+  private static _mainRaceState:RaceState|null = null;
+
   constructor(map:RideMap, users:UserProvider, gameId:string) {
     this._map = map;
     this._userProvider = users;
     this._gameId = gameId;
     this._tmUnfinishedHuman = new Date().getTime();
+    RaceState._mainRaceState = this;
   }
   stop() {
     this._stopped = true;
   }
   tick(tmNow:number) {
     if(this._stopped) {
+      return;
+    }
+    if(RaceState._mainRaceState !== this) {
+      debugger;
       return;
     }
     const users = this._userProvider.getUsers(tmNow);

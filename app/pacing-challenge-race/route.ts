@@ -21,7 +21,7 @@ export default class PacingChallengeRace extends Route.extend({
 
     const tmNow = new Date().getTime();
     if(!this.devices.getLocalUser()?.isPowerValid(tmNow)) {
-      alert("You need a powermeter or trainer set up to play this game");
+      alert("You need a powermeter or trainer set up to play this game.  Click the lightning bolt.");
       return this.transitionTo('pacing-challenge');
     }
   }

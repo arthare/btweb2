@@ -37,6 +37,13 @@ export class PacingChallengeShortMap extends RideMapPartial implements RideMap {
   }
 }
 export class PacingChallengeHills1 extends PacingChallengeShortMap {
+  getLength() {
+    if(window.location.hostname === 'localhost') {
+      return 100;
+    } else {
+      return super.getLength();
+    }
+  }
   getElevationAtDistance(meters: number): number {    
     return 15*Math.cos(meters / 400) + 
            2.5*Math.cos(meters / 170) -
@@ -170,6 +177,8 @@ export class PacingChallengeUserProvider implements UserProvider {
 
 }
 
+let pcRaceId = 0;
+
 export default class PacingChallengeRace extends Controller.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
@@ -185,8 +194,11 @@ export default class PacingChallengeRace extends Controller.extend({
   handicapSecondsAllowed = 0;
   ticks = 0;
   startingSpeedJoules = 0;
+  _id = 0;
 
   _setup(params:{pct:string, map:string}) {
+    this._id = pcRaceId++;
+    console.log("starting pacing challenge id ", this._id);
 
     this.set('transitionedOut', false);
     const pctAsFloat = parseFloat(params.pct);
@@ -233,7 +245,7 @@ export default class PacingChallengeRace extends Controller.extend({
   }
 
   _tick() {
-    console.log("pacing-challenge-race tick");
+    console.log(`pacing-challenge-race ${this._id} tick`);
     const tmNow = new Date().getTime();
     this.incrementProperty("ticks");
     this.devices.tick(tmNow, false);

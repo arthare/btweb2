@@ -55,7 +55,9 @@ export default class MainMap extends Component.extend({
         }
         paintCanvasFrame(canvas, raceState, time, decorationState, dt, paintState);
 
-        requestAnimationFrame(handleAnimationFrame);
+        if(!this.isDestroyed) {
+          requestAnimationFrame(handleAnimationFrame);
+        }
       } else {
         throw new Error("No race state available?");
       }
