@@ -248,7 +248,7 @@ export default class PacingChallengeRace extends Controller.extend({
     console.log(`pacing-challenge-race ${this._id} tick`);
     const tmNow = new Date().getTime();
     this.incrementProperty("ticks");
-    this.devices.tick(tmNow, false);
+    this.devices.tick(tmNow, true);
 
     
     const localUser = this.devices.getLocalUser();

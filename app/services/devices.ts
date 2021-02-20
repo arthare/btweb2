@@ -1,5 +1,5 @@
 import Service from '@ember/service';
-import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
+import { BluetoothKickrDevice, ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
 import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
 import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
@@ -171,6 +171,9 @@ export default class Devices extends Service.extend({
   }
 
   setLocalUserDevice(device:ConnectedDeviceInterface, deviceFlags:number) {
+
+    this.set('kickrConnected', !!BluetoothKickrDevice.getKickrDevice());
+
     const user = this.getLocalUser();
     if(!user) {
       throw new Error("You can't set a device for a local user that doesn't exist");

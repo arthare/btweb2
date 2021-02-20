@@ -1,5 +1,6 @@
 import EmberRouter from '@ember/routing/router';
 import config from './config/environment';
+import {BluetoothKickrDevice} from 'bt-web2/pojs/WebBluetoothDevice';
 
 
 
@@ -26,6 +27,15 @@ const Router = EmberRouter.extend({
             console.log("connections = ", this.get('connection'));
             this.get('connection').disconnect(`Quit-${transition.from.name}`);
             break;
+          case 'kickr-setup':
+            // in kickr-setup, they're likely to have screwed around with the kickr's slope source and settings
+            console.log("they've exited kickr-setup");
+            const kickr = BluetoothKickrDevice.getKickrDevice();
+            if(kickr) {
+              this.get('devices').setLocalUserDevice(kickr, DeviceFlags.AllButHrm);
+              console.log("reset their use of the kickr");
+            }
+            break;
         }
         
       }
@@ -45,6 +55,7 @@ Router.map(function() {
   this.route('pacing-challenge');
   this.route('pacing-challenge-race', {path:'/pacing-challenge-race/:pct'});
   this.route('results');
+  this.route('kickr-setup');
 });
 
 export default Router;

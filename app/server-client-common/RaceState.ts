@@ -21,7 +21,6 @@ export class RaceState {
   private static _mainRaceState:RaceState|null = null;
 
   constructor(map:RideMap, users:UserProvider, gameId:string) {
-    debugger;
     this._map = map;
     this._userProvider = users;
     this._gameId = gameId;

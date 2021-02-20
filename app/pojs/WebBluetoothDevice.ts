@@ -392,17 +392,51 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
 
 
 export class BluetoothKickrDevice extends BluetoothCpsDevice {
+  private static _singleton:BluetoothKickrDevice|null = null;
+  public static getKickrDevice() {
+    return BluetoothKickrDevice._singleton;
+  }
+  private _downhillValue = 0x3fff;
+  private _uphillValue = 0x2000;
+
+  _responsed:boolean = false;
   constructor(gattDevice:BluetoothRemoteGATTServer) {
     super(gattDevice);
 
+    BluetoothKickrDevice._singleton = this;
+
+    try {
+      const dh = parseInt(window.localStorage.getItem('kickr-downhill-number') || '0x3fff');
+      const uh = parseInt(window.localStorage.getItem('kickr-uphill-number') || '0x3fff');
+      if(isFinite(dh) && isFinite(uh) &&
+         dh >= 0 && dh <= 0x3fff &&
+         uh >= 0 && uh <= 0x3fff &&
+         dh > uh) {
+        this._downhillValue = dh;
+        this._uphillValue = uh;
+        console.log("kickr inited to ", dh, uh);
+      }
+    } catch(e) {
+
+    }
+
     this._startupPromise = this._startupPromise.then(() => {
-      return monitorCharacteristic(gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, (evt:any) => console.log("kickr evt ", evt.target.value));
+      return monitorCharacteristic(gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, (evt:any) => this._handleKickrResponse(evt.target.value));
     }).catch((failure) => {
       throw failure;
     })
   }
   getDeviceTypeDescription():string {
     return "Wahoo Kickr";
+  }
+
+  _handleKickrResponse(value:DataView) {
+    this._responsed = true;
+  }
+
+  setUphillDownhill(downhillValue:number, uphillValue:number) {
+    this._downhillValue = downhillValue;
+    this._uphillValue = uphillValue;
   }
 
   _tmLastSlopeUpdate:number = 0;
@@ -420,15 +454,15 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     if(dtMs < 500) {
       return Promise.resolve(false); // don't update the ftms device too often
     }
+    this._tmLastSlopeUpdate = tmNow;
 
     // from goobering around with nRF connect and trainerroad's "set resistance strength"
     // slider, it looks like the kickr's set resistance command looks like:
     // 6 bytes: [01 40 01 00 XX YY]
     // XX: LSB of a 16-bit uint
     // YY: MSB of a 16-bit uint
-    // the uint goes from 0 (full resistance) to 16383 (no resistance), which is a little strange
+    // the uint goes from 0 (full resistance) to 3fff (no resistance), which is a little strange
     // but whatevs.
-    this._tmLastSlopeUpdate = tmNow;
 
     const charOut = new DataView(new ArrayBuffer(3));
     charOut.setUint8(0, 0x40);
@@ -444,8 +478,8 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     let pctUphillClamped = Math.max(0, pctUphill);
     pctUphillClamped = Math.min(1, pctUphill);
 
-    const resistanceAtDownhill = 0x485b;
-    const resistanceAtUphill = 0x105b;
+    const resistanceAtDownhill = this._downhillValue;
+    const resistanceAtUphill = this._uphillValue;
 
     assert2(pctUphillClamped >= 0 && pctUphillClamped <= 1);
     const uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;

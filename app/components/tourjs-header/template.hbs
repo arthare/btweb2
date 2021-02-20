@@ -24,6 +24,11 @@
       <button {{action 'connectHrm'}}>Connect<br>HRM</button>
     </div>
   {{/if}}
+  {{#if devices.kickrConnected}}
+    <div class="tourjs-header__subhead--item">
+      {{#link-to 'kickr-setup'}}Kickr Setup{{/link-to}}
+    </div>
+  {{/if}}
 
 
   {{#if hasPower}}
