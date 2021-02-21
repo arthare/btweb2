@@ -5,13 +5,21 @@
 </div>
 <div class="pacing-challenge-overlay__row">
   <span class="pacing-challenge-overlay__label">Energy Left:</span> 
-  <span class="pacing-challenge-overlay__data">{{powerData.powerRemaining}}</span>
-  <span class="pacing-challenge-overlay__data">{{powerData.powerRemainingPerKm}}</span>
+  {{#if overlayData.usedAllPower}}
+    <span class="pacing-challenge-overlay__data">COASTING</span>
+  {{else}}
+    <span class="pacing-challenge-overlay__data">{{powerData.powerRemaining}}</span>
+    <span class="pacing-challenge-overlay__data">{{powerData.powerRemainingPerKm}}</span>
+  {{/if}}
 </div>
 <div class="pacing-challenge-overlay__row">
   <span class="pacing-challenge-overlay__label">Raw Left</span> 
-  <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemaining}}</span>
-  <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemainingPerKm}}</span>
+  {{#if overlayData.usedAllPower}}
+    <span class="pacing-challenge-overlay__data">COASTING</span>
+  {{else}}
+    <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemaining}}</span>
+    <span class="pacing-challenge-overlay__data">{{powerData.rawPowerRemainingPerKm}}</span>
+  {{/if}}
 </div>
 <div class="pacing-challenge-overlay__row">
   <span class="pacing-challenge-overlay__label">Used:</span> 

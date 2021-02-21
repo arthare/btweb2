@@ -94,6 +94,11 @@ export default class Devices extends Service.extend({
 
   _powerCounters:Map<string,PowerTimer> = new Map<string,PowerTimer>();
   
+  private _fnPowerFilter:(power:number)=>number = (num)=>{return num;};
+
+  setPowerFilter(fnPower:(power:number)=>number) {
+    this._fnPowerFilter = fnPower;
+  }
   addDevice(device:ConnectedDeviceInterface) {
     this.set('deviceDescription', `A ${device.getDeviceTypeDescription()} named ${device.name()}`);
     this.devices.push(device);
@@ -187,6 +192,9 @@ export default class Devices extends Service.extend({
     }
     if(deviceFlags & DeviceFlags.PowerOnly || deviceFlags & DeviceFlags.Trainer) {
       device.setPowerRecipient((tmNow:number, power:number) => {
+        // pacing challenge mode uses the power filter to make users coast to a stop once they've used their energy allotment
+        power = this._fnPowerFilter(power);
+
         user.notifyPower(tmNow, power);
         this._updatePowerCounters(tmNow, power);
       });
