@@ -1,8 +1,5 @@
 <div class="index__container">
   {{tourjs-header}}
-  {{#if devices.kickrConnected}}
-    {{#link-to 'kickr-setup'}}Kickr Setup{{/link-to}}
-  {{/if}}
   <div class="index__activity user" {{action 'goto' 'set-up-user'}}>
     {{#vertical-align class="index__activity--text"}}
       Setup User

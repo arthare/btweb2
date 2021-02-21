@@ -61,7 +61,7 @@ export default class KickrSetup extends Controller.extend({
     uphill(pct:number) {
       const currentUp = parseInt('' + this.get('uphillStrength'));
       const afterUp = Math.min(0x3fff, Math.max(0, currentUp * pct));
-      const currentDown = parseInt('' + this.get('uphillStrength'));
+      const currentDown = parseInt('' + this.get('downhillStrength'));
       const afterDown = Math.max(afterUp + 1, currentDown);
       
       this.set('downhillStrength', Math.floor(afterDown));
