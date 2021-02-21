@@ -21,6 +21,7 @@ export interface PacingChallengeOverlayData {
   endOfRideElevation:number;
   startOfRideElevation:number;
   speedJoulesToStart:number;
+  usedAllPower:boolean;
 }
 
 export default class PacingChallengeOverlay extends Component.extend({

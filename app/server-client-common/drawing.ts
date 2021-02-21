@@ -136,6 +136,7 @@ class DisplayUser {
   public loadingImage:boolean = false;
   public crankPosition:number = 0;
   public heartPosition:number = 0;
+  public slope = 0;
 }
 
 export class PaintFrameState {
@@ -251,7 +252,7 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
 
 
 
-  const smoothMix = 0.33;
+  const smoothMix = 0.1;
 
   let cHumans = 0;
   users.forEach((user) => {
@@ -283,13 +284,31 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
   const localUserPaint = paintState.userPaint.get(localUser.getId()) || new DisplayUser(localUser);
   let localUserDistance = localUserPaint.distance || localUser.getDistance();
   let localUserSlope = map.getSlopeAtDistance(localUserDistance);
+  localUserSlope = smoothMix*localUserSlope + (1-smoothMix)*localUserPaint.slope;
+  localUserPaint.slope = localUserSlope;
   let localUserAngleRadians = -Math.atan(localUserSlope);
 
   // aim to show more distance when we're going up or down big hills so phone people still have situational awareness
-  const distToShow = (1+Math.abs(localUserSlope)*2)*(w/1920)*150;
+  const distToShow = (1+Math.abs(localUserSlope*1)*2)*(w/1920)*150;
 
   minDist = localUserDistance - distToShow/2;
   maxDist = localUserDistance + distToShow/2;
+  decorationState.tick(dt, minDist, maxDist);
+
+  const aspectRatioOfScreen = w / h;
+
+  let elevSpan = (maxDist - minDist) / aspectRatioOfScreen;
+  const userElev = map.getElevationAtDistance(localUser.getDistance());
+
+  ctx.resetTransform();
+  setupContextWithTheseCoords(canvas, ctx, minDist, userElev + elevSpan / 2, maxDist, userElev - elevSpan/2, localUserAngleRadians);
+  
+  // now that we've set up the context with its "must-have" sections, let's expand the part we actually draw
+  minDist -= distToShow/2;
+  maxDist += distToShow/2;
+  elevSpan *= 2;
+
+  
   for(var x = 0; x <= nElevsToSample; x++) {
     const pct = x / nElevsToSample;
 
@@ -297,16 +316,6 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
     dists.push(dist);
     elevs.push(map.getElevationAtDistance(dist));
   }
-  decorationState.tick(dt, minDist, maxDist);
-
-  const aspectRatioOfScreen = w / h;
-
-  const elevSpan = (maxDist - minDist) / aspectRatioOfScreen;
-  const userElev = map.getElevationAtDistance(localUser.getDistance());
-
-  ctx.resetTransform();
-  setupContextWithTheseCoords(canvas, ctx, minDist, userElev + elevSpan / 2, maxDist, userElev - elevSpan/2, localUserAngleRadians);
-  
 
   // time to start drawing!
   const skyGradient = ctx.createLinearGradient(0,0,w,h);

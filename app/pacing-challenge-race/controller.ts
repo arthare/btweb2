@@ -195,9 +195,11 @@ export default class PacingChallengeRace extends Controller.extend({
   ticks = 0;
   startingSpeedJoules = 0;
   _id = 0;
+  usedAllPower = false;
 
   _setup(params:{pct:string, map:string}) {
     this._id = pcRaceId++;
+    this.set('usedAllPower', false);
     console.log("starting pacing challenge id ", this._id);
 
     this.set('transitionedOut', false);
@@ -292,12 +294,22 @@ export default class PacingChallengeRace extends Controller.extend({
     }
 
     if(hsUsed > this.get('handicapSecondsAllowed')) {
-      alert(`You failed!\nYou used ${hsUsed.toFixed(1)} energies before finishing the course.`);
-      raceState.stop();
-      this.devices.dumpPwx("Pacing-Challenge-Failure", new Date().getTime());
+      this.set('usedAllPower', true);
+      this.devices.setPowerFilter((power:number) => {
+        console.log("filtered ", power.toFixed(0), " watts to zero");
+        return 0;
+      });
 
-      // we done here!
-      return this.transitionToRoute('pacing-challenge');
+      if(localUser.getSpeed() < 1.5) {
+        alert(`You failed!\nYou used ${hsUsed.toFixed(1)} energies before finishing the course.`);
+        raceState.stop();
+        this.devices.dumpPwx("Pacing-Challenge-Failure", new Date().getTime());
+        // we done here!
+        return this.transitionToRoute('pacing-challenge');
+      } else {
+        // they're still coasting.  maybe they'll make it!
+      }
+
     }
 
 
@@ -314,7 +326,7 @@ export default class PacingChallengeRace extends Controller.extend({
     this.set('transitionedOut', true);
   }
 
-  @computed("ticks", "handicapSecondsAllowed")
+  @computed("ticks", "handicapSecondsAllowed", "usedAllPower")
   get pacingChallengeData():PacingChallengeOverlayData {
 
     if(!this._map) {
@@ -324,6 +336,7 @@ export default class PacingChallengeRace extends Controller.extend({
       throw new Error("No limit on handi-seconds");
     }
 
+    console.log("used all power? ", this.get('usedAllPower'));
     return {
       pctZeroToOne:this.get('pctZeroTo100') / 100,
       handicapSecondsAllowed:this.get('handicapSecondsAllowed'),
@@ -331,6 +344,7 @@ export default class PacingChallengeRace extends Controller.extend({
       endOfRideElevation: this._map?.getElevationAtDistance(this._map.getLength()),
       startOfRideElevation: this._map.getElevationAtDistance(0),
       speedJoulesToStart: this.get('startingSpeedJoules'),
+      usedAllPower: this.get('usedAllPower'),
     }
   }
 }

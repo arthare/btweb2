@@ -398,6 +398,7 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
   }
   private _downhillValue = 0x3fff;
   private _uphillValue = 0x2000;
+  private _lastSlopeSent = 0;
 
   _responsed:boolean = false;
   constructor(gattDevice:BluetoothRemoteGATTServer) {
@@ -469,7 +470,13 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
 
     const minSlope = -10;
     const maxSlope = 10; // if we ever peg the kickr at max slope, you basically can't turn the pedals
-    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
+    let slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
+    const slopeShiftRate = 0.5;
+    slopeInWholePercent = Math.max(slopeInWholePercent, this._lastSlopeSent - slopeShiftRate);
+    slopeInWholePercent = Math.min(slopeInWholePercent, this._lastSlopeSent + slopeShiftRate);
+    this._lastSlopeSent = slopeInWholePercent;
+
+
 
     const offset = slopeInWholePercent - minSlope;
     const span = maxSlope - minSlope;
@@ -482,7 +489,10 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     const resistanceAtUphill = this._uphillValue;
 
     assert2(pctUphillClamped >= 0 && pctUphillClamped <= 1);
-    const uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;
+    let uint16 = pctUphillClamped*resistanceAtUphill + (1-pctUphillClamped)*resistanceAtDownhill;
+    uint16 = Math.max(this._uphillValue, uint16);
+    uint16 = Math.min(this._downhillValue, uint16);
+
     console.log("sending ", uint16, pctUphillClamped);
     charOut.setUint8(1, uint16 & 0xff);
     charOut.setUint8(2, (uint16>>8) & 0xff);

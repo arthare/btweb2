@@ -24,8 +24,13 @@ export default function setupContextWithTheseCoords(
   const b = spanWidth * Math.cos(-Math.abs(amountToRotateRadians))
   const c = spanWidth * Math.sin(-Math.abs(amountToRotateRadians))
   const d = spanHeight * Math.cos(-Math.abs(amountToRotateRadians))
-  const scaleFactor = Math.max(spanWidth / (a + b), spanHeight / (c + d));
+  let scaleFactor = Math.max(spanWidth / (a + b), spanHeight / (c + d));
   
+  if(clampedSlope > 0) {
+    // going downhill, just use scaleFactor=1
+    scaleFactor=1;
+  }
+
   ctx.resetTransform();
   ctx.translate(canvas.width/2, canvas.height /2);
   ctx.rotate(-amountToRotateRadians);

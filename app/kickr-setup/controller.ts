@@ -21,6 +21,7 @@ export default class KickrSetup extends Controller.extend({
   uphillStrength: 0x2000,
   currentHill: 0,
   mySlopeSource: new SimpleSlopeSource(),
+  frame:0,
 
   _applyToKickr(dh:number, uh:number) {
     const kickr = BluetoothKickrDevice.getKickrDevice();
@@ -30,12 +31,16 @@ export default class KickrSetup extends Controller.extend({
     }
   },
 
-  hillObserver: Ember.observer('currentHill', 'downhillStrength', 'uphillStrength', function(this:KickrSetup) {
+  hillObserver: Ember.observer('currentHill', 'downhillStrength', 'uphillStrength', 'frame', function(this:KickrSetup) {
+    if(this.isDestroyed) {
+      return;
+    }
     const percents = this.get('currentHill');
     const currentDown = parseInt('' + this.get('downhillStrength'));
     const currentUp = parseInt('' + this.get('uphillStrength'));
+    const frame = this.get('frame');
 
-    console.log("setting slope to ", percents);
+    console.log("kickr setup frame " + frame + " setting slope to ", percents);
     this.get('mySlopeSource').setSlope(percents);
 
     const kickr = BluetoothKickrDevice.getKickrDevice();
@@ -87,6 +92,16 @@ export default class KickrSetup extends Controller.extend({
 
     const uh = parseInt(window.localStorage.getItem('kickr-uphill-number') || '0x2000');
     this.set('uphillStrength', uh);
+
+
+    const incrementFrame = () => {
+      this.incrementProperty('frame');
+
+      if(window.location.pathname.includes('kickr-setup')) {
+        setTimeout(() => incrementFrame(), 1000);
+      }
+    }
+    setTimeout(() => incrementFrame(), 1000);
   }
 }
 
