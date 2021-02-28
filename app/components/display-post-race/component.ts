@@ -16,6 +16,7 @@ export default class DisplayPostRace extends Component.extend({
   @computed("results", "frame")
   get processedRankings():any[] {
     const results:S2CFinishUpdate|null = this.get('results');
+    console.log("post-race display! ", results);
     if(results) {
       const ret:any[] = [];
   

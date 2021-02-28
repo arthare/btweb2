@@ -107,12 +107,10 @@ export class PacingChallengeLong extends PacingChallengeShortMap {
     } else if (meters <= 7500) {
       // 2km perfectly flat
       const lastElev = this.getElevationAtDistance(5500);
-      console.log("flat = ", lastElev);
       return lastElev;
     } else {
       // something siney to finish things off
       const lastElev = this.getElevationAtDistance(7500);
-      console.log("flat when building other = ", lastElev);
       meters -= 7500;
       return lastElev + 8*Math.sin(Math.pow(meters, 0.6) / 1300) + 
                         5.5*Math.sin(meters / 250) +

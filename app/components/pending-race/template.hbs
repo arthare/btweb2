@@ -44,4 +44,4 @@
 <div class="pending-race__row">
   {{mini-map race=raceElevations}}
 </div>
-<button class="pending-race__join-button" {{action joinRace race.gameId}}>Join</button>
+<a class="pending-race__join-button" href="{{race.url}}" {{action joinRace race.gameId}}>Join</a>

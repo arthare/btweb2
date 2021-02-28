@@ -6,8 +6,11 @@
   <div class="create-race-widget__param--title">Pick Course</div>
   {{#if stravaLink}}
   {{else}}
-    
     <button class="create-race-widget__button" {{action 'setUpStrava'}}>Pick From Strava</button>
+    <label for="gpx-upload">
+      <input id="gpx-upload" type="file" class="create-race-widget__button file-upload" />
+      <span class="create-race-widget__button">Upload GPX</span>
+    </label>
   {{/if}}
 </div>
 <div class="create-race-widget__param">

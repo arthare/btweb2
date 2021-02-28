@@ -90,7 +90,7 @@ class Rng {
 
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
-const map = makeSimpleMap(15000);
+const map = makeSimpleMap(100);
 const sg = new ServerGame(map, 'Starting_Soon', 'Will Start On Join', 10);
 races.set(sg.getGameId(), sg);
 
@@ -130,7 +130,7 @@ function populatePrescheduledRaces() {
       const c15s = Math.floor(x / msRaceStartInterval);
       let map:RideMap;
       if(c15s & 1) {
-        map = makeSimpleMap(10000)
+        map = makeSimpleMap(100)
       } else {
         map = makeSimpleMap(20000);
       }

@@ -61,15 +61,15 @@ function setCookie(key:string, value:string, maxAgeSeconds:number):void {
   document.cookie = values.join(';');
 }
 
-class StravaMapInterpreter extends RideMapPartial {
+export class ElevDistanceMap extends RideMapPartial {
 
   _distance:number[];
   _elevation:number[];
 
-  constructor(input:{distance:any, altitude:any}) {
+  constructor(elevs:number[], distances:number[]) {
     super();
-    this._distance = input.distance.data;
-    this._elevation = input.altitude.data;
+    this._distance = distances;
+    this._elevation = elevs;
     assert2(this._distance && this._elevation);
   }
 
@@ -175,7 +175,8 @@ export default class PlatformManager extends Service.extend({
     }).then((mapDetails) => {
       return mapDetails.json();
     }).then((mapDetailsJson:any) => {
-      return new StravaMapInterpreter(mapDetailsJson);
+      debugger;
+      return new ElevDistanceMap(mapDetailsJson.altitude.data, mapDetailsJson.distance.data);
     });
   }
 

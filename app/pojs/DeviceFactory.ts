@@ -80,7 +80,6 @@ class BluetoothHrmDevice extends BluetoothDeviceShared {
       hr = dataView.getUint16(1, true);
     }
 
-    console.log("hrm = ", hr, " bpm");
     this._notifyNewHrm(tmNow, hr);
   }
 

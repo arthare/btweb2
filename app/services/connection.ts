@@ -79,6 +79,10 @@ export default class Connection extends Service.extend({
   get msOfStart():number {
     return this._connectManager.msOfStart;
   }
+  @computed("_updateVersion")
+  get raceResults():any {
+    return this._connectManager.raceResults;
+  }
 
   getRaceState():RaceState {
     return this._connectManager.getRaceState();

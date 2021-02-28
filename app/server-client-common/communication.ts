@@ -320,6 +320,7 @@ export class ServerHttpGameListElement {
     this.status = game.getLastRaceState();
     this.tmScheduledStart = game.getRaceScheduledStartTime();
     this.tmActualStart = game.getRaceStartTime();
+    this.url = `/ride/${this.gameId}`;
     this.whoIn = game.userProvider.getUsers(tmNow).filter((user) => {
       return !(user.getUserType() & UserTypeFlags.Ai);
     }).map((user) => user.getName());
@@ -348,6 +349,7 @@ export class ServerHttpGameListElement {
   whoInAi: string[];
   elevations: number[];
   lengthMeters: number;
+  url:string;
 }
 export interface ServerHttpGameList {
   races: ServerHttpGameListElement[];
