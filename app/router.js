@@ -32,7 +32,7 @@ const Router = EmberRouter.extend({
             console.log("they've exited kickr-setup");
             const kickr = BluetoothKickrDevice.getKickrDevice();
             if(kickr) {
-              this.get('devices').setLocalUserDevice(kickr, DeviceFlags.AllButHrm);
+              this.get('devices').setLocalUserDevice(kickr, 0x7);
               console.log("reset their use of the kickr");
             }
             break;
