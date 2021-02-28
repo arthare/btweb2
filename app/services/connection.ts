@@ -54,6 +54,10 @@ export default class Connection extends Service.extend({
     this._connectManager.disconnect();
   }
 
+  getUser(userId:number):User|null {
+    const user = this.devices.getUser(userId);
+    return user || null;
+  }
   getUserName(userId:number):string {
     const user = this.devices.getUser(userId);
     return user && user.getName() || "Unknown";

@@ -491,32 +491,93 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
       //ctx.setTransform(before);
       ctx.restore();
       
-      if(user.getUserType() & UserTypeFlags.Local) {
+      if(user.getUserType() & UserTypeFlags.Local || user.isDraftingLocalUser()) {
         // a local guy!
+
+        let draftColor = {r:255,g:255,b:255};
+        if(user.isDraftingLocalUser()) {
+          draftColor = {r:0,g:0,b:255};
+        }
+
+        const isDrawingLocalHero = user.getUserType() & UserTypeFlags.Local;
+        const elevOffset = isDrawingLocalHero ? 0.4 : 2.0;
+
         const draftStats = user.getLastWattsSaved();
+        const hsSaved = user.getHandicapSecondsSaved();
+        // a local guy!  let's draw their drafting status
+        const myDist = user.getDistance();
+        const deltaAhead = draftStats.fromDistance - myDist;
+        const pctSavings = draftStats.pctOfMax;
 
+        // adjust this so it's in-scale for the user.  Someone with an 80W handicap shouldn't set the 240W they're saving in physics-land, but rather the ~64W that means scaled to their effort level.
+        const wattsSaved = draftStats.watts * (user.getHandicap() / DEFAULT_HANDICAP_POWER);
+
+        
+        const baseLineWidth = isDrawingLocalHero ? 0.8 * pctSavings : 0.4 * pctSavings;
+
+        function getColorForDraftSegment(pctAlongLine:number, userSpeed:number, minAlpha:number):{strokeStyle:string, lineWidth:number} {
+          const cosRaw = Math.cos(pctAlongLine * 6.28 + userSpeed*time/2000);
+          const cosForWidth = cosRaw + 1;
+          const cosForColor = 0.5*(1.0 + 0.5*cosRaw) + 0.5;
+          return {
+            strokeStyle: `rgba(${cosForColor*draftColor.r},${cosForColor*draftColor.g},${cosForColor*draftColor.b},1.0)`,
+            lineWidth: baseLineWidth*cosForWidth,
+          }
+        }
         if(draftStats.pctOfMax > 0) {
-          // a local guy!  let's draw their drafting status
-          const myDist = user.getDistance();
-          const deltaAhead = draftStats.fromDistance - myDist;
-          const pct = draftStats.pctOfMax;
-          const wattsSaved = draftStats.watts * (user.getHandicap() / DEFAULT_HANDICAP_POWER);
-  
-          ctx.lineWidth = 0.8 * pct;
-          ctx.strokeStyle = `rgba(255,255,255,${pct})`;
-          ctx.beginPath();
-  
-          ctx.moveTo(dist,map.getElevationAtDistance(dist) - 0.4);
-          ctx.lineTo(dist+deltaAhead,map.getElevationAtDistance(dist+deltaAhead) - 0.4);
-          ctx.stroke();
 
+          const nSegments = 40;
+
+          const distStart = dist - 2.0;
+          const distEnd = dist + deltaAhead;
+          for(var x = 0; x < nSegments; x++) {
+            
+            const pctThis = x / nSegments;
+            const pctLast = (x-1) / nSegments;
+            const distSegStart = pctLast*distEnd + (1-pctLast)*distStart;
+            const distSegEnd = pctThis*distEnd + (1-pctThis)*distStart;
+
+            const data = getColorForDraftSegment(pctThis, user.getSpeed(), 0);
+            ctx.strokeStyle = data.strokeStyle;
+            ctx.lineWidth = data.lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(distSegStart,map.getElevationAtDistance(distSegStart) - elevOffset);
+            ctx.lineTo(distSegEnd,map.getElevationAtDistance(distSegEnd) - elevOffset);
+            ctx.stroke();
+
+          }
+
+          if(isDrawingLocalHero) {
+            ctx.save();
+            ctx.fillStyle = 'white';
+            ctx.font = '4px Arial';
+            ctx.scale(1,-1);
+            ctx.fillText(wattsSaved.toFixed(0)+'W', (dist+deltaAhead),-(map.getElevationAtDistance(dist+deltaAhead) - 2));
+            ctx.restore();
+          }
+          
+        }
+
+        if(isDrawingLocalHero || user.isDraftingLocalUser() || user.isBeingDraftedByLocalUser()) {
+          
+          // drawing the total handicap-seconds this user has saved this race
           ctx.save();
-          ctx.fillStyle = 'white';
-          ctx.font = '4px Arial';
-          ctx.scale(1,-1);
-          ctx.fillText(wattsSaved.toFixed(0)+'W', (dist+deltaAhead),-(map.getElevationAtDistance(dist+deltaAhead) - 2));
-          ctx.restore();
+          ctx.fillStyle = `rgba(${draftColor.r}, ${draftColor.g}, ${draftColor.b},1.0)`
+          const strokeData = getColorForDraftSegment(0, user.getSpeed(), 0.25);
+          ctx.strokeStyle = `rgba(${draftColor.r}, ${draftColor.g}, ${draftColor.b},1.0)`;
+          ctx.lineWidth = 0.025;
 
+          const fontSize = baseLineWidth*6;
+          ctx.font = `${fontSize}px Arial`;
+
+          const hsSavedText = hsSaved.toFixed(1);
+          const measureText = ctx.measureText(hsSavedText);
+
+          ctx.scale(1,-1);
+          ctx.fillText(hsSavedText, (dist - 2.1 - measureText.width),-(map.getElevationAtDistance(dist) +0.1 - fontSize/2 - elevOffset));
+          ctx.strokeText(hsSavedText, (dist - 2.1 - measureText.width),-(map.getElevationAtDistance(dist) +0.1 - fontSize/2 - elevOffset));
+
+          ctx.restore();
         }
       }
     }

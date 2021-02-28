@@ -124,13 +124,16 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _distanceHistory:DistanceHistoryElement[] = [];
   private _tmLastHandicapRevision:number = 0;
 
-  private _pendingDraftees:any = {};
-  private _lastDraftees:any = {};
+  private _pendingDraftees:{[key:string]:boolean} = {};
+  private _lastDraftees:{[key:string]:boolean} = {};
   private _tmDrafteeCycle:number = 0;
   private _lastElevation:number = 0;
 
   private _lastChat:string = '';
   private _lastChatTime:number = 0;
+  private _physicsJoulesSaved:number = 0;
+  private _physicsJoulesUsed:number = 0;
+  private _lastDraftUser:User|null = null;
 
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
@@ -245,6 +248,7 @@ export class User extends UserDataRecorder implements SlopeSource {
 
     const draftingClose = 0.1;
     const draftingFar = 10;
+    let effectiveDraftingFar = 10;
     let closestRider:User|null = null;
     let closestRiderDist:number = 1e30;
     let closestRiderEffectMod = 1;
@@ -256,18 +260,19 @@ export class User extends UserDataRecorder implements SlopeSource {
       // if they're going really fast, then their draft zone will extend up to twice as long at 72km/h.
       // BUT: the draft impact will be up-to-halved.
       const userEffectMod = Math.max(1, Math.min(2, user.getSpeed() / 10));
-      if(userAhead >= draftingClose*2 && userAhead <= draftingFar) {
+      if(userAhead >= draftingClose*2 && userAhead <= draftingFar*userEffectMod) {
         if(!closestRider || userAhead < closestRiderDist) {
           closestRiderDist = userAhead;
           closestRider = user;
           closestRiderEffectMod = userEffectMod;
+          effectiveDraftingFar = userEffectMod * draftingFar;
         }
       }
     });
     if(closestRider) {
       closestRider = <User>closestRider; // make typescript shut up
       // there was a draftable rider
-      assert2(closestRiderDist >= draftingClose && closestRiderDist <= draftingFar);
+      assert2(closestRiderDist >= draftingClose && closestRiderDist <= effectiveDraftingFar);
       // if there's 10 guys clustered behind a single rider, they're not going to get
       // as much benefit as a well-managed paceline
       closestRider.notifyDrafteeThisCycle(tmNow, this.getId());
@@ -276,7 +281,7 @@ export class User extends UserDataRecorder implements SlopeSource {
       let bestPossibleReduction = (0.33 / cRidersDraftingLastCycle) / closestRiderEffectMod;
       const pctClose = 1 - bestPossibleReduction;
       const pctFar = 1.0;
-      const myPct = (closestRiderDist - draftingClose) / (draftingFar - draftingClose);
+      const myPct = (closestRiderDist - draftingClose) / (effectiveDraftingFar - draftingClose);
       // myPct will be 1.0 when we're really far, 0.0 when we're really close
       let myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
 
@@ -286,9 +291,11 @@ export class User extends UserDataRecorder implements SlopeSource {
       aeroForce *= myPctReduction;
 
       const wattsSaved = Math.abs(newtonsSaved * this._speed);
-      this.setLastWattsSaved(wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
+      this._lastDraftUser = closestRider;
+      this.setLastWattsSaved(dtSeconds, wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
     } else {
-      this.setLastWattsSaved(0, 0, this.getDistance());
+      this.setLastWattsSaved(dtSeconds,0, 0, this.getDistance());
+      this._lastDraftUser = null;
     }
 
     const slope = map.getSlopeAtDistance(this._position);
@@ -332,6 +339,13 @@ export class User extends UserDataRecorder implements SlopeSource {
     if(lastPosition < mapLength && this._position >= mapLength) {
       this.setFinishTime(tmNow);
     }
+
+    if(this._position > 0 && this._position < mapLength) {
+      this._physicsJoulesUsed += dtSeconds * this.getLastPower();
+    } else if(this._position <= 0) {
+      // race not started yet
+      this._physicsJoulesUsed = 0;
+    }
   }
 
   public notifyDrafteeThisCycle(tmNow:number, id:number) {
@@ -366,6 +380,9 @@ export class User extends UserDataRecorder implements SlopeSource {
     return null;
   }
 
+  public isDraftingLocalUser():boolean {
+    return !!(this._lastDraftUser && this._lastDraftUser.getUserType() & UserTypeFlags.Local);
+  }
   public getLastWattsSaved():DraftSavings {
     return this._lastDraftSaving || {
       watts: 0,
@@ -373,12 +390,30 @@ export class User extends UserDataRecorder implements SlopeSource {
       fromDistance: 0,
     };
   }
-  private setLastWattsSaved(watts:number, pctOfMax:number, fromDistance:number) {
+  private setLastWattsSaved(dt:number, watts:number, pctOfMax:number, fromDistance:number) {
+    this._physicsJoulesSaved += dt*watts;
     this._lastDraftSaving = {
       watts,
       pctOfMax,
       fromDistance,
     }
+  }
+
+  public hasDraftersThisCycle(tmNow:number):boolean {
+    return this.getDrafteeCount(tmNow) > 0;
+  }
+
+  public getHandicapSecondsSaved() {
+    const handicapRatio = this._handicap / DEFAULT_HANDICAP_POWER;
+    const userJoulesSaved = this._physicsJoulesSaved * handicapRatio;
+    const handicapSecondsSaved = userJoulesSaved / this._handicap;
+    return handicapSecondsSaved;
+  }
+  public getHandicapSecondsUsed() {
+    const handicapRatio = this._handicap / DEFAULT_HANDICAP_POWER;
+    const userJoulesUsed = this._physicsJoulesUsed * handicapRatio;
+    const handicapSecondsUsed = userJoulesUsed / this._handicap;
+    return handicapSecondsUsed;
   }
 
   getDisplay(raceState:RaceState|null):UserDisplay {

@@ -1,0 +1,19 @@
+.display-post-race {
+  &__rankings {
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  &__title {
+    margin-top: 32px;
+  }
+  &__text {
+    margin-bottom: 16px;
+    font-style:italic;
+    font-size: 10px;
+  }
+  &__table {
+    width: 320px;
+  }
+}

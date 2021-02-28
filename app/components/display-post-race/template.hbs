@@ -2,15 +2,58 @@
 
 
 <div class="display-post-race__rankings">
-  <h3>Rankings:</h3>
-  {{#each processedRankings as |result|}}
-    <div class="display-post-race__result">
-      {{result.rank}} - {{result.name}}: 
-      {{#if result.time}}
-        {{result.time}}
-      {{else}}
-        Not Finished
-      {{/if}}
-    </div>
-  {{/each}}
+  <h3 class="display-post-race__title">Rankings:</h3>
+  <table class="display-post-race__table">
+    {{#each processedRankings.byRank as |result|}}
+      <tr class="display-post-race__result">
+        <td>{{result.rank}}</td>
+        <td>{{result.name}}</td>
+        <td>
+          {{#if result.time}}
+            {{result.time}}
+          {{else}}
+            Not Finished
+          {{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </table>
+
+
+  <h3 class="display-post-race__title">Draft Kings and Queens:</h3>
+  <p class="display-post-race__text">This shows how many FTP-seconds of energy each person saved.  An FTP-second saved means for a 250W rider, they got to skip doing 250W for a second.  Or they got to do 125W less for 2 seconds.</p>
+  <table class="display-post-race__table">
+    {{#each processedRankings.byHs as |result index|}}
+      <tr class="display-post-race__result">
+        <td>#{{add index 1}}</td>
+        <td>{{result.name}}</td>
+        <td>
+          {{#if result.hsSaved}}
+            {{result.hsSaved}}
+          {{else}}
+            Not Finished
+          {{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </table>
+
+  
+  <h3 class="display-post-race__title">The Cheapskate Award:</h3>
+  <p class="display-post-race__text">These users penny-pinched and scrimped and used a minimum of energy over the course.  Rankings are by FTP-seconds spent per kilometer.</p>
+  <table class="display-post-race__table">
+    {{#each processedRankings.byEfficiency as |result index|}}
+      <tr class="display-post-race__result">
+        <td>#{{add index 1}}</td>
+        <td>{{result.name}}</td>
+        <td>
+          {{#if result.efficiency}}
+            {{result.efficiency}}
+          {{else}}
+            Not Finished
+          {{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </table>
 </div>

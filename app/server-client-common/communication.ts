@@ -110,15 +110,22 @@ export class S2CFinishUpdate {
       }
     })
 
+    const raceLengthKm = Math.max(...users.map((u) => u.getDistance())) / 1000;
     this.rankings = [];
     this.times = [];
+    this.hsSaved = [];
+    this.efficiency = [];
     users.forEach((user, index) => {
       this.rankings.push(user.getId());
       this.times.push(user.getRaceTimeSeconds(tmRaceStart));
+      this.hsSaved.push(user.getHandicapSecondsSaved());
+      this.efficiency.push(user.getHandicapSecondsUsed() / raceLengthKm);
     })
   }
   rankings: number[];
   times: number[];
+  hsSaved: number[];
+  efficiency: number[];
 }
 
 export function apiGetInternal(apiRoot:string, endPoint:string, data?:any) {
