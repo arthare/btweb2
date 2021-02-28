@@ -102,7 +102,6 @@ function handleFileSelect(this:CreateRideWidget, evt:any) {
       if(distances.length > 0 && elevs.length > 0 && distances.length === elevs.length) {
         // we good!
         this.set('uploadMapData', new ElevDistanceMap(elevs, distances));
-        this.set('stravaMapData', null);
       } else {
         alert("Failed to import map data");
       }
@@ -120,7 +119,6 @@ export default class CreateRideWidget extends Component.extend({
   raceTime: '12:00',
   classNames: ['create-race-widget__container'],
   race:<RideMapElevationOnly><unknown>null,
-  stravaMapData:<RideMapElevationOnly><unknown>null,
   uploadMapData:<RideMapElevationOnly><unknown>null,
   onRaceCreated:(req:ScheduleRacePostRequest)=>{},
 
@@ -137,7 +135,7 @@ export default class CreateRideWidget extends Component.extend({
           const pickNumber = parseInt(pick);
           if(isFinite(pickNumber)) {
             return this.get('platformManager').getStravaMapDetails(mapList[pickNumber]).then((mapDetails:RideMapElevationOnly) => {
-              this.set('stravaMapData', mapDetails);
+              this.set('uploadMapData', mapDetails);
               this.set('meters', mapDetails.getLength());
               this.set('raceName', mapList[pickNumber].name);
             });
@@ -213,13 +211,8 @@ export default class CreateRideWidget extends Component.extend({
     this.set('raceName', `${localUser.getName()}'s Race`);
   }
 
-  @computed("meters", "rideName", "stravaMapData", "uploadMapData")
+  @computed("meters", "rideName", "uploadMapData")
   get race():RideMapElevationOnly {
-    const stravaMap = this.get('stravaMapData');
-    if(stravaMap) {
-      // we've got a strava map.  We will want to resample it
-      return new RideMapResampleDistance(stravaMap, this.get('meters'));
-    }
     const uploadMap = this.get('uploadMapData');
     if(uploadMap) {
       return new RideMapResampleDistance(uploadMap, this.get('meters'));
