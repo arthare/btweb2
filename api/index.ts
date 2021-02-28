@@ -422,6 +422,10 @@ wss.on('connection', (wsConnection) => {
           const tmNow = new Date().getTime();
           const payload:ClientToServerUpdate = <ClientToServerUpdate>bm.payload;
           const game = races.get(payload.gameId);
+          if(!game) {
+            // this game has ended
+            return;
+          }
           const user = game.getUser(payload.userId);
           if(user) {
             user.notifyPower(tmNow, payload.lastPower);
