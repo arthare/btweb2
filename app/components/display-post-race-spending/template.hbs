@@ -1,0 +1,17 @@
+<h3 class="display-post-race__title">{{title}}</h3>
+<p class="display-post-race__text">{{description}}</p>
+<table class="display-post-race__table">
+  {{#each list as |result index|}}
+    <tr class="display-post-race__result">
+      <td>#{{add index 1}}</td>
+      <td>{{result.name}}</td>
+      <td>
+        {{#if result.spending}}
+          {{result.spending}}
+        {{else}}
+          Not Finished
+        {{/if}}
+      </td>
+    </tr>
+  {{/each}}
+</table>

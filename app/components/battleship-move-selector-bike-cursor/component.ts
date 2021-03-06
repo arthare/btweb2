@@ -2,7 +2,7 @@ import Component from '@ember/component';
 import Ember from 'ember';
 import { SelectableAction, SelectableActionMode, warmup_offset } from '../battleship-move-selector-bike/component';
 import Devices, { PowerTimerAverage } from 'bt-web2/services/devices';
-import { User } from 'bt-web2/server-client-common/User';
+import { User, UserInterface } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 
 interface EarnedAction {
@@ -47,7 +47,7 @@ export default class BattleshipMoveSelectorBikeCursor extends Component.extend({
 
   _findEarnedAction(avg:PowerTimerAverage,
                     secondsOfCycle:number,
-                    user:User|undefined,
+                    user:UserInterface|null,
                     actionsList:SelectableAction[]
     ):EarnedAction {
     const totalJDone = avg.joules;

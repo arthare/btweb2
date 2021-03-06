@@ -1,6 +1,6 @@
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from "./User";
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from "./User";
 import { UserProvider, RaceState } from "./RaceState";
-import { ClientConnectionRequest, CurrentRaceState } from "./communication";
+import { ClientConnectionRequest, CurrentRaceState, S2CFinishUpdate } from "./communication";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
@@ -314,7 +314,7 @@ export class ServerGame {
   public findUserByImage(tmNow:number, imageBase64:string, riderName:string, handicap:number):ServerUser|null {
 
     const users = this.userProvider.getUsers(tmNow);
-    const found:User|null = users.find((user) => {
+    const found:UserInterface|null = users.find((user) => {
       return !(user.getUserType() & UserTypeFlags.Ai) &&
               user.getHandicap() === handicap &&
               user.getName() === riderName &&
@@ -349,7 +349,7 @@ export class ServerGame {
 
     if(this._tmScheduledRaceStart < 0) {
       // we don't have a race start time yet.  Let's put it in the future about 30 seconds
-      this._tmScheduledRaceStart = tmNow + 30000;
+      this._tmScheduledRaceStart = tmNow + 5000;
     }
     this._scheduleTick();
     return newId;
@@ -380,7 +380,7 @@ export class ServerGame {
 
     // update AI powers
     if(tmNow - this._tmLastAiUpdate > 250) {
-      this.userProvider.getUsers(tmNow).forEach((user:User) => {
+      this.userProvider.getUsers(tmNow).forEach((user:UserInterface) => {
         if(user.getUserType() & UserTypeFlags.Ai) {
           const spread = 50;
           const pct = user.getHandicap() / DEFAULT_HANDICAP_POWER;
@@ -422,6 +422,11 @@ export class ServerGame {
           if(this.raceState.isAllHumansFinished(tmNow)) {
             if(this.raceState.isAllRacersFinished(tmNow)) {
               // ok, absolutely everyone is finished, so we _really_ don't need a physics update, and we're definitely post-race
+              const permanentFinishUpdate = new S2CFinishUpdate(this.userProvider, this._tmRaceStart);
+              try{fs.mkdirSync('../finish-data/');}catch(e){}
+              
+              fs.writeFileSync(`../finish-data/${S2CFinishUpdate.getPermanentKey(permanentFinishUpdate)}.json`, JSON.stringify(permanentFinishUpdate));
+
               thisRaceState = CurrentRaceState.PostRace;
               console.log(`all racers (human and AI) are done ${this.raceState.getGameId()}, so we're post-race now`);
             } else {

@@ -1,9 +1,10 @@
+import { USERSETUP_KEY_HANDICAP } from "bt-web2/components/user-set-up-widget/component";
 import { Layer } from "./DecorationFactory";
 import { DecorationState } from "./DecorationState";
 import { RaceState } from "./RaceState";
 import { RideMap } from "./RideMap";
 import setupContextWithTheseCoords from "./setupContextWithTheseCoords";
-import { DEFAULT_HANDICAP_POWER, User, UserTypeFlags } from "./User";
+import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 
 export const local_color = 'white';
@@ -126,7 +127,7 @@ export function drawMinimap(params:DrawMinimapParameters) {
 
 
 class DisplayUser {
-  constructor(user:User) {
+  constructor(user:UserInterface) {
     this.distance = user.getDistance();
     this.image = null;
     this.loadingImage = false;
@@ -137,6 +138,7 @@ class DisplayUser {
   public crankPosition:number = 0;
   public heartPosition:number = 0;
   public slope = 0;
+  public draftCosBase = 0;
 }
 
 export class PaintFrameState {
@@ -232,7 +234,7 @@ export function doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, d
   }
 }
 
-export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, time:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
+export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
   // ok, all we have to do is paint the map!  How hard can it be
   const tmNow = new Date().getTime();
   const ctx = canvas.getContext('2d');
@@ -349,8 +351,11 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
   decorationState.draw(ctx, Layer.Underground);
 
 
-  const drawAUser = (user:User) => {
+  const drawAUser = (user:UserInterface) => {
     const displayUser:DisplayUser|undefined = paintState.userPaint.get(user.getId());
+    if(!displayUser) {
+      return;
+    }
     const dist = displayUser?.distance || user.getDistance();
     const elev = map.getElevationAtDistance(dist);
 
@@ -506,8 +511,8 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
         const hsSaved = user.getHandicapSecondsSaved();
         // a local guy!  let's draw their drafting status
         const myDist = user.getDistance();
-        const deltaAhead = draftStats.fromDistance - myDist;
-        const pctSavings = draftStats.pctOfMax;
+        let deltaAhead = draftStats.fromDistance - myDist - 1.5;
+        let pctSavings = draftStats.pctOfMax;
 
         // adjust this so it's in-scale for the user.  Someone with an 80W handicap shouldn't set the 240W they're saving in physics-land, but rather the ~64W that means scaled to their effort level.
         const wattsSaved = draftStats.watts * (user.getHandicap() / DEFAULT_HANDICAP_POWER);
@@ -515,8 +520,10 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
         
         const baseLineWidth = isDrawingLocalHero ? 0.8 * pctSavings : 0.4 * pctSavings;
 
+        displayUser.draftCosBase += dt*user.getSpeed()*2;
         function getColorForDraftSegment(pctAlongLine:number, userSpeed:number, minAlpha:number):{strokeStyle:string, lineWidth:number} {
-          const cosRaw = Math.cos(pctAlongLine * 6.28 + userSpeed*time/2000);
+          const cosRaw = Math.cos(pctAlongLine * 6.28 + (displayUser as DisplayUser).draftCosBase);
+          
           const cosForWidth = cosRaw + 1;
           const cosForColor = 0.5*(1.0 + 0.5*cosRaw) + 0.5;
           return {
@@ -558,16 +565,16 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
           
         }
 
-        if(isDrawingLocalHero || user.isDraftingLocalUser() || user.isBeingDraftedByLocalUser()) {
+        if((isDrawingLocalHero && draftStats.pctOfMax > 0 || user.hasDraftersThisCycle(tmNow)) || user.isDraftingLocalUser()) {
           
           // drawing the total handicap-seconds this user has saved this race
           ctx.save();
           ctx.fillStyle = `rgba(${draftColor.r}, ${draftColor.g}, ${draftColor.b},1.0)`
           const strokeData = getColorForDraftSegment(0, user.getSpeed(), 0.25);
-          ctx.strokeStyle = `rgba(${draftColor.r}, ${draftColor.g}, ${draftColor.b},1.0)`;
-          ctx.lineWidth = 0.025;
+          ctx.strokeStyle = `rgba(255, 255, 255,1.0)`;
+          ctx.lineWidth = 0.03;
 
-          const fontSize = baseLineWidth*6;
+          const fontSize = 2.5;
           ctx.font = `${fontSize}px Arial`;
 
           const hsSavedText = hsSaved.toFixed(1);

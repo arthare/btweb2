@@ -1,7 +1,7 @@
 import Service from '@ember/service';
 import { BluetoothKickrDevice, ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
 import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
 import { RaceResultSubmission, S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
 import Ember from 'ember';
@@ -82,7 +82,7 @@ export default class Devices extends Service.extend({
 }) implements UserProvider {
   // normal class body definition here
   devices:ConnectedDeviceInterface[] = [];
-  users:User[] = [];
+  users:UserInterface[] = [];
   deviceDescription:string = "No Device Connected";
   workoutSaver:WorkoutFileSaver|null = null;
   ridersVersion = 0;
@@ -240,7 +240,7 @@ export default class Devices extends Service.extend({
     return this.devices.find((dev) => dev.getDeviceFlags() & (DeviceFlags.Trainer | DeviceFlags.PowerOnly)) || null;
   }
 
-  getLocalUser():User|null {
+  getLocalUser():UserInterface|null {
     return this.users.find((user) => user.getUserType() & UserTypeFlags.Local) || null;
   }
 
@@ -294,7 +294,7 @@ export default class Devices extends Service.extend({
     }
   }
 
-  getUsers(tmNow:number):User[] {
+  getUsers(tmNow:number):UserInterface[] {
     return this.users.filter((user) => {
       return user.getUserType() & UserTypeFlags.Local ||
              user.getUserType() & UserTypeFlags.Ai ||
@@ -360,7 +360,7 @@ export default class Devices extends Service.extend({
       });
     })
   }
-  getUser(id:number):User|null {
+  getUser(id:number):UserInterface|null {
     return this.users.find((user) => user.getId() === id) || null;
   }
 

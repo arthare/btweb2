@@ -1,5 +1,5 @@
 import { RaceState, UserProvider } from "./RaceState";
-import { User, UserTypeFlags } from "./User";
+import { JoulesUsedClass, User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
@@ -93,6 +93,8 @@ export class S2CRaceStateUpdate {
   msUntilNextState:number;
   tmOfNextState:number;
 }
+
+
 export class S2CFinishUpdate {
   constructor(provider:UserProvider, tmRaceStart:number) {
     const tmNow = new Date().getTime();
@@ -111,21 +113,42 @@ export class S2CFinishUpdate {
     })
 
     const raceLengthKm = Math.max(...users.map((u) => u.getDistance())) / 1000;
+    this.raceLengthKm = raceLengthKm;
+    this.tmRaceStart = tmRaceStart;
+    this.names = [];
     this.rankings = [];
     this.times = [];
     this.hsSaved = [];
     this.efficiency = [];
+    this.userSpending = [];
+    this.types = [];
+    this.handicaps = [];
     users.forEach((user, index) => {
+      this.names.push(user.getName());
       this.rankings.push(user.getId());
       this.times.push(user.getRaceTimeSeconds(tmRaceStart));
       this.hsSaved.push(user.getHandicapSecondsSaved());
-      this.efficiency.push(user.getHandicapSecondsUsed() / raceLengthKm);
+      this.efficiency.push(user.getHandicapSecondsUsed()[JoulesUsedClass.WholeCourse] / raceLengthKm); // this is redundant, but around for backwards-compatibility
+      this.userSpending.push(user.getHandicapSecondsUsed());
+      this.types.push(user.getUserType());
+      this.handicaps.push(user.getHandicap());
     })
   }
+  static getPermanentKey(s2c:S2CFinishUpdate):string {
+    const dt = new Date(s2c.tmRaceStart);
+    const lengthM = s2c.raceLengthKm*1000;
+    return `${lengthM.toFixed(0)}m-${dt.getFullYear()}-${dt.getMonth()+1}-${dt.getDate()}-${dt.getHours()}-${dt.getMinutes()}`;
+  }
+  raceLengthKm:number;
+  tmRaceStart:number;
+  names:string[];
   rankings: number[];
   times: number[];
   hsSaved: number[];
   efficiency: number[];
+  userSpending: {[key:string]:number}[];
+  types:number[];
+  handicaps:number[];
 }
 
 export function apiGetInternal(apiRoot:string, endPoint:string, data?:any) {
@@ -196,7 +219,7 @@ export interface ClientConnectionResponse {
 
 export class S2CImageUpdate {
 
-  constructor(user:User) {
+  constructor(user:UserInterface) {
     this.id = user.getId();
 
     const image = user.getImage();
@@ -392,6 +415,7 @@ export default class ConnectionManager {
   _lastTimeStamp = 0;
   _imageSources:Map<number,string> = new Map();
   _userProvider:UserProvider|null = null;
+  _desiresDisconnect:boolean = false;
 
   _onLocalHandicapChange:(newHandicap:number)=>void;
   _onLastServerRaceStateChange:()=>void;
@@ -408,7 +432,7 @@ export default class ConnectionManager {
     this._notifyNewClient = notifyNewClient
   }
 
-  _performStartupNegotiate(ws:WebSocket, user:User, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
+  _performStartupNegotiate(ws:WebSocket, user:UserInterface, accountId:string, gameId:string):Promise<ClientConnectionResponse> {
     const oldOnMessage = ws.onmessage;
     return new Promise((resolve, reject) => {
       ws.onmessage = (msg:MessageEvent) => {
@@ -447,7 +471,8 @@ export default class ConnectionManager {
     })
   }
 
-  connect(wsUrl:string, userProvider:UserProvider, gameId:string, accountId:string, user:User, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
+  connect(wsUrl:string, userProvider:UserProvider, gameId:string, accountId:string, user:UserInterface, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
+    this._desiresDisconnect = false;
     return new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(wsUrl);
       ws.onopen = () => {
@@ -467,6 +492,9 @@ export default class ConnectionManager {
         console.log("websocket closed");
 
         const tryConnectAgain = () => {
+          if(this._desiresDisconnect) {
+            return;
+          }
           console.log("attempting reconnect to ", gameId);
           this.connect(wsUrl, userProvider, gameId, accountId, user, fnOnNewRaceState).then((newRaceState) => {
             // woohoo, we reconnected!
@@ -480,7 +508,12 @@ export default class ConnectionManager {
             }
           });
         }
-        reconnectTimeout = setTimeout(tryConnectAgain, 1000);
+
+        if(this._desiresDisconnect) {
+
+        } else {
+          reconnectTimeout = setTimeout(tryConnectAgain, 1000);
+        }
       }
     }).then((ws:WebSocket) => {
       if(!user) {
@@ -630,7 +663,7 @@ export default class ConnectionManager {
   disconnect() {
     this._timeout = null;
     clearTimeout(this._timeout);
-
+    this._desiresDisconnect = true;
 
     if(this._ws) {
       this._ws.onmessage = () => {};

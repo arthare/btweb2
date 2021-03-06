@@ -2,7 +2,7 @@ import Controller from '@ember/controller';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { computed } from '@ember/object';
-import { User } from 'bt-web2/server-client-common/User';
+import { User, UserInterface } from 'bt-web2/server-client-common/User';
 import { HeartRateEngine } from 'bt-web2/server-client-common/heart-rate-engine';
 
 export default class HrmControl extends Controller.extend({
@@ -73,7 +73,7 @@ export default class HrmControl extends Controller.extend({
   }
 
 
-  _applyTargetErg(user:User, handicap:number) {
+  _applyTargetErg(user:UserInterface, handicap:number) {
     this.devices.setErgMode(handicap * user.getHandicap() / 100);
     this.set('targetHandicap', handicap);
   }

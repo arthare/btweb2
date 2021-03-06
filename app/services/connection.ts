@@ -1,7 +1,7 @@
 import Service from '@ember/service';
-import ConnectionManager, { S2CPositionUpdateUser}  from 'bt-web2/server-client-common/communication';
+import ConnectionManager, { S2CFinishUpdate, S2CPositionUpdateUser}  from 'bt-web2/server-client-common/communication';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
-import { User } from 'bt-web2/server-client-common/User';
+import { User, UserInterface } from 'bt-web2/server-client-common/User';
 import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
 import Ember from 'ember';
 import Devices from './devices';
@@ -35,7 +35,7 @@ export default class Connection extends Service.extend({
     this.devices.addRemoteUser(client, image);
   }
 
-  connect(targetHost:string, gameId:string, accountId:string, user:User, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
+  connect(targetHost:string, gameId:string, accountId:string, user:UserInterface, fnOnNewRaceState:(raceState:RaceState)=>void):Promise<RaceState> {
     let url = ENV.environment === 'production' ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
 
     return this._connectManager.connect(url, this.devices, gameId, accountId, user, fnOnNewRaceState);
@@ -45,7 +45,9 @@ export default class Connection extends Service.extend({
 
     const tmNow = new Date().getTime();
 
-    this.devices.dumpPwx(activityName, tmNow);
+    if(activityName) {
+      this.devices.dumpPwx(activityName, tmNow);
+    }
     const user = this.devices.getLocalUser();
     if(user) {
       user.setId(-1);
@@ -54,7 +56,7 @@ export default class Connection extends Service.extend({
     this._connectManager.disconnect();
   }
 
-  getUser(userId:number):User|null {
+  getUser(userId:number):UserInterface|null {
     const user = this.devices.getUser(userId);
     return user || null;
   }
@@ -84,7 +86,7 @@ export default class Connection extends Service.extend({
     return this._connectManager.msOfStart;
   }
   @computed("_updateVersion")
-  get raceResults():any {
+  get raceResults():S2CFinishUpdate|null {
     return this._connectManager.raceResults;
   }
 

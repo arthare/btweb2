@@ -56,6 +56,7 @@ Router.map(function() {
   this.route('pacing-challenge-race', {path:'/pacing-challenge-race/:pct'});
   this.route('results');
   this.route('kickr-setup');
+  this.route('race-results', {path:'/race-results/:key'});
 });
 
 export default Router;

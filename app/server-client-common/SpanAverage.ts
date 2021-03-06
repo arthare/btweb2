@@ -72,7 +72,7 @@ export class SpanAverage {
         // this is too far ago, and shouldn't be counted anymore
         ixSlice++;
         this.dtSum -= sample.dt;
-        this.powerSum -= sample.power*sample.dt;
+        this.powerSum = Math.max(0, this.powerSum - sample.power*sample.dt);
         assert2(this.powerSum >= 0);
       } else {
         // this is within our span, so we're done our slicing

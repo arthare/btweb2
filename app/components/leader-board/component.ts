@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
+import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
 import { assert2 } from 'bt-web2/server-client-common/Utils';
 import { RaceState } from 'bt-web2/server-client-common/RaceState';
 import { computed } from '@ember/object';
@@ -23,17 +23,17 @@ function formatDelta(secondsAhead:number) {
 
 interface CompactedUser {
   rank:string;
-  user:User;
+  user:UserInterface;
 }
 
-function compactUserList(users:User[]):CompactedUser[] {
+function compactUserList(users:UserInterface[]):CompactedUser[] {
   let compacted:CompactedUser[] = [];
   let lastUser = users[0];
   let ixStartOfGroup = 0;
 
   const localUser = users.find((user) => user.getUserType() & UserTypeFlags.Local);
   if(!localUser) {
-    return;
+    return [];
   }
 
   for(var x = 0; x < users.length; x++) {
@@ -126,7 +126,7 @@ export default class LeaderBoard extends Component.extend({
       let compactedUsers = compactUserList(users);
 
       let ixUser = 0;
-      let localUser:User|null = null;
+      let localUser:UserInterface|null = null;
       for(var x = 0;x < compactedUsers.length; x++) {
         if(compactedUsers[x].user.getUserType() & UserTypeFlags.Local) {
           ixUser = x;

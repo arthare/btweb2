@@ -1,5 +1,5 @@
 import Controller from '@ember/controller';
-import { User, UserTypeFlags, DEFAULT_CDA, DEFAULT_RHO, DEFAULT_HANDICAP_POWER, DEFAULT_GRAVITY, DEFAULT_CRR, DEFAULT_RIDER_MASS } from 'bt-web2/server-client-common/User';
+import { User, UserTypeFlags, DEFAULT_CDA, DEFAULT_RHO, DEFAULT_HANDICAP_POWER, DEFAULT_GRAVITY, DEFAULT_CRR, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
 import { RideMapPartial, RideMap, MapBounds } from 'bt-web2/server-client-common/RideMap';
 import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
 import Ember from 'ember';
@@ -134,9 +134,10 @@ export function getPacingChallengeMap(name:string):PacingChallengeShortMap {
 }
 
 export class PacingChallengeUserProvider implements UserProvider {
-  users: User[];
+  users: UserInterface[];
+  localUser:UserInterface;
 
-  constructor(localUserOverride:User, pctZeroToOne:number, mapLen:number) {
+  constructor(localUserOverride:UserInterface, pctZeroToOne:number, mapLen:number) {
     if(!localUserOverride) {
       throw new Error("You need to have your devices set up before starting");
     }
@@ -145,6 +146,7 @@ export class PacingChallengeUserProvider implements UserProvider {
     this.users = [
       localUserOverride,
     ];
+    this.localUser = localUserOverride;
     
 
     // generate a bunch of slow AIs so that the user has to overtake them and decide whether to stick around and draft or push harder
@@ -164,12 +166,15 @@ export class PacingChallengeUserProvider implements UserProvider {
     });
   }
 
-  getUsers(tmNow: number): User[] {
+  getUsers(tmNow: number): UserInterface[] {
     return this.users.slice();
   }  
   
-  getUser(id: number): User | null {
+  getUser(id: number): UserInterface | null {
     return this.users.find((user) => user.getId() === id) || null;
+  }
+  getLocalUser():UserInterface|null {
+    return this.localUser;
   }
 
 

@@ -11,6 +11,7 @@ import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
 import { map } from 'rsvp';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
+import { S2CFinishUpdate } from 'bt-web2/server-client-common/communication';
 
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here
@@ -26,7 +27,10 @@ export default class Ride extends Controller.extend({
       this.devices.addUser(user);
       (<any>this)._setup(this.get('_gameId'));
     }
-  }
+  },
+
+  watchForRaceCompletion: Ember.observer('connection.postRace', function(this:Ride) {
+  })
 }) {
   // normal class body definition here
   lastLocalMeters: number = 0;
@@ -100,9 +104,21 @@ export default class Ride extends Controller.extend({
     this.devices.tick(tmNow, true);
 
 
+    const conn = this.get('connection');
+    if(conn.postRace && conn.raceResults) {
+      // we're post race!  let's just transition to the post-race route
+      conn.disconnect('');
+      const rr = conn.raceResults;
+      setTimeout(() => {
+        window.location.href = `/race-results/${S2CFinishUpdate.getPermanentKey(rr)}`;
+      }, 1000);
+      
+    } else {
+      this.myTimeout = setTimeout(() => this._tick(), 15);
+      this.incrementProperty('frame');
+    }
 
-    this.myTimeout = setTimeout(() => this._tick(), 15);
-    this.incrementProperty('frame');
+
   }
 
   @computed("devices.ridersVersion", "connection._updateVersion")

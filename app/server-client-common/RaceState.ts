@@ -1,5 +1,5 @@
 import { RideMap } from "./RideMap";
-import { User, UserTypeFlags } from "./User";
+import { User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { S2CPositionUpdate, S2CNameUpdate } from "./communication";
 
@@ -7,9 +7,9 @@ import { S2CPositionUpdate, S2CNameUpdate } from "./communication";
 // why UserProvider?  this lets us have a network-connected module that figures out all the users that are currently
 // in existence.
 export interface UserProvider {
-  getUsers(tmNow:number):User[];
-  getUser(id:number):User|null;
-  getLocalUser():User|null;
+  getUsers(tmNow:number):UserInterface[];
+  getUser(id:number):UserInterface|null;
+  getLocalUser():UserInterface|null;
 }
 
 export class RaceState {
@@ -68,7 +68,7 @@ export class RaceState {
   getMap():RideMap {
     return this._map;
   }
-  getLocalUser():User|null {
+  getLocalUser():UserInterface|null {
     const tmNow = new Date().getTime();
     const users = this._userProvider.getUsers(tmNow);
     const allLocal = users.filter((user) => {

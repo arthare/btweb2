@@ -1,4 +1,4 @@
-import { User } from "./User";
+import { User, UserInterface } from "./User";
 
 export interface RideMapElevationOnly {
   getSlopeAtDistance(meters:number):number;
@@ -56,6 +56,6 @@ export interface MapBounds {
 }
 
 export interface RideMap extends RideMapPartial {
-  getPowerTransform(who:User):(power:number)=>number;
+  getPowerTransform(who:UserInterface):(power:number)=>number;
   getBounds():MapBounds;
 }

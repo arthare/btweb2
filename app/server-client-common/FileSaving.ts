@@ -1,9 +1,9 @@
 import { IWorkoutSample, RaceResultSubmission } from "./communication";
-import { User } from "./User";
+import { User, UserInterface } from "./User";
 
 
 class WorkoutSample implements IWorkoutSample {
-  constructor(tmNow:number, user:User) {
+  constructor(tmNow:number, user:UserInterface) {
     this.tm = tmNow;
     this.power = user.getLastPower();
     this.distance = user.getDistance();
@@ -18,12 +18,12 @@ class WorkoutSample implements IWorkoutSample {
 }
 
 export class WorkoutFileSaver {
-  _user:User;
+  _user:UserInterface;
   _tmLastSample:number;
 
   _samples:IWorkoutSample[];
 
-  constructor(myUser:User, tmNow:number) {
+  constructor(myUser:UserInterface, tmNow:number) {
     console.log("built a new workout saver for ", myUser.getName());
     this._user = myUser;
     this._tmLastSample = 0;

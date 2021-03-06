@@ -39,8 +39,8 @@
   </table>
 
   
-  <h3 class="display-post-race__title">The Cheapskate Award:</h3>
-  <p class="display-post-race__text">These users penny-pinched and scrimped and used a minimum of energy over the course.  Rankings are by FTP-seconds spent per kilometer.</p>
+  <h3 class="display-post-race__title">The "Definitely Not A Prius" Award</h3>
+  <p class="display-post-race__text">Who used the most energy per km?  Rankings are by FTP-seconds spent per kilometer.</p>
   <table class="display-post-race__table">
     {{#each processedRankings.byEfficiency as |result index|}}
       <tr class="display-post-race__result">
@@ -56,4 +56,39 @@
       </tr>
     {{/each}}
   </table>
+
+
+  {{display-post-race-spending 
+      list=processedRankings.last-500m
+       title="Sprint Finish" 
+       description="Energy spent in the last 500m"}}
+
+  {{display-post-race-spending 
+      list=processedRankings.first-half
+       title="First Half Heroes" 
+       description="Energy spent in the first half of the course.  You don't want to be winning this ranking."}}
+
+       
+  {{display-post-race-spending 
+      list=processedRankings.last-half
+       title="Negative Splits Aren't So Negative" 
+       description="Energy spent in the second half of the course"}}
+
+  {{display-post-race-spending 
+      list=processedRankings.while-downhill
+       title="Which Way Does Gravity Go?" 
+       description="Total FTP-seconds spent on downhill segments.  It's probably unwise to win this ranking."}}
+  
+  {{display-post-race-spending 
+      list=processedRankings.while-uphill
+       title="Up Up And Away!" 
+       description="Total FTP-seconds spent on uphill segments"}}
+       
+  {{display-post-race-spending 
+      list=processedRankings.whole-course
+       title="Total Energy Spent" 
+       description="Total FTP-seconds spent on the entire course"}}
+
+    <br><br><br><br><br><br><br>
+       
 </div>

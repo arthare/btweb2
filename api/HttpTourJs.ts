@@ -144,6 +144,30 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.write("");
     res.end();
   });
+  app.get('/race-results', (req:core.Request, res:core.Response) => {
+    setCorsHeaders(req, res);
+    res.setHeader('Cache-Control', 'no-store');
+    if(req.query.key) {
+      try {
+        let key = req.query.key;
+        key = key.replace(/[^a-zA-Z\-0-9]/gi, ''); // only alphanumerics and dashes allowed to avoid them trying to read other files
+        const json = JSON.parse(fs.readFileSync(`../finish-data/${key}.json`, 'utf8'));
+
+        res.writeHead(200, 'ok');
+        res.write(JSON.stringify(json));
+        res.end();
+      } catch(e) {
+        res.writeHead(404, 'ok');
+        res.write("");
+        res.end();
+      }
+    } else {
+      res.writeHead(500, 'ok');
+      res.write("");
+      res.end();
+    }
+
+  })
   app.get('/user-ride-results', (req:core.Request, res:core.Response) => {
     setCorsHeaders(req, res);
     res.setHeader('Cache-Control', 'no-store');

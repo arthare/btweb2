@@ -1,4 +1,4 @@
-import { User } from "./User";
+import { User, UserInterface } from "./User";
 
 export class HeartRateEngine {
 
@@ -9,7 +9,7 @@ export class HeartRateEngine {
     this.lastBpm = firstBpm;
   }
 
-  tick(user:User, tmNow:number, dt:number, targetBpm:number, targetHandicap:number, gainFactorZeroToOne:number):{newTargetHandicap:number} {
+  tick(user:UserInterface, tmNow:number, dt:number, targetBpm:number, targetHandicap:number, gainFactorZeroToOne:number):{newTargetHandicap:number} {
 
     if(user) {
       const lastBpm = user.getLastHrm(tmNow);

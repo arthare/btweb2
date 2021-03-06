@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../app/server-client-common/communication';
 import { assert2 } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
-import { User, UserTypeFlags } from '../app/server-client-common/User';
+import { User, UserInterface, UserTypeFlags } from '../app/server-client-common/User';
 import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
 import { RideMap, RideMapPartial } from '../app/server-client-common/RideMap';
 import { makeSimpleMap } from './ServerUtils';
@@ -90,7 +90,7 @@ class Rng {
 
 
 const races:Map<string, ServerGame> = new Map<string, ServerGame>();
-const map = makeSimpleMap(100);
+const map = makeSimpleMap(500);
 const sg = new ServerGame(map, 'Starting_Soon', 'Will Start On Join', 10);
 races.set(sg.getGameId(), sg);
 
@@ -175,7 +175,7 @@ populatePrescheduledRaces();
 
 
 const lastSentTo:Map<number,Rng> = new Map<number,Rng>();
-function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:UserProvider, n:number):S2CPositionUpdate {
+function buildClientPositionUpdate(tmNow:number, centralUser:UserInterface, userList:UserProvider, n:number):S2CPositionUpdate {
   const users = userList.getUsers(tmNow);
 
   if(!lastSentTo.has(centralUser.getId())) {
@@ -192,7 +192,7 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
 
   // stage two: send the nClosest closest users
   const nClosest = 6;
-  const sortedByDistance = users.sort((a:User, b:User) => {
+  const sortedByDistance = users.sort((a:UserInterface, b:UserInterface) => {
     const distA = Math.abs(a.getDistance() - centralUser.getDistance());
     const distB = Math.abs(b.getDistance() - centralUser.getDistance());
     return distA < distB ? -1 : 1;
@@ -207,7 +207,7 @@ function buildClientPositionUpdate(tmNow:number, centralUser:User, userList:User
   for(var x = 0;x < n; x++) {
     const r = Math.floor(Math.pow(Math.random(),2) * sortedByDistance.length);
     assert2(r >= 0 && r < sortedByDistance.length);
-    const u:User = users[r];
+    const u:UserInterface = users[r];
 
     if(setPicked.has(u.getId())) {
       continue;

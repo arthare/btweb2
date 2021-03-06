@@ -29,7 +29,7 @@ export interface UserDisplay {
   lastWattsSaved: string;
   secondsDelta?:string;
   handicap:string;
-  user:User;
+  user:UserInterface;
   hrm: string;
 }
 
@@ -107,7 +107,64 @@ export interface DistanceHistoryElement {
   distance:number;
 }
 
-export class User extends UserDataRecorder implements SlopeSource {
+export enum JoulesUsedClass {
+  WholeCourse = 'whole-course',
+  Last500m = 'last-500m',
+  WhileUphill = 'while-uphill',
+  WhileDownhill = 'while-downhill',
+  FirstHalf = 'first-half',
+  LastHalf = 'last-half',
+}
+
+export interface UserInterface {
+  getName(): string;
+  getUserType(): number;
+  getHandicap(): number;
+  getHandicapSecondsSaved(): number;
+  getHandicapSecondsUsed(): { [key: string]: number; };
+  getId(): number;
+
+  setId(newId: number): void;
+  setHandicap(watts: number): void;
+  setChat(tmNow: number, chat: string): void;
+  getLastChat(tmNow: number): { tmWhen: number; chat: string; } | null;
+  getLastElevation(): number;
+  getPositionUpdate(tmNow: number): S2CPositionUpdateUser;
+  setDistance(dist: number): void;
+  setSpeed(speed: number): void;
+  setDistanceHistory(newHistory: DistanceHistoryElement[]): void;
+  getDistanceHistory(): DistanceHistoryElement[];
+  getLastSlopeInWholePercent(): number;
+  getDistance(): number;
+  getSpeed(): number;
+  getImage(): string | null;
+  getBigImageMd5(): string | null;
+  getLastHandicapChangeTime(): number;
+  physicsTick(tmNow: number, map: RideMap, otherUsers: UserInterface[]): void;
+  notifyDrafteeThisCycle(tmNow: number, id: number): void;
+  getDrafteeCount(tmNow: number): number;
+  getSecondsAgoToCross(tmNow: number, distance: number): number|null;
+  isDraftingLocalUser(): boolean;
+  getLastWattsSaved(): DraftSavings;
+  hasDraftersThisCycle(tmNow: number): boolean;
+  getDisplay(raceState: RaceState | null): UserDisplay;
+  setImage(imageBase64: string, bigImageMd5: string | null): void;
+  absorbNameUpdate(tmNow: number, name: string, type: number, handicap: number): void;
+  absorbPositionUpdate(tmNow: number, update: S2CPositionUpdateUser): void;
+  isPowerValid(tmNow: number): boolean;
+  notifyPower(tmNow: number, watts: number): void;
+  notifyCadence(tmNow: number, cadence: number): void;
+  notifyHrm(tmNow: number, hrm: number): void;
+  getLastHrm(tmNow: number): number;
+  getLastPower(): number;
+  setFinishTime(tmNow: number): void;
+  getRaceTimeSeconds(tmRaceStart: number): number;
+  isFinished(): boolean;
+  getMsSinceLastPacket(tmNow: number): number;
+  notePacket(tmNow: number): void;
+}
+
+export class User extends UserDataRecorder implements SlopeSource, UserInterface {
 
   private _massKg: number;
   private _handicap: number;
@@ -132,8 +189,8 @@ export class User extends UserDataRecorder implements SlopeSource {
   private _lastChat:string = '';
   private _lastChatTime:number = 0;
   private _physicsJoulesSaved:number = 0;
-  private _physicsJoulesUsed:number = 0;
-  private _lastDraftUser:User|null = null;
+  private _physicsJoulesUsed:{[key:string]:number} = {};
+  private _lastDraftUser:UserInterface|null = null;
 
   constructor(name:string, massKg:number, handicap:number, typeFlags:number) {
     super();
@@ -225,7 +282,7 @@ export class User extends UserDataRecorder implements SlopeSource {
   }
 
 
-  physicsTick(tmNow:number, map:RideMap, otherUsers:User[]) {
+  physicsTick(tmNow:number, map:RideMap, otherUsers:UserInterface[]) {
 
 
     const t = tmNow / 1000.0;
@@ -246,14 +303,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     let aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
 
 
-    const draftingClose = 0.1;
+    const draftingClose = 1.5;
     const draftingFar = 10;
     let effectiveDraftingFar = 10;
-    let closestRider:User|null = null;
+    let closestRider:UserInterface|null = null;
     let closestRiderDist:number = 1e30;
     let closestRiderEffectMod = 1;
 
-    otherUsers.forEach((user:User) => {
+    otherUsers.forEach((user:UserInterface) => {
       const userAhead = user.getDistance() - this.getDistance();
 
       // user effect mod:
@@ -341,10 +398,26 @@ export class User extends UserDataRecorder implements SlopeSource {
     }
 
     if(this._position > 0 && this._position < mapLength) {
-      this._physicsJoulesUsed += dtSeconds * this.getLastPower();
+      this._physicsJoulesUsed[JoulesUsedClass.WholeCourse] = (this._physicsJoulesUsed[JoulesUsedClass.WholeCourse] || 0) + dtSeconds * transformedPower;
+
+      if(slope > 0) {
+        this._physicsJoulesUsed[JoulesUsedClass.WhileUphill] = (this._physicsJoulesUsed[JoulesUsedClass.WhileUphill] || 0) + dtSeconds * transformedPower;
+      }
+      if(slope < 0) {
+        this._physicsJoulesUsed[JoulesUsedClass.WhileDownhill] = (this._physicsJoulesUsed[JoulesUsedClass.WhileDownhill] || 0) + dtSeconds * transformedPower;
+      }
+      if(this._position >= map.getLength() - 500) {
+        this._physicsJoulesUsed[JoulesUsedClass.Last500m] = (this._physicsJoulesUsed[JoulesUsedClass.Last500m] || 0) + dtSeconds * transformedPower;
+      }
+      if(this._position >= map.getLength() / 2) {
+        this._physicsJoulesUsed[JoulesUsedClass.LastHalf] = (this._physicsJoulesUsed[JoulesUsedClass.LastHalf] || 0) + dtSeconds * transformedPower;
+      }
+      if(this._position < map.getLength() / 2) {
+        this._physicsJoulesUsed[JoulesUsedClass.FirstHalf] = (this._physicsJoulesUsed[JoulesUsedClass.FirstHalf] || 0) + dtSeconds * transformedPower;
+      }
     } else if(this._position <= 0) {
       // race not started yet
-      this._physicsJoulesUsed = 0;
+      this._physicsJoulesUsed[JoulesUsedClass.WholeCourse] = 0;
     }
   }
 
@@ -391,11 +464,13 @@ export class User extends UserDataRecorder implements SlopeSource {
     };
   }
   private setLastWattsSaved(dt:number, watts:number, pctOfMax:number, fromDistance:number) {
-    this._physicsJoulesSaved += dt*watts;
-    this._lastDraftSaving = {
-      watts,
-      pctOfMax,
-      fromDistance,
+    if(fromDistance > 5) { // don't count "savings" when everyone is in the starting corral
+      this._physicsJoulesSaved += dt*watts;
+      this._lastDraftSaving = {
+        watts,
+        pctOfMax,
+        fromDistance,
+      }
     }
   }
 
@@ -409,11 +484,14 @@ export class User extends UserDataRecorder implements SlopeSource {
     const handicapSecondsSaved = userJoulesSaved / this._handicap;
     return handicapSecondsSaved;
   }
-  public getHandicapSecondsUsed() {
-    const handicapRatio = this._handicap / DEFAULT_HANDICAP_POWER;
-    const userJoulesUsed = this._physicsJoulesUsed * handicapRatio;
-    const handicapSecondsUsed = userJoulesUsed / this._handicap;
-    return handicapSecondsUsed;
+  public getHandicapSecondsUsed():{[key:string]:number} {
+
+    let ret:{[key:string]:number} = {};
+    for(var key in this._physicsJoulesUsed) {
+      ret[key] = this._physicsJoulesUsed[key] / DEFAULT_HANDICAP_POWER;
+    }
+
+    return ret;
   }
 
   getDisplay(raceState:RaceState|null):UserDisplay {
