@@ -194,9 +194,17 @@ interface AIBrain {
   getName(handicap:number):string;
 }
 class AIBoringBrain implements AIBrain {
+  _nextChange = 0;
+  _currentOutput = 0;
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
-    const spread = handicap * 0.15;
-    return Math.max(0, handicap + Math.random()*spread*2 - spread);
+    if(timeSeconds > this._nextChange || this._currentOutput <= 0) {
+      this._nextChange = timeSeconds + Math.random()*15 + 5;
+
+      const spread = handicap * 0.15;
+      this._currentOutput = Math.max(0, handicap + Math.random()*spread*2 - spread);
+    }
+
+    return this._currentOutput;
   }
   getName(handicap:number):string {
     return `Boring ${(handicap/3).toFixed(0)}%`;
@@ -207,7 +215,7 @@ class AISineBrain implements AIBrain {
   private _magnitude:number; // as a fraction of our handicap
   constructor() {
     this._period = Math.random()*30 + 30;
-    this._magnitude = Math.random()*0.2;
+    this._magnitude = Math.random()*0.4;
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     const mod = handicap * this._magnitude * Math.sin(timeSeconds * 2 * Math.PI / this._period);
@@ -218,14 +226,12 @@ class AISineBrain implements AIBrain {
   }
 }
 class AIHillBrain implements AIBrain {
-  private _period:number;
   private _magnitude:number; // as a fraction of our handicap
   constructor() {
-    this._period = Math.random()*30 + 30;
-    this._magnitude = Math.random()*0.2;
+    this._magnitude = 0.9 + Math.random()*0.2;
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
-    const modSlope = slopeWholePercent / 100.0 + 1.0;
+    const modSlope = this._magnitude*slopeWholePercent / 100.0 + 1.0;
     return Math.max(0, handicap * modSlope);
   }
   getName(handicap:number):string {

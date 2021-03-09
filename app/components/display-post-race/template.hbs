@@ -60,17 +60,20 @@
 
   {{display-post-race-spending 
       list=processedRankings.last-500m
+      overDistanceKm=processedRankings.sprintDistanceKm
        title="Sprint Finish" 
        description="Energy spent in the last 500m"}}
 
   {{display-post-race-spending 
       list=processedRankings.first-half
+      overDistanceKm=processedRankings.halfDistanceKm
        title="First Half Heroes" 
        description="Energy spent in the first half of the course.  You don't want to be winning this ranking."}}
 
        
   {{display-post-race-spending 
       list=processedRankings.last-half
+      overDistanceKm=processedRankings.halfDistanceKm
        title="Negative Splits Aren't So Negative" 
        description="Energy spent in the second half of the course"}}
 
@@ -86,6 +89,7 @@
        
   {{display-post-race-spending 
       list=processedRankings.whole-course
+      overDistanceKm=processedRankings.raceDistanceKm
        title="Total Energy Spent" 
        description="Total FTP-seconds spent on the entire course"}}
 

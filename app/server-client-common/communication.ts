@@ -123,6 +123,7 @@ export class S2CFinishUpdate {
     this.userSpending = [];
     this.types = [];
     this.handicaps = [];
+    this.key = S2CFinishUpdate.getPermanentKey(this);
     users.forEach((user, index) => {
       this.names.push(user.getName());
       this.rankings.push(user.getId());
@@ -135,10 +136,14 @@ export class S2CFinishUpdate {
     })
   }
   static getPermanentKey(s2c:S2CFinishUpdate):string {
+    if(s2c.key) {
+      return s2c.key;
+    }
     const dt = new Date(s2c.tmRaceStart);
     const lengthM = s2c.raceLengthKm*1000;
-    return `${lengthM.toFixed(0)}m-${dt.getFullYear()}-${dt.getMonth()+1}-${dt.getDate()}-${dt.getHours()}-${dt.getMinutes()}`;
+    return `${lengthM.toFixed(0)}m-${dt.getUTCFullYear()}-${dt.getUTCMonth()+1}-${dt.getUTCDate()}-${dt.getUTCHours()}-${dt.getUTCMinutes()}`;
   }
+  key:string;
   raceLengthKm:number;
   tmRaceStart:number;
   names:string[];

@@ -176,6 +176,9 @@ export default class DisplayPostRace extends Component.extend({
       }
       console.log("final = ", finalObject);
 
+      finalObject.raceDistanceKm = results.raceLengthKm;
+      finalObject.halfDistanceKm = (results.raceLengthKm / 2);
+      finalObject.sprintDistanceKm = 0.5;
 
       return finalObject;
     } else {

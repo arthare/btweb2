@@ -7,7 +7,11 @@
       <td>{{result.name}}</td>
       <td>
         {{#if result.spending}}
-          {{result.spending}}
+          {{#if overDistanceKm}}
+            {{divide result.spending overDistanceKm 1}}/km
+          {{else}}
+            {{result.spending}}
+          {{/if}}
         {{else}}
           Not Finished
         {{/if}}

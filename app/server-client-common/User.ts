@@ -303,57 +303,60 @@ export class User extends UserDataRecorder implements SlopeSource, UserInterface
     let aeroForce = -Math.pow(this._speed, 2) * 0.5 * rho * cda;
 
 
-    const draftingClose = 1.5;
-    const draftingFar = 10;
-    let effectiveDraftingFar = 10;
-    let closestRider:UserInterface|null = null;
-    let closestRiderDist:number = 1e30;
-    let closestRiderEffectMod = 1;
+    if(this._position > 5) { // let's not engage drafting in the pre-start.
+      const draftingClose = 1.5;
+      const draftingFar = 10;
+      let effectiveDraftingFar = 10;
+      let closestRider:UserInterface|null = null;
+      let closestRiderDist:number = 1e30;
+      let closestRiderEffectMod = 1;
 
-    otherUsers.forEach((user:UserInterface) => {
-      const userAhead = user.getDistance() - this.getDistance();
+      otherUsers.forEach((user:UserInterface) => {
+        const userAhead = user.getDistance() - this.getDistance();
 
-      // user effect mod:
-      // if they're going really fast, then their draft zone will extend up to twice as long at 72km/h.
-      // BUT: the draft impact will be up-to-halved.
-      const userEffectMod = Math.max(1, Math.min(2, user.getSpeed() / 10));
-      if(userAhead >= draftingClose*2 && userAhead <= draftingFar*userEffectMod) {
-        if(!closestRider || userAhead < closestRiderDist) {
-          closestRiderDist = userAhead;
-          closestRider = user;
-          closestRiderEffectMod = userEffectMod;
-          effectiveDraftingFar = userEffectMod * draftingFar;
+        // user effect mod:
+        // if they're going really fast, then their draft zone will extend up to twice as long at 72km/h.
+        // BUT: the draft impact will be up-to-halved.
+        const userEffectMod = Math.max(1, Math.min(2, user.getSpeed() / 10));
+        if(userAhead >= draftingClose*2 && userAhead <= draftingFar*userEffectMod) {
+          if(!closestRider || userAhead < closestRiderDist) {
+            closestRiderDist = userAhead;
+            closestRider = user;
+            closestRiderEffectMod = userEffectMod;
+            effectiveDraftingFar = userEffectMod * draftingFar;
+          }
         }
+      });
+      if(closestRider) {
+        closestRider = <User>closestRider; // make typescript shut up
+        // there was a draftable rider
+        assert2(closestRiderDist >= draftingClose && closestRiderDist <= effectiveDraftingFar);
+        // if there's 10 guys clustered behind a single rider, they're not going to get
+        // as much benefit as a well-managed paceline
+        closestRider.notifyDrafteeThisCycle(tmNow, this.getId());
+        const cRidersDraftingLastCycle = Math.max(1, closestRider.getDrafteeCount(tmNow));
+
+        let bestPossibleReduction = (0.33 / cRidersDraftingLastCycle) / closestRiderEffectMod;
+        const pctClose = 1 - bestPossibleReduction;
+        const pctFar = 1.0;
+        const myPct = (closestRiderDist - draftingClose) / (effectiveDraftingFar - draftingClose);
+        // myPct will be 1.0 when we're really far, 0.0 when we're really close
+        let myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
+
+
+
+        const newtonsSaved = (1-myPctReduction)*aeroForce;
+        aeroForce *= myPctReduction;
+
+        const wattsSaved = Math.abs(newtonsSaved * this._speed);
+        this._lastDraftUser = closestRider;
+        this.setLastWattsSaved(dtSeconds, wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
+      } else {
+        this.setLastWattsSaved(dtSeconds,0, 0, this.getDistance());
+        this._lastDraftUser = null;
       }
-    });
-    if(closestRider) {
-      closestRider = <User>closestRider; // make typescript shut up
-      // there was a draftable rider
-      assert2(closestRiderDist >= draftingClose && closestRiderDist <= effectiveDraftingFar);
-      // if there's 10 guys clustered behind a single rider, they're not going to get
-      // as much benefit as a well-managed paceline
-      closestRider.notifyDrafteeThisCycle(tmNow, this.getId());
-      const cRidersDraftingLastCycle = Math.max(1, closestRider.getDrafteeCount(tmNow));
-
-      let bestPossibleReduction = (0.33 / cRidersDraftingLastCycle) / closestRiderEffectMod;
-      const pctClose = 1 - bestPossibleReduction;
-      const pctFar = 1.0;
-      const myPct = (closestRiderDist - draftingClose) / (effectiveDraftingFar - draftingClose);
-      // myPct will be 1.0 when we're really far, 0.0 when we're really close
-      let myPctReduction = myPct*pctFar + (1-myPct)*pctClose;
-
-
-
-      const newtonsSaved = (1-myPctReduction)*aeroForce;
-      aeroForce *= myPctReduction;
-
-      const wattsSaved = Math.abs(newtonsSaved * this._speed);
-      this._lastDraftUser = closestRider;
-      this.setLastWattsSaved(dtSeconds, wattsSaved, 1-myPct, this.getDistance() + closestRiderDist);
-    } else {
-      this.setLastWattsSaved(dtSeconds,0, 0, this.getDistance());
-      this._lastDraftUser = null;
     }
+    
 
     const slope = map.getSlopeAtDistance(this._position);
     this._lastSlopeWholePercent = slope*100;
