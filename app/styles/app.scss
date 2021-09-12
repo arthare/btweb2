@@ -12,10 +12,6 @@
 @import './create-race-widget.scss';
 @import './display-pre-race-rider.scss';
 @import './display-pre-race.scss';
-@import './battleship-map-cell.scss';
-@import './battleship-map.scss';
-@import './battleship.scss';
-@import './battleship-move-selector-bike-cursor.scss';
 @import './vertical-align.scss';
 @import './index.scss';
 @import './hrm-control.scss';
@@ -69,6 +65,9 @@ body {
       height: 100px;
     }
     
+    &.cheater {
+      top: 92.5vh;
+    }
     &.user-valid {
       top: 92.5vh;
     }

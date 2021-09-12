@@ -22,7 +22,6 @@ const Router = EmberRouter.extend({
             this.get('devices').dumpPwx('pacing-challenge-abandoned');
             break;
           case 'ride':
-          case 'battleship':
             console.log("they jumped away from the ride screen.  We probably need to disconnect");
             console.log("connections = ", this.get('connection'));
             this.get('connection').disconnect(`Quit-${transition.from.name}`);
@@ -50,7 +49,6 @@ Router.map(function() {
   this.route('set-up-join');
   this.route('test-hacks');
   this.route('strava-auth');
-  this.route('battleship');
   this.route('hrm-control');
   this.route('pacing-challenge');
   this.route('pacing-challenge-race', {path:'/pacing-challenge-race/:pct'});

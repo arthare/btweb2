@@ -366,6 +366,7 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
     let fillColor = 'lightpink';
     let borderColor = 'black';
     let sz = 2;
+    let deltaX = 0;
     let nameToDraw;
     let chatToDraw:null|{chat:string,tmWhen:number} = null;
     if(isLocal && isHuman) {
@@ -382,6 +383,7 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
     } else {
       // ai
       sz = 2;
+      deltaX = -0.25;
       fillColor = ai_color;
       borderColor = 'transparent';
       userImage = paintState.defaultAiImage;
@@ -402,7 +404,7 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
       const angleDegrees = -Math.atan(slope);
 
 
-      ctx.translate(dist-sz / 2,elev + sz/2);
+      ctx.translate(dist-(sz / 2) - deltaX,elev + sz/2);
       ctx.rotate(-angleDegrees);
       ctx.scale(1,-1);
 

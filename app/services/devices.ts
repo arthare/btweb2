@@ -85,6 +85,8 @@ export default class Devices extends Service.extend({
   users:UserInterface[] = [];
   deviceDescription:string = "No Device Connected";
   workoutSaver:WorkoutFileSaver|null = null;
+  _displayControlPoint:BluetoothRemoteGATTCharacteristic|null = null;
+  _displayWriteQueue:Promise<any> = Promise.resolve();
   ridersVersion = 0;
 
   goodUpdates = 0;
@@ -96,6 +98,10 @@ export default class Devices extends Service.extend({
   
   private _fnPowerFilter:(power:number)=>number = (num)=>{return num;};
 
+  setDisplayDevice(controlPoint:BluetoothRemoteGATTCharacteristic) {
+    this._displayControlPoint = controlPoint;
+    this._internalTick(new Date().getTime());
+  }
   setPowerFilter(fnPower:(power:number)=>number) {
     this._fnPowerFilter = fnPower;
   }
@@ -364,16 +370,101 @@ export default class Devices extends Service.extend({
     return this.users.find((user) => user.getId() === id) || null;
   }
 
+  _tmLastDisplayUpdate = 0;
+  _displayUpdates = 0;
+  _updateDisplay() {
+    if(this._displayControlPoint) {
+      const tmNow = new Date().getTime();
+      if(tmNow - this._tmLastDisplayUpdate > 1000) {
+        const cp = this._displayControlPoint;
+        const local = this.getLocalUser();
+        if(local) {
+          this._displayWriteQueue = this._displayWriteQueue.then(async () => {
+            this._displayUpdates++;
+
+            { // #1: current power
+              const charOut = new DataView(new ArrayBuffer(20));
+              const pwr = local.getLastPower();
+  
+              charOut.setUint8(0, 0x11); // SetUISlot
+              charOut.setUint8(1, 0x0); // slot zero, no flags
+              charOut.setUint8(2, 0); // UISLOT_DISPLAY::POWER
+              charOut.setUint8(3, 0); // params[0] = 0
+              charOut.setUint8(4, 0); // params[1] = 0
+              charOut.setFloat32(5, pwr, true); // their power!
+              await cp.writeValue(charOut);
+            }
+            { // #2: current distance
+              const charOut = new DataView(new ArrayBuffer(20));
+              const dist = local.getDistance();
+  
+              charOut.setUint8(0, 0x11); // SetUISlot
+              charOut.setUint8(1, 0x1); // slot one, no flags
+              charOut.setUint8(2, 5); // UISLOT_DISPLAY::DISTANCE
+              charOut.setUint8(3, 0); // params[0] = 0
+              charOut.setUint8(4, 0); // params[1] = 0
+              charOut.setFloat32(5, dist, true); // their distance!
+              await cp.writeValue(charOut);
+            }
+            { // #3: current speed
+              const charOut = new DataView(new ArrayBuffer(20));
+              const speed = local.getSpeed();
+  
+              charOut.setUint8(0, 0x11); // SetUISlot
+              charOut.setUint8(1, 0x2); // slot two, no flags
+              charOut.setUint8(2, 6); // UISLOT_DISPLAY::SPEED
+              charOut.setUint8(3, 0); // params[0] = 0
+              charOut.setUint8(4, 0); // params[1] = 0
+              charOut.setFloat32(5, speed, true); // their speed!
+              await cp.writeValue(charOut);
+            }
+            { // #4: current slope [text]
+              const charOut = new DataView(new ArrayBuffer(20));
+              const slope:number = local.getLastSlopeInWholePercent();
+              charOut.setUint8(0, 0x11); // SetUISlot
+
+              const flags = (this._displayUpdates % 10 === 0) ? 1 : 0;
+              const slot = 3;
+              const slotFlags = slot | (flags << 4);
+
+              let slopeText;
+              if(flags) {
+                slopeText = `Slope`;
+              } else {
+                slopeText = `${slope.toFixed(1)}%`;
+              }
+              charOut.setUint8(1, slotFlags); // slot three, no flags
+              charOut.setUint8(2, 4); // UISLOT_DISPLAY::TEXT
+              charOut.setUint8(3, 0); // params[0] = 0
+              charOut.setUint8(4, 0); // params[1] = 0
+              for(var x = 0;x < slopeText.length; x++) {
+                charOut.setUint8(5 + x, slopeText.charCodeAt(x)); // their speed!
+              }
+              charOut.setUint8(5 + slopeText.length, 0); // c-style string ender
+              await cp.writeValue(charOut);
+            }
+  
+          }).catch(() => {
+            // whatevs
+            console.log("display send failed.  that's fine");
+          })
+        }
+        this._tmLastDisplayUpdate = tmNow;
+      }
+    }
+  }
+
   tmLastInternalTick = 0;
-  nextTickHandle = 0;
+  nextTickHandle:any = 0;
   _internalTick(tmNow:number) {
-    
-    this.nextTickHandle = 0;
-    
+    if(this._displayControlPoint) {
+      this._updateDisplay();
+    }
     this.tmLastInternalTick = tmNow;
 
     if(!this.nextTickHandle) {
-      setTimeout(() => {
+      this.nextTickHandle = setTimeout(() => {
+        this.nextTickHandle = 0;
         this._internalTick(new Date().getTime());
       }, 100);
     }

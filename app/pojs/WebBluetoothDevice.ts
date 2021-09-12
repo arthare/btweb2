@@ -472,8 +472,14 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     const maxSlope = 10; // if we ever peg the kickr at max slope, you basically can't turn the pedals
     let slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
     const slopeShiftRate = 0.5;
+
+    // bounds!
+    slopeInWholePercent = Math.min(slopeInWholePercent, maxSlope);
+    slopeInWholePercent = Math.max(slopeInWholePercent, minSlope);
+
     slopeInWholePercent = Math.max(slopeInWholePercent, this._lastSlopeSent - slopeShiftRate);
     slopeInWholePercent = Math.min(slopeInWholePercent, this._lastSlopeSent + slopeShiftRate);
+    
     this._lastSlopeSent = slopeInWholePercent;
 
 
@@ -493,9 +499,11 @@ export class BluetoothKickrDevice extends BluetoothCpsDevice {
     uint16 = Math.max(this._uphillValue, uint16);
     uint16 = Math.min(this._downhillValue, uint16);
 
+    const buf:Buffer = Buffer.alloc(2);
+    buf.writeUInt16LE(uint16, 0);
+
     console.log("sending ", uint16, pctUphillClamped);
-    charOut.setUint8(1, uint16 & 0xff);
-    charOut.setUint8(2, (uint16>>8) & 0xff);
+    charOut.setUint16(1, buf.readUInt16LE(0), true);
 
     return writeToCharacteristic(this._gattDevice, 'cycling_power', serviceUuids.kickrWriteCharacteristic, charOut).then(() => {
       return true;

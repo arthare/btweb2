@@ -9,20 +9,21 @@
       <i class="fas fa-arrow-right green"></i>
     </div>
     <div class="application__bluetooth-warning--buttons">
-      {{#if hasPlugins}}
-        <button class="application__bluetooth-warning--button" {{action 'connectPlugin'}}>
-          <i class="fas fa-plug"></i>
-        </button>
-      {{/if}}
       <button class="application__bluetooth-warning--button" {{action 'connectHrm'}}>
         <i class="fas fa-heart"></i>
       </button>
       <button class="application__bluetooth-warning--button" {{action 'connectDevice'}}>
         <i class="fas fa-bolt"></i>
       </button>
+
+      {{#if isDebug}}
+        <button class="application__bluetooth-warning--button" {{action 'connectDh'}}>
+          <i class="fas fa-desktop"></i>
+        </button>
+      {{/if}}
     </div>
   </div>
-  <div class="application__user-status {{if localUser 'user-valid'}}">
+  <div class="application__user-status {{if localUser 'user-valid'}} {{if showCheater 'cheater'}}">
     {{#if showCheater}}
       <div class="application__user-status--cheater"></div>
     {{/if}}
@@ -33,9 +34,6 @@
     {{/if}}
     <a href='#' {{action 'connectDevice'}}>Power/Trainer</a> 
     <a href='#' {{action 'connectHrm'}}>HRM</a> 
-    {{#if hasPlugins}}
-      <a href='#' {{action 'connectPlugin'}}>Plugin</a>
-    {{/if}}
     <br />
 
 

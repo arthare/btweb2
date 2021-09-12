@@ -3,13 +3,11 @@ import { JoulesUsedClass, User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
 import { RideMap, RideMapElevationOnly, RideMapPartial } from "./RideMap";
 import { ServerGame } from "./ServerGame";
-import { BattleshipGameTurn, BattleshipApplyMove } from "./battleship-game";
 import { RideMapHandicap } from "./RideMapHandicap";
 
 export enum PORTS {
   TOURJS_WEBSOCKET_PORT = 8080,
   GENERAL_HTTP_PORT = 8081,
-  BATTLESHIP_WEBSOCKET_PORT = 8082,
 }
 
 
@@ -22,7 +20,6 @@ export enum BasicMessageType {
   S2CNameUpdate,
   S2CFinishUpdate,
   S2CImageUpdate,
-  BattleshipMessage,
   S2CClientChat,
   ClientToServerChat,
 }
@@ -457,6 +454,7 @@ export default class ConnectionManager {
       
 
       // ok, we've got our listener set up
+      console.log("image size is ", user.getImage()?.length);
       const connect:ClientConnectionRequest = {
         riderName: user.getName(),
         imageBase64: user.getImage(),

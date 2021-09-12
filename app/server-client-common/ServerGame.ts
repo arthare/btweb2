@@ -1,4 +1,4 @@
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from "./User";
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface, DistanceHistoryElement } from "./User";
 import { UserProvider, RaceState } from "./RaceState";
 import { ClientConnectionRequest, CurrentRaceState, S2CFinishUpdate } from "./communication";
 import { RideMap } from "./RideMap";
@@ -6,6 +6,10 @@ import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
 import fs from 'fs';
 import { SpanAverage } from "./SpanAverage";
+import { brainPath, takeTrainingSnapshot, TrainingSnapshot, trainingSnapshotToAIInput } from "./ServerAISnapshots";
+import FeedForwardNeuralNetworks from 'ml-fnn';
+
+
 
 export class ServerUser extends User {
   _tmLastNameSent:number;
@@ -15,14 +19,17 @@ export class ServerUser extends User {
 
   _spanAverages:Map<number,SpanAverage> = new Map<number, SpanAverage>();
   _wsConnection:WebSocket|null;
+  _raceState:RaceState;
 
-  constructor(name:string, massKg:number, handicap:number, typeFlags:number, wsConnection:WebSocket|null) {
+
+  constructor(name:string, massKg:number, handicap:number, typeFlags:number, wsConnection:WebSocket|null, raceState:RaceState) {
     super(name, massKg, handicap, typeFlags);
 
     this._tmLastFinishUpdate = -1;
     this._tmLastNameSent = -1;
     this._tmLastImageUpdate = -1;
     this._wsConnection = wsConnection;
+    this._raceState = raceState;
 
     const minutesForSpans = [5,10,20,30,45,60];
     minutesForSpans.forEach((minutes) => {
@@ -62,7 +69,27 @@ export class ServerUser extends User {
     this._position = where;
   }
 
+  _pendingTrainingSnapshot:TrainingSnapshot|null = null;
+  _tmTrainingSnapshot:number = 0;
+  private _takeTrainingSnapshot(tmNow:number) {
+
+
+    if(tmNow - this._tmTrainingSnapshot > 1500) {
+      
+      if(this._pendingTrainingSnapshot) {
+        // we've got an old training snapshot that needs our current power filled in, and then needs to get dumped to disk
+        this._pendingTrainingSnapshot.powerNextSecond = this.getLastPower() / this.getHandicap();
+        fs.appendFile(brainPath(`${this.getName()}-${this.getBigImageMd5()}.training`), JSON.stringify(this._pendingTrainingSnapshot, undefined, '\t') + "\n$$\n", {}, ()=>{});
+        this._pendingTrainingSnapshot = null;
+      }
+      
+      this._pendingTrainingSnapshot = takeTrainingSnapshot(tmNow, this, this._raceState);
+      this._tmTrainingSnapshot = tmNow;
+    }
+    
+  }
   
+
   public notifyPower(tmNow:number, watts:number):void {
     super.notifyPower(tmNow, watts);
 
@@ -71,7 +98,9 @@ export class ServerUser extends User {
       this._spanAverages.forEach((span, minutes) => {
         span.add(tmNow, watts);
       });
-  
+
+      this._takeTrainingSnapshot(tmNow);
+
       const span5:SpanAverage|undefined = this._spanAverages.get(5);
       const span10:SpanAverage|undefined = this._spanAverages.get(10);
       const span20:SpanAverage|undefined = this._spanAverages.get(20);
@@ -162,14 +191,14 @@ export class ServerUserProvider implements UserProvider {
   getUser(id:number):ServerUser|null {
     return this.users.find((user) => user.getId() === id) || null;
   }
-  addUser(ccr:ClientConnectionRequest, wsConnection:WebSocket|null, userTypeFlags?:UserTypeFlags):number {
+  addUser(ccr:ClientConnectionRequest, wsConnection:WebSocket|null, userTypeFlags:UserTypeFlags, raceState:RaceState):number {
 
     if(!userTypeFlags) {
       userTypeFlags = 0;
     }
 
     let newId = userIdCounter++;
-    const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags, wsConnection);
+    const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags, wsConnection, raceState);
     if(user.getUserType() & UserTypeFlags.Ai) {
       assert2(wsConnection === null);
     } else {
@@ -191,11 +220,46 @@ export class ServerUserProvider implements UserProvider {
 
 interface AIBrain {
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number;
+  isNN():boolean;
+  getPowerNN(handicap:number, data:TrainingSnapshot):number;
   getName(handicap:number):string;
 }
+
+class AINNBrain implements AIBrain {
+
+  _nn:FeedForwardNeuralNetworks;
+  _name:string;
+  _strength:number;
+  constructor(strength:number, brain:string) {
+    const model = JSON.parse(fs.readFileSync(brainPath(brain), 'utf8'));
+    this._nn = FeedForwardNeuralNetworks.load(model);
+    this._strength = strength;
+
+    this._name = brain.split('-')[0];
+  }
+
+  getPower(timeSeconds: number, handicap: number, dist: number, mapLength: number, slopeWholePercent: number): number {
+    throw new Error("Don't call this for NN AI");
+  }
+  isNN() {return true;}
+  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+    const numbers = trainingSnapshotToAIInput(data);
+    const pctFtp = this._nn.predict([numbers]);
+    return handicap * pctFtp[0];
+  }
+  getName(handicap: number): string {
+    return `${this._name}Bot ${(this._strength*100).toFixed(0)}%`;
+  }
+  
+}
+
 class AIBoringBrain implements AIBrain {
   _nextChange = 0;
   _currentOutput = 0;
+  _strength = 0;
+  constructor(strength:number) {
+    this._strength = strength;
+  }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     if(timeSeconds > this._nextChange || this._currentOutput <= 0) {
       this._nextChange = timeSeconds + Math.random()*15 + 5;
@@ -204,76 +268,106 @@ class AIBoringBrain implements AIBrain {
       this._currentOutput = Math.max(0, handicap + Math.random()*spread*2 - spread);
     }
 
-    return this._currentOutput;
+    return this._strength * this._currentOutput;
+  }
+  isNN() {return false;}
+  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+    throw new Error("Not implemented");
   }
   getName(handicap:number):string {
-    return `Boring ${(handicap/3).toFixed(0)}%`;
+    return `Boring ${(this._strength*100).toFixed(0)}%`;
   }
 }
 class AISineBrain implements AIBrain {
   private _period:number;
   private _magnitude:number; // as a fraction of our handicap
-  constructor() {
+  private _strength = 0;
+  constructor(strength:number) {
     this._period = Math.random()*30 + 30;
     this._magnitude = Math.random()*0.4;
+    this._strength = strength;
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     const mod = handicap * this._magnitude * Math.sin(timeSeconds * 2 * Math.PI / this._period);
-    return Math.max(0, handicap + mod);
+    return this._strength * Math.max(0, handicap + mod);
+  }
+  isNN() {return false;}
+  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+    throw new Error("Not implemented");
   }
   getName(handicap:number):string {
-    return `Sine ${(handicap/3).toFixed(0)}%`;
+    return `Sine ${(this._strength*100).toFixed(0)}%`;
   }
 }
 class AIHillBrain implements AIBrain {
   private _magnitude:number; // as a fraction of our handicap
-  constructor() {
+  private _strength = 0;
+  constructor(strength:number) {
     this._magnitude = 0.9 + Math.random()*0.2;
+    this._strength = strength;
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     const modSlope = this._magnitude*slopeWholePercent / 100.0 + 1.0;
-    return Math.max(0, handicap * modSlope);
+    return this._strength * Math.max(0, handicap * modSlope);
+  }
+  isNN() {return false;}
+  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+    throw new Error("Not implemented");
   }
   getName(handicap:number):string {
-    return `Hill ${(handicap/3).toFixed(0)}%`;
+    return `Hill ${(this._strength*100).toFixed(0)}%`;
   }
 }
 class DumbSavey implements AIBrain {
   private _fractionOfLengthToSave = 0.95;
   private _fractionToSaveAt = 0.98;
-  constructor() {
+  private _strength = 0;
+  constructor(strength:number) {
     this._fractionOfLengthToSave = 0.9 + Math.random() * 0.075;
     this._fractionToSaveAt = 0.95 + Math.random() * 0.04;
+    this._strength = strength;
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
 
     const myPctOfMap = dist / mapLength;
     if(myPctOfMap < this._fractionOfLengthToSave) {
-      return handicap * this._fractionToSaveAt;
+      return this._strength * handicap * this._fractionToSaveAt;
     } else {
       const fractionOfLengthToChargeAt = 1 - this._fractionOfLengthToSave;
       const chargeEffort = (1 - (this._fractionOfLengthToSave*this._fractionToSaveAt)) / fractionOfLengthToChargeAt;
       return chargeEffort * handicap;
     }
   }
+  isNN() {return false;}
+  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+    throw new Error("Not implemented");
+  }
   getName(handicap:number):string {
-    return `Savey ${(handicap/3).toFixed(0)}%`;
+    return `Savey ${(this._strength*100).toFixed(0)}%`;
   }
 }
 
-function getNextAIBrain():AIBrain {
-  const nAis = 4;
+function getNextAIBrain(strength:number, brains:string[]):AIBrain {
+  const nAis = 5;
   const val = Math.floor(Math.random() * nAis);
   switch(val) {
     default:
     case 0:
-      return new AIBoringBrain();
+      return new AIBoringBrain(strength);
     case 1:
-      return new AISineBrain();
+      return new AISineBrain(strength);
     case 2:
-      return new AIHillBrain();
+      return new AIHillBrain(strength);
     case 3:
-      return new DumbSavey();
+      return new DumbSavey(strength);
+    case 4:
+      try {
+        const ixBrain = Math.floor(Math.random() * brains.length);
+        return new AINNBrain(strength, brains[ixBrain]);
+      } catch(e) {
+        return new DumbSavey(strength);
+      }
+      
   }
 }
 
@@ -287,18 +381,20 @@ export class ServerGame {
     const expectedTimeHours = map.getLength() / 40000;
     const aiStrengthBoost = 0.89 * Math.pow(expectedTimeHours, -0.155831);
 
+    const brains = fs.readdirSync(brainPath('')).filter((path) => path.endsWith('.training.brain'));
+
     for(var x = 0;x < cAis; x++) {
-      const aiStrength = Math.random()*75 + 225;
-      const aiBrain = getNextAIBrain();
+      const aiStrength = Math.random()*0.25 + 0.75;
+      const aiBrain = getNextAIBrain(aiStrength, brains);
 
       const aiId = this.userProvider.addUser({
         riderName:aiBrain.getName(aiStrength),
         accountId:"-1",
-        riderHandicap: aiStrength*aiStrengthBoost,
+        riderHandicap: 300*aiStrengthBoost,
         gameId:gameId,
         imageBase64: null,
         bigImageMd5: null,
-      }, null, UserTypeFlags.Ai);
+      }, null, UserTypeFlags.Ai, this.raceState);
 
       this._aiBrains.set(aiId, aiBrain);
     }
@@ -344,7 +440,7 @@ export class ServerGame {
   }
   public addUser(tmNow:number, ccr:ClientConnectionRequest, wsConnection:WebSocket|null):number {
     // they've added a user.  So we want to perhaps manage the game start to tip it towards starting soon.
-    let newId = this.userProvider.addUser(ccr, wsConnection);
+    let newId = this.userProvider.addUser(ccr, wsConnection, 0, this.raceState);
 
     const user = this.userProvider.getUser(newId);
     if(user && this._lastRaceStateMode === CurrentRaceState.PostRace) {
@@ -395,9 +491,18 @@ export class ServerGame {
           // let's see if this user has a brain...
           const aiBrain = this._aiBrains.get(user.getId());
           if(aiBrain) {
-            const map = this.raceState.getMap();
-            const dist = user.getDistance();
-            power = aiBrain.getPower(tmNow / 1000.0, user.getHandicap(), dist, map.getLength(), map.getSlopeAtDistance(dist)*100);
+            if(aiBrain.isNN()) {
+              const data = takeTrainingSnapshot(tmNow, user as User, this.raceState);
+              if(data) {
+                power = aiBrain.getPowerNN(user.getHandicap(), data);
+              } else {
+                power = user.getHandicap() * 0.9;
+              }
+            } else {
+              const map = this.raceState.getMap();
+              const dist = user.getDistance();
+              power = aiBrain.getPower(tmNow / 1000.0, user.getHandicap(), dist, map.getLength(), map.getSlopeAtDistance(dist)*100);
+            }
           }
           user.notifyPower(tmNow, Math.max(0, power));
         }

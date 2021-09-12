@@ -2,6 +2,8 @@ export const serviceUuids = {
   ftms: '00001826-0000-1000-8000-00805f9b34fb',
   cps: '00001818-0000-1000-8000-00805f9b34fb',
   kickrService: 'a026ee01-0a7d-4ab3-97fa-f1500f9feb8b',
+  display4iiii: '9891eaf4-5456-11eb-ae93-0242ac130002',
+  display4iiiiControlPoint: '2ebe05f1-20f5-ec8e-374e-fc1900003c16',
   kickrWriteCharacteristic:   'a026e005-0a7d-4ab3-97fa-f1500f9feb8b',
   hrm: '0000180d-0000-1000-8000-00805f9b34fb',
 };

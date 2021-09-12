@@ -62,11 +62,13 @@ export default class Application extends Controller.extend({
   bluetoothWarning: false,
   canDoBluetooth: false,
   frame: 0,
-  showCheater: false,
-  hasPlugins: false,
+  showCheater: true,
+  isDebug: window.location.hostname === 'localhost',
   
   observeGoodUpdates: Ember.observer('devices.goodUpdates', function(this:Application) {
     const deviceWrite = document.querySelector('.application__device-write');
+
+
     if(deviceWrite) {
       deviceWrite.classList.add('good');
       setTimeout(() => {
@@ -77,6 +79,11 @@ export default class Application extends Controller.extend({
 
 
   actions: {
+    connectDh() {
+      getDeviceFactory().findDisplay().then((device:BluetoothRemoteGATTCharacteristic) => {
+        this.devices.setDisplayDevice(device);
+      });
+    },
     connectDevice() {
       if((window.location.search && window.location.search.includes("fake"))) {
         const device = g_fakeDevice = new FakeDevice();
@@ -103,11 +110,6 @@ export default class Application extends Controller.extend({
         });
       }
 
-    },
-    connectPlugin() {
-      getDeviceFactory().findPowermeter(true).then((device:ConnectedDeviceInterface) => {
-        this.devices.setLocalUserDevice(device, DeviceFlags.AllButHrm);
-      })
     },
     ftmsAdjust(amt:number) {
       this.devices.ftmsAdjust(amt);
@@ -144,8 +146,8 @@ export default class Application extends Controller.extend({
   }
   start() {
 
-    if(window.location.hostname === 'localhost') {
-      this.set('showCheater', false);
+    if(window.location.hostname === 'localhost' || window.location.search.includes('?fake')) {
+      this.set('showCheater', true);
 
       Ember.run.later('afterRender', () => {
         const cheater:HTMLDivElement|null = document.querySelector('.application__user-status--cheater');

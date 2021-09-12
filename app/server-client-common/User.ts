@@ -39,6 +39,7 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
   private _id:number = -1; // assigned by the server.  Positive when set
   private _tmFinish:number = -1;
   private _tmLastPacket:number = -1;
+  private _powerHistory:DistanceHistoryElement[] = [];
 
   private _lastHrm = 0;
   private _tmLastHrm = 0;
@@ -47,9 +48,26 @@ class UserDataRecorder implements CadenceRecipient, HrmRecipient {
     return tmNow - this._tmLastPower < 5000;
   }
 
+  public getPowerAverageForLastNSeconds(tmNow:number, seconds:number):number {
+    let sum = 0;
+    let count = 0;
+    const tmFirst = tmNow - seconds*1000;
+    
+    for(var x = this._powerHistory.length - 1; x >= 0; x--) {
+      if(this._powerHistory[x].tm < tmFirst) {
+        // done adding!
+        break;
+      }
+
+      sum += this._powerHistory[x].distance;
+      count++;
+    }
+    return sum / count;
+  }
   public notifyPower(tmNow:number, watts:number):void {
     this._lastPower = watts;
     this._tmLastPower = tmNow;
+    this._powerHistory.push({tm:tmNow, distance:watts});
   }
   public notifyCadence(tmNow:number, cadence:number):void {
 
@@ -499,7 +517,6 @@ export class User extends UserDataRecorder implements SlopeSource, UserInterface
 
   getDisplay(raceState:RaceState|null):UserDisplay {
     const map = raceState && raceState.getMap() || null;
-
     let classes = [];
     if(this._typeFlags & UserTypeFlags.Local) {
       classes.push("local");
@@ -513,11 +530,12 @@ export class User extends UserDataRecorder implements SlopeSource, UserInterface
       classes.push("remote");
     }
 
+    const displayDist = map ? map.getLength() - this._position : this._position;
     const tmNow = new Date().getTime();
     return {
       name: this._name,
       lastPower: this.getLastPower().toFixed(0) + 'W',
-      distance: formatDisplayDistance(this._position),
+      distance: formatDisplayDistance(displayDist),
       speed: (this._speed*3.6).toFixed(1) + 'km/h',
       slope: (map && (map.getSlopeAtDistance(this._position)*100).toFixed(1) + '%') || '',
       elevation: (map && map.getElevationAtDistance(this._position).toFixed(0) + 'm') || '',

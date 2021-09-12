@@ -53,7 +53,7 @@ function handleFileSelect(this:UserSetUp, evt:any) {
   }
 }
 
-function resizeImage(originalBase64:string, maxWidth:number, maxHeight:number):Promise<string> {
+export function resizeImage(originalBase64:string, maxWidth:number, maxHeight:number):Promise<string> {
 
   return new Promise((resolve) => {
     var img = new Image;
@@ -98,6 +98,39 @@ function resizeImage(originalBase64:string, maxWidth:number, maxHeight:number):P
 
 }
 
+export function storeFromVirginImage(base64:string, recursed:boolean, displayImage:HTMLImageElement|null):Promise<string> {
+  
+  if(!recursed) {
+    console.log("setting ", base64.substr(0, 100), " with length ", base64.length, "and md5 ", md5(base64), " to localstorage");
+    localStorage.setItem(USERSETUP_KEY_IMAGE, base64);
+  }
+  
+
+  const img:HTMLImageElement = document.createElement('img');
+  return new Promise((resolve, reject) => {
+    img.onload = () => {
+      // ok, we've got the image
+      if(img.width <= 256 && img.height <= 256) {
+        // this image is fine!
+        if(displayImage) {
+          displayImage.src = base64;
+        } else {
+          // lol what
+        }
+        return resolve(base64);
+      } else {
+        // we need to resize this sucker
+        
+        return resizeImage(base64, 256, 256).then((resizedBase64) => {
+          return storeFromVirginImage(resizedBase64, true, displayImage);
+        }).then(resolve, reject);
+      }
+    }
+    img.src = base64;
+
+  })
+}
+
 export default class UserSetUp extends Component.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service('devices'),
@@ -136,7 +169,7 @@ export default class UserSetUp extends Component.extend({
 
     const lastImage = window.localStorage.getItem(USERSETUP_KEY_IMAGE);
     if(lastImage) {
-      this.setImage(lastImage, false);
+      this.setImage(lastImage);
     }
 
     const lastName = window.localStorage.getItem(USERSETUP_KEY_NAME);
@@ -155,34 +188,10 @@ export default class UserSetUp extends Component.extend({
     }
   }
 
-  setImage(base64:string, recursed:boolean) {
+  setImage(base64:string) {
 
-    if(!recursed) {
-      console.log("setting ", base64.substr(0, 100), " with length ", base64.length, "and md5 ", md5(base64), " to localstorage");
-      localStorage.setItem(USERSETUP_KEY_IMAGE, base64);
-    }
-    
-
-    const img:HTMLImageElement = document.createElement('img');
-    img.onload = () => {
-      // ok, we've got the image
-      if(img.width <= 64 && img.height <= 64) {
-        // this image is fine!
-        const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
-        if(displayImage) {
-          displayImage.src = base64;
-        } else {
-          // lol what
-        }
-      } else {
-        // we need to resize this sucker
-        
-        return resizeImage(base64, 64, 64).then((resizedBase64) => {
-          this.setImage(resizedBase64, true);
-        })
-      }
-    }
-    img.src = base64;
+    const displayImage:HTMLImageElement|null = this.element.querySelector('.user-set-up__image');
+    storeFromVirginImage(base64, false, displayImage);
   }
 
   // normal class body definition here

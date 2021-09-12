@@ -5,7 +5,10 @@
     "target": "es6",
     "moduleResolution": "node",
     "sourceMap": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    // skip error: Interface 'WebGL2RenderingContext' incorrectly extends interface 'WebGL2RenderingContextBase'.
+    // https://github.com/tensorflow/tfjs/issues/4201
+    "skipLibCheck": true
   },
   "files": [
     "./index.ts",

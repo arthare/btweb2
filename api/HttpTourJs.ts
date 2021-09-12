@@ -10,6 +10,7 @@ import { assert2 } from '../app/server-client-common/Utils';
 import { setCorsHeaders, postStartup } from './HttpUtils';
 import fs from 'fs';
 import md5 from 'md5';
+import { v4 as uuidv4 } from 'uuid';
 
 
 export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame>) {

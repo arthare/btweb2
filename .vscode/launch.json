@@ -22,7 +22,27 @@
             "group": "build",
         },
         "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
-    }, {
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/api",
+      "name": "Bt-web2 NeuralNetworkTrain",
+      "skipFiles": [
+          "<node_internals>/**"
+      ],
+      "args": ["neural"],
+      "program": "${workspaceFolder}/api/index.ts",
+      "preLaunchTask":{
+          "type": "typescript",
+          "tsconfig": "api/tsconfig.json",
+          "problemMatcher": [
+              "$tsc"
+          ],
+          "group": "build",
+      },
+      "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
+  }, {
         "type": "node",
         "request": "launch",
         "cwd": "${workspaceFolder}/api",

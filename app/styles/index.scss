@@ -34,10 +34,6 @@
       opacity: 0.5;
     }
 
-    &.battleship {
-      @include background-cover();
-      background-image: url('battleship.jpg');
-    }
     &.race {
       @include background-cover();
       background-image: url('race.jpg');
