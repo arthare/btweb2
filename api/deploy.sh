@@ -3,7 +3,8 @@ tsc
 SIGNIN=art@tourjs.ca
 APIHOSTDIR=/home/art/tourjs-api
 
-ssh $SIGNIN "mkdir -p $APIHOSTDIR"
+ssh $SIGNIN "mkdir -p $APIHOSTDIR && mkdir -p $APIHOSTDIR/brains"
+scp -r ./deploy-brains/* $SIGNIN:$APIHOSTDIR/brains/
 scp -r dist/* $SIGNIN:$APIHOSTDIR
 scp pm2.json $SIGNIN:$APIHOSTDIR/pm2.json
 scp ssl-config.json $SIGNIN:$APIHOSTDIR/ssl-config.json

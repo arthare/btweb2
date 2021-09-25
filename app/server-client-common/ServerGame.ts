@@ -6,8 +6,10 @@ import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
 import fs from 'fs';
 import { SpanAverage } from "./SpanAverage";
-import { brainPath, takeTrainingSnapshot, TrainingSnapshot, trainingSnapshotToAIInput } from "./ServerAISnapshots";
-import FeedForwardNeuralNetworks from 'ml-fnn';
+import { brainPath, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshot, trainingSnapshotToAIInput } from "./ServerAISnapshots";
+import * as tf from '@tensorflow/tfjs-node';
+import { LayersModel, Sequential, Tensor, Tensor2D } from '@tensorflow/tfjs-node';
+
 
 
 
@@ -218,6 +220,51 @@ export class ServerUserProvider implements UserProvider {
   users:ServerUser[];
 }
 
+export function predictFromRawTrainingData(model:LayersModel, norms:NormData, data:TrainingSnapshot):number {
+  const numbers = makeTensor([new TrainingDataPrepped(data)._myData.map((dt) => dt.data)]);
+  const normalizedInputs = normalizeData(numbers, norms.inputMin, norms.inputMax);
+  const predictions = model.predict(normalizedInputs);
+  const fixedPreds = unnormalizeData(predictions, norms.labelMin, norms.labelMax);
+  return fixedPreds.dataSync()[0];
+}
+export class NormData {
+  inputMin:Tensor;
+  inputMax:Tensor;
+  labelMin:Tensor;
+  labelMax:Tensor;
+  inputSpans:Float32Array;
+  labelSpans:Float32Array;
+
+  constructor(inputs:Tensor2D, labels:Tensor2D) {
+    
+    this.inputMin = inputs.min(0);
+    this.inputMax = inputs.max(0);
+    this.labelMin =labels.min(0);
+    this.labelMax = labels.max(0);
+
+    this.inputSpans = this.inputMax.sub(this.inputMin).dataSync() as Float32Array;
+    this.labelSpans = this.labelMax.sub(this.labelMin).dataSync() as Float32Array;
+  }
+
+  toJSON() {
+    return {
+      inputMin: this.inputMin.dataSync(),
+      inputMax: this.inputMax.dataSync(),
+      labelMin: this.labelMin.dataSync(),
+      labelMax: this.labelMax.dataSync(),
+    }
+  }
+}
+export function unnormalizeData(data:any, min:Tensor, max:Tensor) {
+  return data.mul(max.sub(min)).add(min);
+}
+export function normalizeData(data:Tensor2D, min:Tensor, max:Tensor) {
+  return  data.sub(min).div(max.sub(min));
+}
+export function makeTensor(arr:number[][]):Tensor2D {
+  return tf.tensor2d(arr, [arr.length, arr[0].length]);
+}
+
 interface AIBrain {
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number;
   isNN():boolean;
@@ -226,26 +273,39 @@ interface AIBrain {
 }
 
 class AINNBrain implements AIBrain {
-
-  _nn:FeedForwardNeuralNetworks;
+  _model:LayersModel|null = null;
   _name:string;
   _strength:number;
+  _norms:any;
   constructor(strength:number, brain:string) {
-    const model = JSON.parse(fs.readFileSync(brainPath(brain), 'utf8'));
-    this._nn = FeedForwardNeuralNetworks.load(model);
+
+    const totalPath = brainPath(brain);
+    tf.loadLayersModel(`file://${totalPath}/model.json`).then((model:LayersModel) => {
+      const rawNorms = JSON.parse(fs.readFileSync(totalPath  + '/norm.json', 'utf8'));
+      this._norms = {};
+      for(var key in rawNorms) {
+        rawNorms[key] = Object.values(rawNorms[key]);
+      }
+      this._norms = new NormData(makeTensor([rawNorms.inputMax, rawNorms.inputMin]), makeTensor([rawNorms.labelMax, rawNorms.labelMin]));
+      this._model = model;
+    })
     this._strength = strength;
 
     this._name = brain.split('-')[0];
   }
 
   getPower(timeSeconds: number, handicap: number, dist: number, mapLength: number, slopeWholePercent: number): number {
-    throw new Error("Don't call this for NN AI");
+
+    return this._strength * handicap;
   }
-  isNN() {return true;}
+  isNN() {return !!this._model;}
   getPowerNN(handicap:number, data:TrainingSnapshot):number {
-    const numbers = trainingSnapshotToAIInput(data);
-    const pctFtp = this._nn.predict([numbers]);
-    return handicap * pctFtp[0];
+    if(this._model) {
+      const ret = handicap * this._strength * predictFromRawTrainingData(this._model, this._norms, data);
+      console.log(`${this.getName(handicap)} did ${ret.toFixed(2)}`)
+      return ret;
+    }
+    return this.getPower(0, handicap, data.distanceInRace, data.distanceInRace + data.distanceToFinish, data.avgSlopeCurrentUphill);
   }
   getName(handicap: number): string {
     return `${this._name}Bot ${(this._strength*100).toFixed(0)}%`;
@@ -381,7 +441,8 @@ export class ServerGame {
     const expectedTimeHours = map.getLength() / 40000;
     const aiStrengthBoost = 0.89 * Math.pow(expectedTimeHours, -0.155831);
 
-    const brains = fs.readdirSync(brainPath('')).filter((path) => path.endsWith('.training.brain'));
+    const possibleBrains = fs.readdirSync(brainPath(''));
+    const brains = possibleBrains.filter((path) => fs.statSync(brainPath(path)).isDirectory() && path.endsWith('.brain'));
 
     for(var x = 0;x < cAis; x++) {
       const aiStrength = Math.random()*0.25 + 0.75;

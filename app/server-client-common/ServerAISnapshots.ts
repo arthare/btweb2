@@ -44,6 +44,58 @@ export interface TrainingSnapshot {
   powerNextSecond:number;
 }
 
+export interface DataWithName {
+  name:string;
+  data:number;
+}
+
+export class TrainingDataPrepped {
+  _myData:DataWithName[];
+  constructor(snap:TrainingSnapshot) {
+    // we need to pre-normalize a bunch of these, as well as filter out crap that doesn't matter
+    let temp:any = {...snap};
+
+    delete temp.tm; // this is not helpful
+    delete temp.powerNextSecond; // this is label data
+    delete temp.rankInGroup; // absolute ranks aren't that important, we will convert this into a percentage of the group size
+    delete temp.distanceInRace; // absolute meters aren't helpful when we're talking about a wide variety of possible lengths for a given player
+    delete temp.distanceToFinish; // absolute meters aren't helpful when we're talking about a wide variety of possible lengths for a given player
+
+    delete temp.gapToHumanAhead;
+    delete temp.gapToHumanBehind;
+    delete temp.closeRateHumanAhead;
+    delete temp.closeRateHumanBehind;
+    
+    // in particular, the "distance to finish", "distance in race" are going to be crap.
+    // if Art does a 5km race and a 50km race in the same training set, then the 5km race's "distance" values will be 1/10th what they should be after normalization.
+    const distancesPassed = [
+      500,
+      1000,
+      1500,
+      2500,
+      3500,
+      4500,
+      5000,
+    ];
+    
+    distancesPassed.forEach((dist) => {
+      temp[`distance-passed-${dist}`] = snap.distanceInRace > dist ? 1 : 0;
+      temp[`distanceleft-passed-${dist}`] = snap.distanceToFinish < dist ? 1 : 0;
+    });
+    
+    temp.rankInGroup = snap.rankInGroup / snap.groupSize; // normalizing this so that it's not compared against someone that rode in a group of 30
+
+    this._myData = [];
+    for(var key in temp) {
+      if(typeof temp[key] === 'number') {
+        this._myData.push({data:temp[key], name: key});
+      } else if(Array.isArray(temp[key])) {
+        debugger;
+      }
+    }
+  }
+}
+
 function getMetersLeftToClimb(currentDist:number, map:RideMap, dir:number) {
   let lastElev = dir*map.getElevationAtDistance(currentDist);
 
@@ -236,11 +288,11 @@ export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceStat
   ret.powerNextSecond = -1; // this needs to get filled in on our next cycle
   return ret;
 }
-export function trainingSnapshotToAIInput(data:TrainingSnapshot|any):number[] {
-  const obj = {...data};
-  delete obj.tm;
-  delete obj.powerNextSecond;
-  return Object.values(obj);
+export function trainingSnapshotToAILabel(data:TrainingSnapshot|any):number[] {
+  return [data.powerNextSecond];
+}
+export function trainingSnapshotToAIInput(data:TrainingSnapshot|any):DataWithName[] {
+  return new TrainingDataPrepped(data)._myData;
 }
 
 export function brainPath(brain:string):string {

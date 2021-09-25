@@ -1,0 +1,29 @@
+How to train a brain:
+-Grab the .training file from the game server - it will record samples for every human player
+-Run `node index.js neural` - the neural CLI arg will trigger it to run index-nntrain
+-index-nntrain will run continuously, saving a new .brain folder every time it gets a better-trained brain.
+
+What is a .brain?
+-Google's representation of a Tensorflow LayersModel neural network
+-Note: It also includes a norms.json, which includes the normalization parameters that were used so that we know how to feed things into and convert things back out of the brain's space.
+
+
+How to change our training data:
+1) Changing what gets captured on the server: Modify the `TrainingSnapshot` interface - TrainingSnapshot represents the raw data from the server, and ideally needs to get captured in a hurry without slowing down the server.
+1.1) You will also want to change `takeTrainingSnapshot` function in ServerAISnapshots.ts - this does the actual analysis of the game state and produces the snapshot
+
+
+How to change the preparation of the training data:
+1) Change the TrainingDataPrepped class - this class takes the raw data and converts it into (possibly?) better-prepared data, nearly ready to feed into the model.
+1.1) What might you change?  Some variables will normalize better if we prepare them first.  For example, a "distance in race" value isn't that useful, since you might have data from a 1km sprint and 100km ride in the same training data.  But a "percentage of race completed" or "has completed 1km" might be useful to feed in, and can be made out of the "distance in race" value.
+
+
+How to take a TrainingSnapshot and turn it straight into unnormalized but training-ready data?
+1) trainingSnapshotToAIInput
+
+How to take a TrainingSnapshot and turn it straight into unnormalized but training-ready labels?
+1) trainingSnapshotToAILabel
+
+
+I think I've made a good brain!  How do I put it on the server?
+1) Copy its .brain folder into the deploy-brains folder and it'll be deployed to the server next deploy
