@@ -191,6 +191,9 @@ class TestDeviceFactory implements DeviceFactory {
 
     
     async _checkAvailable() {
+      if(window.location.search.includes('fake') || window.location.hostname === 'localhost') {
+        return;
+      }
       const available = await navigator.bluetooth.getAvailability();
       if(!available) {
         const msg = "It looks like your browser/OS combo doesn't support BLE in the browser.\n\nOr your bluetooth is disabled.\n\nTourJS is best enjoyed on a Mac with Chrome or Android phone with Chrome.  If it asks for location services, allow them.  If none of that works, try a paid service like Zwift.";

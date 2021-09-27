@@ -85,7 +85,7 @@ export default class Application extends Controller.extend({
       });
     },
     connectDevice() {
-      if((window.location.search && window.location.search.includes("fake"))) {
+      if((window.location?.search?.includes("fake")) || window.location.hostname === 'localhost') {
         const device = g_fakeDevice = new FakeDevice();
         this.devices.setLocalUserDevice(device, DeviceFlags.All);
       } else {

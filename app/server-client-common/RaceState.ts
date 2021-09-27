@@ -12,6 +12,13 @@ export interface UserProvider {
   getLocalUser():UserInterface|null;
 }
 
+export function getAIStrengthBoostForDistance(dist:number):number {
+  
+  const expectedTimeHours = dist / 40000;
+  const aiStrengthBoost = 0.89 * Math.pow(expectedTimeHours, -0.155831);
+  return aiStrengthBoost;
+}
+
 export class RaceState {
   private _map:RideMap;
   private _userProvider:UserProvider;

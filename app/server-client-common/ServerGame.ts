@@ -1,14 +1,15 @@
 import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface, DistanceHistoryElement } from "./User";
-import { UserProvider, RaceState } from "./RaceState";
+import { UserProvider, RaceState, getAIStrengthBoostForDistance } from "./RaceState";
 import { ClientConnectionRequest, CurrentRaceState, S2CFinishUpdate } from "./communication";
 import { RideMap } from "./RideMap";
 import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
 import fs from 'fs';
 import { SpanAverage } from "./SpanAverage";
-import { brainPath, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshot, trainingSnapshotToAIInput } from "./ServerAISnapshots";
+import { BrainLocation, brainPath, makeTensor, normalizeData, NormData, predictFromRawTrainingData, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshot, trainingSnapshotToAIInput, TrainingSnapshotV2, unnormalizeData } from "./ServerAISnapshots";
 import * as tf from '@tensorflow/tfjs-node';
 import { LayersModel, Sequential, Tensor, Tensor2D } from '@tensorflow/tfjs-node';
+import { reject } from "rsvp";
 
 
 
@@ -71,7 +72,7 @@ export class ServerUser extends User {
     this._position = where;
   }
 
-  _pendingTrainingSnapshot:TrainingSnapshot|null = null;
+  _pendingTrainingSnapshot:TrainingSnapshotV2|null = null;
   _tmTrainingSnapshot:number = 0;
   private _takeTrainingSnapshot(tmNow:number) {
 
@@ -81,7 +82,7 @@ export class ServerUser extends User {
       if(this._pendingTrainingSnapshot) {
         // we've got an old training snapshot that needs our current power filled in, and then needs to get dumped to disk
         this._pendingTrainingSnapshot.powerNextSecond = this.getLastPower() / this.getHandicap();
-        fs.appendFile(brainPath(`${this.getName()}-${this.getBigImageMd5()}.training`), JSON.stringify(this._pendingTrainingSnapshot, undefined, '\t') + "\n$$\n", {}, ()=>{});
+        fs.appendFile(brainPath(`${this.getName()}-v${this._pendingTrainingSnapshot.version}-${this.getBigImageMd5()}.training`, BrainLocation.ForTraining), JSON.stringify(this._pendingTrainingSnapshot, undefined, '\t') + "\n$$\n", {}, ()=>{});
         this._pendingTrainingSnapshot = null;
       }
       
@@ -187,7 +188,7 @@ export class ServerUserProvider implements UserProvider {
     return this.users.filter((user) => {
       return user.getMsSinceLastPacket(tmNow) < 300000 ||  // either this user is still obviously connected
              user.isFinished() ||
-             user.getUserType() & UserTypeFlags.Ai; // or this user has finished
+             user.getUserType() & (UserTypeFlags.Ai | UserTypeFlags.Bot); // or this user has finished
     });
   }
   getUser(id:number):ServerUser|null {
@@ -201,7 +202,7 @@ export class ServerUserProvider implements UserProvider {
 
     let newId = userIdCounter++;
     const user = new ServerUser(ccr.riderName, DEFAULT_RIDER_MASS, ccr.riderHandicap, UserTypeFlags.Remote | userTypeFlags, wsConnection, raceState);
-    if(user.getUserType() & UserTypeFlags.Ai) {
+    if(user.getUserType() & (UserTypeFlags.Ai | UserTypeFlags.Bot)) {
       assert2(wsConnection === null);
     } else {
       assert2(wsConnection !== null);
@@ -220,89 +221,65 @@ export class ServerUserProvider implements UserProvider {
   users:ServerUser[];
 }
 
-export function predictFromRawTrainingData(model:LayersModel, norms:NormData, data:TrainingSnapshot):number {
-  const numbers = makeTensor([new TrainingDataPrepped(data)._myData.map((dt) => dt.data)]);
-  const normalizedInputs = normalizeData(numbers, norms.inputMin, norms.inputMax);
-  const predictions = model.predict(normalizedInputs);
-  const fixedPreds = unnormalizeData(predictions, norms.labelMin, norms.labelMax);
-  return fixedPreds.dataSync()[0];
-}
-export class NormData {
-  inputMin:Tensor;
-  inputMax:Tensor;
-  labelMin:Tensor;
-  labelMax:Tensor;
-  inputSpans:Float32Array;
-  labelSpans:Float32Array;
-
-  constructor(inputs:Tensor2D, labels:Tensor2D) {
-    
-    this.inputMin = inputs.min(0);
-    this.inputMax = inputs.max(0);
-    this.labelMin =labels.min(0);
-    this.labelMax = labels.max(0);
-
-    this.inputSpans = this.inputMax.sub(this.inputMin).dataSync() as Float32Array;
-    this.labelSpans = this.labelMax.sub(this.labelMin).dataSync() as Float32Array;
-  }
-
-  toJSON() {
-    return {
-      inputMin: this.inputMin.dataSync(),
-      inputMax: this.inputMax.dataSync(),
-      labelMin: this.labelMin.dataSync(),
-      labelMax: this.labelMax.dataSync(),
-    }
-  }
-}
-export function unnormalizeData(data:any, min:Tensor, max:Tensor) {
-  return data.mul(max.sub(min)).add(min);
-}
-export function normalizeData(data:Tensor2D, min:Tensor, max:Tensor) {
-  return  data.sub(min).div(max.sub(min));
-}
-export function makeTensor(arr:number[][]):Tensor2D {
-  return tf.tensor2d(arr, [arr.length, arr[0].length]);
-}
-
-interface AIBrain {
+export interface AIBrain {
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number;
   isNN():boolean;
   getPowerNN(handicap:number, data:TrainingSnapshot):number;
   getName(handicap:number):string;
+  finishLoadPromise():Promise<any>;
 }
 
-class AINNBrain implements AIBrain {
+
+export class AINNBrain implements AIBrain {
   _model:LayersModel|null = null;
   _name:string;
   _strength:number;
   _norms:any;
+  _finishLoad:Promise<any>;
   constructor(strength:number, brain:string) {
 
-    const totalPath = brainPath(brain);
-    tf.loadLayersModel(`file://${totalPath}/model.json`).then((model:LayersModel) => {
-      const rawNorms = JSON.parse(fs.readFileSync(totalPath  + '/norm.json', 'utf8'));
-      this._norms = {};
-      for(var key in rawNorms) {
-        rawNorms[key] = Object.values(rawNorms[key]);
+    assert2(strength >= 0.75 && strength <= 1.0);
+
+    const totalPath = brainPath(brain, BrainLocation.Deployed);
+    this._finishLoad = new Promise<void>((resolve, reject) => {
+      try {
+        tf.loadLayersModel(`file://${totalPath}/model.json`).then((model:LayersModel) => {
+          const rawNorms = JSON.parse(fs.readFileSync(totalPath  + '/norm.json', 'utf8'));
+          this._norms = {};
+          for(var key in rawNorms) {
+            rawNorms[key] = Object.values(rawNorms[key]);
+          }
+          const inputMinMax = makeTensor(tf, [rawNorms.inputMax, rawNorms.inputMin]);
+          const labelMinMax = makeTensor(tf, [rawNorms.labelMax, rawNorms.labelMin]);
+          this._norms = new NormData(inputMinMax, labelMinMax, rawNorms.killCols);
+          this._model = model;
+          resolve();
+        })
+
+      } catch(e) {
+        reject(e);
       }
-      this._norms = new NormData(makeTensor([rawNorms.inputMax, rawNorms.inputMin]), makeTensor([rawNorms.labelMax, rawNorms.labelMin]));
-      this._model = model;
     })
     this._strength = strength;
 
     this._name = brain.split('-')[0];
   }
-
+  finishLoadPromise() {
+    return this._finishLoad;
+  }
   getPower(timeSeconds: number, handicap: number, dist: number, mapLength: number, slopeWholePercent: number): number {
 
     return this._strength * handicap;
   }
   isNN() {return !!this._model;}
-  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+  getPowerNN(handicap:number, data:TrainingSnapshot|null):number {
+    if(!data) {
+      // just default to something basic if we don't have our data yet
+      return handicap * 1.0;
+    }
     if(this._model) {
-      const ret = handicap * this._strength * predictFromRawTrainingData(this._model, this._norms, data);
-      console.log(`${this.getName(handicap)} did ${ret.toFixed(2)}`)
+
+      const ret = handicap * this._strength * predictFromRawTrainingData(tf, this._model, this._norms, data);
       return ret;
     }
     return this.getPower(0, handicap, data.distanceInRace, data.distanceInRace + data.distanceToFinish, data.avgSlopeCurrentUphill);
@@ -319,6 +296,9 @@ class AIBoringBrain implements AIBrain {
   _strength = 0;
   constructor(strength:number) {
     this._strength = strength;
+  }
+  finishLoadPromise() {
+    return Promise.resolve();
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     if(timeSeconds > this._nextChange || this._currentOutput <= 0) {
@@ -347,6 +327,9 @@ class AISineBrain implements AIBrain {
     this._magnitude = Math.random()*0.4;
     this._strength = strength;
   }
+  finishLoadPromise() {
+    return Promise.resolve();
+  }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     const mod = handicap * this._magnitude * Math.sin(timeSeconds * 2 * Math.PI / this._period);
     return this._strength * Math.max(0, handicap + mod);
@@ -365,6 +348,9 @@ class AIHillBrain implements AIBrain {
   constructor(strength:number) {
     this._magnitude = 0.9 + Math.random()*0.2;
     this._strength = strength;
+  }
+  finishLoadPromise() {
+    return Promise.resolve();
   }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
     const modSlope = this._magnitude*slopeWholePercent / 100.0 + 1.0;
@@ -387,6 +373,9 @@ class DumbSavey implements AIBrain {
     this._fractionToSaveAt = 0.95 + Math.random() * 0.04;
     this._strength = strength;
   }
+  finishLoadPromise() {
+    return Promise.resolve();
+  }
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
 
     const myPctOfMap = dist / mapLength;
@@ -408,6 +397,8 @@ class DumbSavey implements AIBrain {
 }
 
 function getNextAIBrain(strength:number, brains:string[]):AIBrain {
+  assert2(strength >= 0.75 && strength <= 1.0);
+
   const nAis = 5;
   const val = Math.floor(Math.random() * nAis);
   switch(val) {
@@ -422,13 +413,25 @@ function getNextAIBrain(strength:number, brains:string[]):AIBrain {
       return new DumbSavey(strength);
     case 4:
       try {
-        const ixBrain = Math.floor(Math.random() * brains.length);
-        return new AINNBrain(strength, brains[ixBrain]);
+        if(brains.length > 0) {
+          const ixBrain = Math.floor(Math.random() * brains.length);
+          return new AINNBrain(strength, brains[ixBrain]);
+        } else {
+          return new DumbSavey(strength);
+        }
       } catch(e) {
         return new DumbSavey(strength);
       }
       
   }
+}
+
+
+export function getBrainFolders():string[] {
+  const brainWhere = brainPath('', BrainLocation.Deployed);
+  const possibleBrains = fs.readdirSync(brainWhere);
+  const brains = possibleBrains.filter((path) => fs.statSync(brainPath(path, BrainLocation.Deployed)).isDirectory() && path.endsWith('.brain'));
+  return brains;
 }
 
 export class ServerGame {
@@ -438,11 +441,10 @@ export class ServerGame {
     this.raceState = new RaceState(map, this.userProvider, gameId);
     this._aiBrains = new Map();
     this._tmLastAiUpdate = new Date().getTime();
-    const expectedTimeHours = map.getLength() / 40000;
-    const aiStrengthBoost = 0.89 * Math.pow(expectedTimeHours, -0.155831);
 
-    const possibleBrains = fs.readdirSync(brainPath(''));
-    const brains = possibleBrains.filter((path) => fs.statSync(brainPath(path)).isDirectory() && path.endsWith('.brain'));
+    const aiStrengthBoost = getAIStrengthBoostForDistance(map.getLength());
+
+    const brains = getBrainFolders();
 
     for(var x = 0;x < cAis; x++) {
       const aiStrength = Math.random()*0.25 + 0.75;

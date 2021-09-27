@@ -24,6 +24,26 @@
         "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
     },
     {
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/api",
+        "name": "Bt-web2 Self Check",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "program": "${workspaceFolder}/api/index.ts",
+        "args": ["self-check"],
+        "preLaunchTask":{
+            "type": "typescript",
+            "tsconfig": "api/tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": "build",
+        },
+        "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
+    },
+    {
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}/api",

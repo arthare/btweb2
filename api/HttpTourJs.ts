@@ -201,9 +201,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.end();
   })
   app.post('/submit-ride-result', (req:core.Request, res:core.Response) => {
-    console.log("submit ride result hit");
     return postStartup(req, res).then((postInput:RaceResultSubmission) => {
-      console.log("submit ride result got post ", postInput);
       setCorsHeaders(req, res);
 
       delete (postInput as any).imageBase64;

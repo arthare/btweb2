@@ -15,6 +15,7 @@ export enum UserTypeFlags {
   Local = 1,
   Remote = 2,
   Ai = 4,
+  Bot = 8,
 }
 
 export interface UserDisplay {
@@ -322,6 +323,8 @@ export class User extends UserDataRecorder implements SlopeSource, UserInterface
 
 
     if(this._position > 5) { // let's not engage drafting in the pre-start.
+
+      this.drafteeCheck(tmNow);
       const draftingClose = 1.5;
       const draftingFar = 10;
       let effectiveDraftingFar = 10;
@@ -451,8 +454,20 @@ export class User extends UserDataRecorder implements SlopeSource, UserInterface
     }
     this._pendingDraftees[id] = true;
   }
+  public drafteeCheck(tmNow:number) {
+    // this is here so that we don't eternally have this._lastDraftees holding onto the last guy that drafted us, since we never get another notifyDrafteeThisCycle if we go off the front and win
+    if(tmNow > this._tmDrafteeCycle) {
+      // time for a new draftee cycle!
+      this._lastDraftees = this._pendingDraftees;
+      this._pendingDraftees = {};
+      this._tmDrafteeCycle = tmNow;
+    }
+  }
   public getDrafteeCount(tmNow:number):number {
     return Object.keys(this._lastDraftees).length;
+  }
+  public getDrafteeIds(tmNow:number):number[] {
+    return Object.keys(this._lastDraftees).map((id) => parseInt(id));
   }
 
   public getSecondsAgoToCross(tmNow:number, distance:number):number|null {

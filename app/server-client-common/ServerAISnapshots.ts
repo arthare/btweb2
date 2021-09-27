@@ -1,8 +1,80 @@
-import { RaceState } from "./RaceState";
+import { LayersModel, Tensor, Tensor2D } from "@tensorflow/tfjs-node";
+import { getAIStrengthBoostForDistance, RaceState } from "./RaceState";
 import { RideMap } from "./RideMap";
-import { ServerUser } from "./ServerGame";
 import { User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
+
+function randRange(min:number, max:number):number {
+  const span = max - min;
+  return Math.floor(Math.random() * span + min);
+}
+
+export function buildModel(tf:any, nInput:number, nOutput:number) {
+  // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#3
+  // and
+  // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#8
+  const model = tf.sequential();
+  model.add(tf.layers.dense({inputShape: [nInput], units: 50}));
+  model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
+  if(Math.random() > 0.5) {
+    model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
+  }
+
+  if(Math.random() > 0.5) {
+    model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
+  }
+  model.add(tf.layers.dense({units: nOutput}));
+
+  return model;
+}
+
+export function predictFromRawTrainingData(tf:any, model:LayersModel, norms:NormData, data:TrainingSnapshot):number {
+  const preppedData = new TrainingDataPrepped(data, norms.killCols)._myData.map((dt) => dt.data);
+  assert2(preppedData.length === norms.inputSpans.length, `Our prepped data had ${preppedData.length} but our trained model expected ${norms.inputSpans.length}`);
+  const numbers = makeTensor(tf, [preppedData]);
+  
+  const normalizedInputs = normalizeData(numbers, norms.inputMin, norms.inputMax);
+  const predictions = model.predict(normalizedInputs);
+  const fixedPreds = unnormalizeData(predictions, norms.labelMin, norms.labelMax);
+
+  const ret = fixedPreds.dataSync()[0];
+
+  return ret;
+}
+export class NormData {
+  inputMin:Tensor;
+  inputMax:Tensor;
+  labelMin:Tensor;
+  labelMax:Tensor;
+  inputSpans:Float32Array;
+  labelSpans:Float32Array;
+  killCols:number[];
+
+  constructor(inputs:Tensor2D, labels:Tensor2D, killCols:number[]) {
+    
+    
+    this.inputMin = inputs.min(0);
+    this.inputMax = inputs.max(0);
+    this.labelMin =labels.min(0);
+    this.labelMax = labels.max(0);
+    this.killCols = killCols;
+
+    this.inputSpans = this.inputMax.sub(this.inputMin).dataSync() as Float32Array;
+    this.labelSpans = this.labelMax.sub(this.labelMin).dataSync() as Float32Array;
+
+    assert2(Array.isArray(killCols) && killCols.length >= 0 && killCols.length < this.inputSpans.length);
+  }
+
+  toJSON() {
+    return {
+      inputMin: this.inputMin.dataSync(),
+      inputMax: this.inputMax.dataSync(),
+      labelMin: this.labelMin.dataSync(),
+      labelMax: this.labelMax.dataSync(),
+      killCols: this.killCols,
+    }
+  }
+}
 
 export interface TrainingSnapshot {
   tm:number;
@@ -44,22 +116,50 @@ export interface TrainingSnapshot {
   powerNextSecond:number;
 }
 
+export interface TrainingSnapshotV2 extends TrainingSnapshot {
+  version:"2";
+
+  speed:number;
+  currentSlope:number;
+  currentDraftPct:number;
+  currentDrafteeCount:number;
+  closestDrafteeFtpSecondsSavedPerKm:number; // the person hot on our ass, how much have they been saving?
+  biggestLeechInGroupFtpSecondsSavedPerKm:number; // in our group, who has been saving the most?
+  ftpSecondsSpentPerKm:number[]; // all the various metrics stuff from getHandicapSecondsUsed
+  ftpSecondsSavedPerKm:number;
+
+}
+
 export interface DataWithName {
   name:string;
   data:number;
 }
 
+function bound(min:number, val:number, max:number):number {
+  return Math.max(min, Math.min(val, max));
+}
+
 export class TrainingDataPrepped {
   _myData:DataWithName[];
-  constructor(snap:TrainingSnapshot) {
+  constructor(snap:TrainingSnapshot, killCols:number[]) {
     // we need to pre-normalize a bunch of these, as well as filter out crap that doesn't matter
     let temp:any = {...snap};
 
     delete temp.tm; // this is not helpful
     delete temp.powerNextSecond; // this is label data
     delete temp.rankInGroup; // absolute ranks aren't that important, we will convert this into a percentage of the group size
+
+    temp.raceTotalLength = temp.distanceInRace + temp.distanceToFinish;
+    temp.pctOfRaceToFinish = 1 - snap.pctOfRaceComplete;
     delete temp.distanceInRace; // absolute meters aren't helpful when we're talking about a wide variety of possible lengths for a given player
     delete temp.distanceToFinish; // absolute meters aren't helpful when we're talking about a wide variety of possible lengths for a given player
+
+    temp.negAvgSlopeCurrentDownhill = -temp.avgSlopeCurrentDownhill;
+    temp.negAvgSlopeCurrentUphill = -temp.avgSlopeCurrentUphill;
+    temp.currentSlope = -Math.abs(snap.avgSlopeCurrentDownhill) || Math.abs(snap.avgSlopeCurrentUphill);
+    temp.heightDeltaInCurrentHill = Math.abs(snap.metersLeftToClimbCurrentUphill) || -Math.abs(snap.metersLeftToDescentCurrentDownhill);
+    temp.heightDeltaRemaining = Math.abs(snap.metersLeftToClimb) || -Math.abs(snap.metersLeftToDescend);
+
 
     delete temp.gapToHumanAhead;
     delete temp.gapToHumanBehind;
@@ -69,6 +169,7 @@ export class TrainingDataPrepped {
     // in particular, the "distance to finish", "distance in race" are going to be crap.
     // if Art does a 5km race and a 50km race in the same training set, then the 5km race's "distance" values will be 1/10th what they should be after normalization.
     const distancesPassed = [
+      250,
       500,
       1000,
       1500,
@@ -76,23 +177,55 @@ export class TrainingDataPrepped {
       3500,
       4500,
       5000,
+      7500,
+      10000,
+      15000,
     ];
     
     distancesPassed.forEach((dist) => {
-      temp[`distance-passed-${dist}`] = snap.distanceInRace > dist ? 1 : 0;
-      temp[`distanceleft-passed-${dist}`] = snap.distanceToFinish < dist ? 1 : 0;
+      temp[`distance-passed-${dist}`] = bound(0, snap.distanceInRace / dist, 1);
+      temp[`distanceleft-passed-${dist}`] = bound(0, snap.distanceToFinish / dist, 1);
     });
+
+    temp.aiRatingForDistanceCovered = getAIStrengthBoostForDistance(snap.distanceInRace);
+    temp.aiRatingForMapLength = getAIStrengthBoostForDistance(temp.raceTotalLength);
+    temp.aiRatingForDistanceLeft = getAIStrengthBoostForDistance(snap.distanceToFinish);
     
     temp.rankInGroup = snap.rankInGroup / snap.groupSize; // normalizing this so that it's not compared against someone that rode in a group of 30
 
     this._myData = [];
+    let needHandleStuff = false;
     for(var key in temp) {
       if(typeof temp[key] === 'number') {
         this._myData.push({data:temp[key], name: key});
       } else if(Array.isArray(temp[key])) {
-        debugger;
+        
+        switch(key) {
+          case 'ftpSecondsSpentPerKm':
+            /*const asNameValue = temp[key].map((val:number,index:number) => {
+              return {
+                name: key + '-' + index,
+                data: val,
+              }
+            })
+            this._myData.push(...asNameValue);*/
+            break;
+          default:
+            needHandleStuff = true;
+            console.log("gotta handle", key, " which had values ", temp[key]);
+            break;
+        }
+
       }
     }
+    
+    if(needHandleStuff) {
+      debugger;
+    }
+
+    killCols.reverse().forEach((ixColToKill) => {
+      this._myData.splice(ixColToKill, 1);
+    });
   }
 }
 
@@ -174,9 +307,10 @@ function getGroup(ixMe:number, allUsersSorted:UserInterface[]):{group:UserInterf
   return {group, ixYou, ridersAheadOfGroup};
 }
 
-export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceState):TrainingSnapshot|null {
-  const ret:TrainingSnapshot = {
+export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceState):TrainingSnapshotV2|null {
+  const ret:TrainingSnapshotV2 = {
     tm: new Date().getTime(),
+    version: "2",
   } as any;
 
   const map:RideMap = raceState.getMap();
@@ -185,22 +319,34 @@ export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceStat
     // they're done, so no snapshot to be done
     return null;
   }
-  if(raceState.isAllHumansFinished(tmNow)) {
-    return null;
-  }
   if(raceState.isAllRacersFinished(tmNow)) {
     return null;
   }
   if(user.isFinished()) {
     return null;
   }
-  if(!user.isPowerValid(tmNow)) {
-    return null;
-  }
   if(user.getDistance() <= 50) {
     return null;
   }
   
+  const dist = user.getDistance();
+
+  ret.speed = user.getSpeed();
+  ret.currentSlope = user.getLastSlopeInWholePercent();
+  ret.ftpSecondsSavedPerKm = user.getHandicapSecondsSaved() / dist;
+  ret.ftpSecondsSpentPerKm = [];
+  const spent = user.getHandicapSecondsUsed();
+  for(var key in spent) {
+    ret.ftpSecondsSpentPerKm.push(spent[key] / dist);
+  }
+  ret.currentDraftPct = user.getLastWattsSaved().pctOfMax;
+  ret.currentDrafteeCount = user.getDrafteeCount(tmNow);
+
+  const drafteeIds = user.getDrafteeIds(tmNow);
+  const users = drafteeIds.map((id) => raceState.getUserProvider().getUser(id)).filter((u) => u).sort((a:User, b:User) => a.getDistance() > b.getDistance() ? -1 : 1);
+  ret.closestDrafteeFtpSecondsSavedPerKm = (users && users.length > 0 && users[0]?.getHandicapSecondsSaved() || 0) / dist;
+
+
 
   ret.distanceToFinish = map.getLength() - user.getDistance();
   ret.distanceInRace = user.getDistance();
@@ -280,21 +426,344 @@ export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceStat
   }
 
   const group = getGroup(ixMe, allUsers);
+
+  ret.biggestLeechInGroupFtpSecondsSavedPerKm = Math.max(0, ...group.group.filter((u) => u.getId() !== user.getId()).map((u) => u.getHandicapSecondsSaved() / dist));
   ret.groupSize = group.group.length;
   ret.rankInGroup = group.ixYou;
   ret.ridersAheadOfGroup = group.ridersAheadOfGroup;
 
 
   ret.powerNextSecond = -1; // this needs to get filled in on our next cycle
+
   return ret;
 }
-export function trainingSnapshotToAILabel(data:TrainingSnapshot|any):number[] {
-  return [data.powerNextSecond];
+export function trainingSnapshotToAILabel(data:TrainingSnapshot|any, index:number, array:TrainingSnapshot[]):number[] {
+
+  let sum = 0;
+  let count = 0;
+  const N = 5;
+
+  let lastDistance = array[index].distanceInRace;
+  for(var x = index; x < Math.min(array.length, index+N); x++) {
+    if(array[x].distanceInRace < lastDistance) {
+      // since the TrainingSnapshot array is ALL the races this person has participated in, if it goes backwards that means we're on a new race
+      break;
+    }
+    sum += array[x].powerNextSecond;
+    count++;
+  }
+  return [sum / count];
 }
-export function trainingSnapshotToAIInput(data:TrainingSnapshot|any):DataWithName[] {
-  return new TrainingDataPrepped(data)._myData;
+export function trainingSnapshotToAIInput(data:TrainingSnapshot|any, killCols:number[]):DataWithName[] {
+  return new TrainingDataPrepped(data, killCols)._myData;
 }
 
-export function brainPath(brain:string):string {
-  return `./brains/${brain}`;
+export enum BrainLocation {
+  ForTraining,
+  Deployed,
+}
+
+export function brainPath(brain:string, location:BrainLocation):string {
+  switch(location) {
+    case BrainLocation.Deployed:
+      return `./deploy-brains/${brain}`;
+    default:
+    case BrainLocation.ForTraining:
+      return `./brains/${brain}`;
+  }
+}
+
+
+export function removeBoringColumns(data:DataWithName[][]):{allInputDatasAsNumbers:number[][], killCols:number[]} {
+  const cols = data[0].length;
+
+  let killCols:number[] = [];
+  for(var ixCol = 0; ixCol < cols; ixCol++) {
+    console.log("working on col ", ixCol);
+    let colMax = Math.max(...data.map((row) => row[ixCol].data));
+    let colMin = Math.min(...data.map((row) => row[ixCol].data));
+    if(colMin === colMax) {
+      console.error("Data column ", data[0][ixCol].name, " is bad");
+      killCols.push(ixCol);
+    }
+  }
+
+  const allInputDatasAsNumbers = data.map((row) => {
+    let ret = [];
+    let lastCol = -1;
+    killCols.forEach((ixKillCol) => {
+      ret.push(...row.slice(lastCol+1, ixKillCol).map((dt) => dt.data));
+      lastCol = ixKillCol;
+    })
+    ret.push(...row.slice(lastCol+1, row.length).map((dt) => dt.data));
+
+    ret.forEach((val) => {
+      assert2(!isNaN(val) && val >= -10000);
+    });
+    return ret;
+  });
+
+  return {
+    allInputDatasAsNumbers,
+    killCols,
+  }
+}
+
+
+export function testModel(tf:any, model:LayersModel, inputData:Tensor2D, labelTensor:Tensor2D, normData:NormData, checkDeep:boolean, names:DataWithName[][]):{score:number, data:number[][], labels:string[]} {
+  // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#6
+
+  tf.engine().startScope();
+
+  const normalizedInput = normalizeData(inputData, normData.inputMin, normData.inputMax);
+  const normalizedLabel = normalizeData(labelTensor, normData.labelMin, normData.labelMax);
+
+  const normalizedPredictions = model.predict(normalizedInput);
+  
+  const thisScore = getRSquared((normalizedPredictions as Tensor).dataSync(), (normalizedLabel as Tensor).dataSync());
+  //const thisScore = tf.metrics.meanSquaredError(normalizedLabel, normalizedPredictions as any).dataSync()[0];
+
+  
+  let data:number[][] = [];
+  let labels:string[] = [];
+  if(checkDeep) {
+    const normRightAnswer = normalizedLabel.dataSync();
+    const normPredAnswer = (normalizedPredictions as Tensor2D).dataSync();
+
+    const unnormRightAnswer = labelTensor.dataSync();
+    const unnormInputs = inputData.dataSync();
+    const unnormPredAnswer = unnormalizeData(normalizedPredictions, normData.labelMin, normData.labelMax).dataSync();
+
+    const perRow = unnormInputs.length / unnormPredAnswer.length;
+
+    labels.push("Right Answer");
+    labels.push("Predicted Answer");
+    labels.push("Norm Right Answer");
+    labels.push("Norm Predicted Answer");
+    labels.push(...names[0].map((data) => data.name));
+
+    unnormRightAnswer.forEach((ans, index) => {
+      let myRow:number[] = [];
+      myRow.push(ans); // the correct answer
+      myRow.push(unnormPredAnswer[index]); // the predicted answer
+      myRow.push(normRightAnswer[index]);
+      myRow.push(normPredAnswer[index]);
+
+      myRow.push(...unnormInputs.slice(index*perRow, (index+1)*perRow));
+      data.push(myRow);
+    })
+  }
+  tf.engine().endScope();
+
+  return {score: thisScore.rSquared, data, labels};
+}
+
+function shuffle(arrays:any[][]):any[][] {
+  let currentIndex = arrays[0].length;
+
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    const randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    arrays.forEach((rg) => {
+      [rg[currentIndex], rg[randomIndex]] = [
+        rg[randomIndex], rg[currentIndex]];
+    })
+    
+  }
+
+  return arrays;
+}
+
+export function unnormalizeData(data:any, min:Tensor, max:Tensor) {
+  return data.mul(max.sub(min)).add(min);
+}
+export function normalizeData(data:Tensor2D, min:Tensor, max:Tensor) {
+  return  data.sub(min).div(max.sub(min));
+}
+export function makeTensor(tf:any, arr:number[][]):Tensor2D {
+  return tf.tensor2d(arr, [arr.length, arr[0].length]);
+}
+
+function getRSquared(predict:Float32Array|number[]|Int32Array|Uint8Array, correct:Float32Array|number[]|Int32Array|Uint8Array):{meanValue:number,SStot:number,SSres:number,rSquared:number} {
+  var yAxis = correct;
+  var rPrediction = [];
+
+  var meanValue = 0; // MEAN VALUE
+  var SStot = 0; // THE TOTAL SUM OF THE SQUARES
+  var SSres = 0; // RESIDUAL SUM OF SQUARES
+  var rSquared = 0;
+
+  // SUM ALL VALUES
+  for (var n in yAxis) { meanValue += yAxis[n]; }
+
+  // GET MEAN VALUE
+  meanValue = (meanValue / yAxis.length);
+  
+  for (var n in yAxis) { 
+      // CALCULATE THE SSTOTAL    
+      SStot += Math.pow(yAxis[n] - meanValue, 2); 
+      // REGRESSION PREDICTION
+      rPrediction.push(predict[n]);
+      // CALCULATE THE SSRES
+      SSres += Math.pow(rPrediction[n] - yAxis[n], 2);
+  }
+
+  // R SQUARED
+  rSquared = 1 - (SSres / SStot);
+
+  return {
+      meanValue: meanValue,
+      SStot: SStot,
+      SSres: SSres,
+      rSquared: rSquared
+  };
+}
+
+export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas:TrainingSnapshot[], writeResult:(name:string, contents:string)=>void, visCallbacks:any, fnCancelCallback:()=>boolean) {
+  // take our training snapshots and convert them into our training inputs
+  let inputDataPrepped = datas.map((data) => trainingSnapshotToAIInput(data, []));
+  let allLabelsAsNumbers = datas.map(trainingSnapshotToAILabel);
+
+  // now that we've done the mapping, which tends to depend on them being in correct order, let's shuffle.
+  [inputDataPrepped, allLabelsAsNumbers] = shuffle([inputDataPrepped, allLabelsAsNumbers]);
+
+  // remove all the columns that have no actual information in them
+  const {killCols, allInputDatasAsNumbers} = removeBoringColumns(inputDataPrepped);
+
+  // take our training snapshots and convert them into our training labels
+  let model = buildModel(tf, allInputDatasAsNumbers[0].length, 1);
+
+  // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#4
+
+  
+
+  const inputTensor = makeTensor(tf, allInputDatasAsNumbers);
+  const labelTensor = makeTensor(tf, allLabelsAsNumbers);
+
+  const slicePoint = Math.floor(0.75*datas.length);
+  const afterSlicePoint = datas.length - slicePoint;
+  const inputTrainingTensor = inputTensor.slice(0, slicePoint);
+  const labelTrainingTensor = labelTensor.slice(0, slicePoint);
+  const inputEvalTensor = inputTensor.slice(slicePoint, afterSlicePoint);
+  const labelEvalTensor = labelTensor.slice(slicePoint, afterSlicePoint);
+
+  const normData:NormData = new NormData(inputTensor, labelTensor, []); // we put in no kill cols here, because we removed the boring columns already.  But we need to remember to store the killCols when we save norm.json
+
+  const normalizedInputs = normalizeData(inputTrainingTensor, normData.inputMin, normData.inputMax);
+  const normalizedLabels = normalizeData(labelTrainingTensor, normData.labelMin, normData.labelMax);
+
+
+  
+  // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#5
+  model.compile({
+    optimizer: tf.train.adam(),
+    loss: tf.losses.meanSquaredError,
+    metrics: ['mse'],
+  });
+
+  const batchSize = labelTrainingTensor.size;
+  const epochs = 50;
+
+  let bestSoFar = -1000;
+
+  let loops = 0;
+  let rebuilds = 0;
+  let trains = 0;
+  let failsUntilRedo = 40;
+  let trainsSinceLastBest = 0;
+  while(true) {
+    if(fnCancelCallback()) {
+      break;
+    }
+    const fromTheStartEachTime = {
+      initialEpoch: 0,
+      batchSize,
+      epochs:epochs,
+      shuffle: true,
+      verbose: 0,
+      callbacks: visCallbacks,
+    }
+    const sequentially = {
+      initialEpoch: loops * epochs,
+      batchSize,
+      epochs: (loops+1)*epochs,
+      shuffle: true,
+      verbose: 0,
+      callbacks: visCallbacks,
+    }
+
+    let sequenceParam;
+    const rnd = Math.random();
+    if(trains > failsUntilRedo) {
+      console.log("Total model rebuild");
+      model.dispose();
+      model = buildModel(tf, allInputDatasAsNumbers[0].length, 1);
+      model.compile({
+        optimizer: tf.train.adam(),
+        loss: tf.losses.meanSquaredError,
+        metrics: ['mse'],
+      });
+      sequenceParam = fromTheStartEachTime;
+
+      rebuilds++;
+      loops = 0;
+      trains = 0;
+      trainsSinceLastBest = 0;
+
+    } else if(rnd > 0.9) {
+      sequenceParam = fromTheStartEachTime;
+      loops = 0;
+    } else {
+      sequenceParam = sequentially;
+    }
+
+    await model.fit(normalizedInputs, normalizedLabels, sequenceParam);
+    trains++;
+    trainsSinceLastBest++;
+
+
+    const thisScore = testModel(tf, model, inputEvalTensor, labelEvalTensor, normData, false, inputDataPrepped);
+    const prefix = `${rebuilds}.${trains}: `;
+    if(thisScore.score > bestSoFar && trains > 1) {
+      console.log(prefix + "Metric of prediction = ", thisScore.score.toFixed(8), " best so far ", bestSoFar.toFixed(8));
+
+      // future training cycles should get 25% as many tries as it took us to get here, since they've got to beat us
+      failsUntilRedo = Math.max(trains * 1.25, failsUntilRedo);
+      trainsSinceLastBest = 0;
+
+      
+      const brainName = `${rootNameOfBot}-${thisScore.score.toFixed(8)}.brain`;
+      await model.save(`downloads://${brainName}`);
+
+      {// put the norm.json so that we can figure out the norms that this brain was trained with
+        normData.killCols = killCols;
+        writeResult(`${brainName}-norm.json`, JSON.stringify(normData.toJSON()));
+        normData.killCols = [];
+      }
+
+      { // make the CSV
+        const bigScore = testModel(tf, model, inputEvalTensor, labelEvalTensor, normData, true, inputDataPrepped);
+        let lines:string[] = [];
+        lines.push(bigScore.labels.join('\t'));
+
+        const restOfLines:string[] = bigScore.data.map((dataLine) => {
+          return dataLine.map(d => d.toFixed(8)).join('\t');
+        });
+        lines.push(...restOfLines);
+        writeResult(`${brainName}-check.txt`, lines.join('\n'));
+      }
+
+
+      bestSoFar = thisScore.score;
+    } else {
+      console.log(prefix + " missed.");
+    }
+    loops++;
+  }
 }

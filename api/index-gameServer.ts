@@ -1,19 +1,20 @@
 import WebSocket from 'ws';
 import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../app/server-client-common/communication';
-import { assert2 } from '../app/server-client-common/Utils';
+import { assert2, testAssert } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
 import { User, UserInterface, UserTypeFlags } from '../app/server-client-common/User';
 import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
 import { RideMap, RideMapPartial } from '../app/server-client-common/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './ServerConstants';
-import { ServerGame, ServerUser } from '../app/server-client-common/ServerGame';
+import { AINNBrain, getBrainFolders, ServerGame, ServerUser } from '../app/server-client-common/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { setUpCors } from './HttpUtils';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import { takeTrainingSnapshot } from '../app/server-client-common/ServerAISnapshots';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
@@ -285,7 +286,6 @@ export function startGameServer() {
   }
 
   wss.on('connection', (wsConnection) => {
-    console.log("server got connection from ", wsConnection);
 
     let stillConnected = true;
     let thisConnectionGameId:string|null = null;
@@ -474,5 +474,78 @@ export function startGameServer() {
   setUpCors(app);
   setUpServerHttp(app, races);
   app.listen(PORTS.GENERAL_HTTP_PORT);
+
+}
+
+
+export async function startSelfCheck() {
+  // this function gets run before a deploy.
+  // let's do at least a couple self-checks:
+  // 1) we'll make sure that all the tensorflow AIs are valid and won't crash when run
+  // 2) other automated tests
+  
+  const map = makeSimpleMap(10000);
+  const sg = new ServerGame(map, 'Self-Check', 'Self-Check', 0);
+  
+  const brainsAvailable = getBrainFolders();
+  const aiBrains:AINNBrain[] = brainsAvailable.map((avail) => {
+    return new AINNBrain(1.0, avail);
+  });
+
+  await Promise.all(aiBrains.map((ai) => ai.finishLoadPromise()));
+
+  const aiIds = aiBrains.map((aiBrain, index) => {
+    
+    const aiId = sg.userProvider.addUser({
+      riderName:`Test AI ${index}`,
+      accountId:"-1",
+      riderHandicap: 300,
+      gameId:sg.getGameId(),
+      imageBase64: null,
+      bigImageMd5: null,
+    }, null, UserTypeFlags.Bot | UserTypeFlags.Ai, this.raceState);
+    return aiId;
+  });
+
+  // ok, we've stuffed all our AIs into the race, and faked like they're all humans.  let's run the race!
+  const tmStart = new Date().getTime();
+  sg.scheduleRaceStartTime(tmStart);
+  const msTick = 1000 / SERVER_PHYSICS_FRAME_RATE;
+  let tmNow = tmStart;
+  console.log("Fake race started")
+  while(true) {
+    sg.raceState.tick(tmNow);
+    
+    aiBrains.forEach((ai, index) => {
+      const aiId = aiIds[index];
+      const name = brainsAvailable[index];
+      testAssert(!isNaN(aiId) && aiId >= 0, `Sanity check for AI#${brainsAvailable[index]}'s ID ${aiId}`);
+
+      const user = sg.getUser(aiId);
+      testAssert(ai.isNN(), "All these AIs should've loaded their brains");
+      
+      const snapshot = takeTrainingSnapshot(tmNow, user, sg.raceState);
+      const power = ai.getPowerNN(user.getHandicap(), snapshot);
+      testAssert(power >= 0 && power < 1500, `Nobody that plays TourJS sprints at 5x their FTP, but ${name} produced a wattage of ${power.toFixed(1)}`);
+      user.notifyPower(tmNow, power);
+    })
+
+    if(sg.raceState.isAllRacersFinished(tmNow)) {
+      const secondsTaken = (tmNow - tmStart) / 1000;
+      const kmDone = map.getLength() / 1000;
+
+      aiIds.forEach((aiId, index) => {
+        const user = sg.getUser(aiId);
+        const finishTimeSeconds = user.getRaceTimeSeconds(tmStart);
+        const hoursTaken = finishTimeSeconds / 3600;
+        const kmh = kmDone / hoursTaken;
+        const msg = `${user.getName()} from ${brainsAvailable[index]} finished the ${map.getLength()}m course at ${kmh.toFixed(1)}km/h`;
+        testAssert(kmh >= 35 && kmh <= 50, msg + `, which was out of allowed bounds`); // these are reasonable speeds to complete our set 10km course
+        console.log(msg);
+      })
+      break;
+    }
+    tmNow += msTick;
+  }
 
 }

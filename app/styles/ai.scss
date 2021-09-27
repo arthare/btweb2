@@ -1,0 +1,21 @@
+@import './common.scss';
+.ai {
+  &__container {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right:auto;
+    margin-top:128px;
+  }
+  &__file {
+    padding: 32px;
+    font-size: 24px;
+    border: 1px solid black;
+
+    &:hover {
+      background-color: lightgreen;
+    }
+  }
+  &__button {
+    @include big-button();
+  }
+}

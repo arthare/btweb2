@@ -1,0 +1,20 @@
+<div class="ai__container">
+  <h3>TourJS AI Training</h3>
+  <table>
+    <tr>
+      <td>Upload File</td>
+      <td><input class="ai__file" id="upload" type="file" onchange={{action 'onFileChange'}}></td>
+    </tr>
+
+    {{#if datas}}
+      <tr>
+        <td colspan=2><button disabled={{running}} class="ai__button" {{action 'train'}}>Train</button></td>
+      </tr>
+    {{/if}}
+    {{#if running}}
+      <tr>
+        <td colspan=2><button class="ai__button" {{action 'cancel'}}>Stop Running</button></td>
+      </tr>
+    {{/if}}
+  </table>
+</div>

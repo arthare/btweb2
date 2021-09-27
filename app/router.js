@@ -55,6 +55,7 @@ Router.map(function() {
   this.route('results');
   this.route('kickr-setup');
   this.route('race-results', {path:'/race-results/:key'});
+  this.route('ai');
 });
 
 export default Router;

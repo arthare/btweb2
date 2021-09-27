@@ -6,6 +6,11 @@ export function assert2(f:any, reason?:string) {
     debugger;
   }
 }
+export function testAssert(f:any, reason:string) {
+  if(!f) {
+    throw new Error(reason);
+  }
+}
 
 export function formatSecondsHms(seconds:number) {
   if(seconds < 60) {
