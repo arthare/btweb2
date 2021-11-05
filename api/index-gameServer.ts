@@ -2,12 +2,12 @@ import WebSocket from 'ws';
 import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../app/server-client-common/communication';
 import { assert2, testAssert } from '../app/server-client-common/Utils';
 import { RaceState, UserProvider } from '../app/server-client-common/RaceState';
-import { User, UserInterface, UserTypeFlags } from '../app/server-client-common/User';
+import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from '../app/server-client-common/User';
 import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
 import { RideMap, RideMapPartial } from '../app/server-client-common/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './ServerConstants';
-import { AINNBrain, getBrainFolders, ServerGame, ServerUser } from '../app/server-client-common/ServerGame';
+import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from '../app/server-client-common/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
@@ -477,6 +477,69 @@ export function startGameServer() {
 
 }
 
+async function getTimeToCompleteCourse(fnMakeMap:()=>RideMap, name:string, ais:AIBrain[]):Promise<number> {
+
+  return new Promise(async (resolve) => {
+    const map = fnMakeMap();
+    const sg = new ServerGame(map, 'Self-Check', 'Self-Check', 0);
+
+    const aiIds = [];
+    for(var ai of ais) {
+      aiIds.push(sg.userProvider.addUser({
+        riderName:`Test AI`,
+        accountId:"-1",
+        riderHandicap: 300,
+        gameId:sg.getGameId(),
+        imageBase64: null,
+        bigImageMd5: null,
+      }, null, UserTypeFlags.Bot | UserTypeFlags.Ai, sg.raceState));
+    }
+
+    const tmStart = new Date().getTime();
+    sg.scheduleRaceStartTime(tmStart);
+    const msTick = 200;
+    let tmNow = tmStart;
+    console.log(`Fake race started for ${name}`)
+    while(true) {
+      const secondsTaken = (tmNow - tmStart) / 1000;
+      sg.raceState.tick(tmNow);
+      
+      for(var aiId of aiIds) {
+        testAssert(!isNaN(aiId) && aiId >= 0, `Sanity check for AI#${name}'s ID ${aiId}`);
+  
+        const user = sg.getUser(aiId);
+        const snapshot = takeTrainingSnapshot(tmNow, user, sg.raceState);
+        let power;
+        if(ai.isNN()) {
+          power = ai.getPowerNN(user.getHandicap(), snapshot);
+        } else {
+          power = ai.getPower(secondsTaken, user.getHandicap(), user.getDistance(), map.getLength(), map.getSlopeAtDistance(user.getDistance()));
+        }
+        testAssert(power >= 0 && power < 1500, `Nobody that plays TourJS sprints at 5x their FTP, but ${name} produced a wattage of ${power.toFixed(1)}`);
+        user.notifyPower(tmNow, power);
+      }
+      
+      
+
+      if(sg.raceState.isAllRacersFinished(tmNow)) {
+        const kmDone = map.getLength() / 1000;
+
+        const user = sg.getUser(aiId);
+        const finishTimeSeconds = user.getRaceTimeSeconds(tmStart);
+        const hoursTaken = finishTimeSeconds / 3600;
+        const kmh = kmDone / hoursTaken;
+        const msg = `${user.getName()} from ${name} finished the ${map.getLength()}m course at ${kmh.toFixed(1)}km/h`;
+        testAssert(kmh >= 35 && kmh <= 50, msg + `, which was out of allowed bounds`); // these are reasonable speeds to complete our set 10km course
+        console.log(msg);
+        resolve(secondsTaken);
+        break;
+      }
+      tmNow += msTick;
+    }
+  })
+
+}
+
 
 export async function startSelfCheck() {
   // this function gets run before a deploy.
@@ -484,6 +547,8 @@ export async function startSelfCheck() {
   // 1) we'll make sure that all the tensorflow AIs are valid and won't crash when run
   // 2) other automated tests
   
+
+
   const map = makeSimpleMap(10000);
   const sg = new ServerGame(map, 'Self-Check', 'Self-Check', 0);
   
@@ -494,58 +559,22 @@ export async function startSelfCheck() {
 
   await Promise.all(aiBrains.map((ai) => ai.finishLoadPromise()));
 
-  const aiIds = aiBrains.map((aiBrain, index) => {
+  const dumb = new AIUltraBoringBrain(1.0)
+  const baselineTime = await getTimeToCompleteCourse(() => makeSimpleMap(10000), "Ultraboring", [dumb]);
+
+  let index = 0;
+  for(var aiBrain of aiBrains) {
+    const time5 = await getTimeToCompleteCourse(() => makeSimpleMap(5000), brainsAvailable[index], [aiBrain]);
+    const time10 = await getTimeToCompleteCourse(() => makeSimpleMap(10000), brainsAvailable[index], [aiBrain]);
+    const time20 = await getTimeToCompleteCourse(() => makeSimpleMap(20000), brainsAvailable[index], [aiBrain]);
     
-    const aiId = sg.userProvider.addUser({
-      riderName:`Test AI ${index}`,
-      accountId:"-1",
-      riderHandicap: 300,
-      gameId:sg.getGameId(),
-      imageBase64: null,
-      bigImageMd5: null,
-    }, null, UserTypeFlags.Bot | UserTypeFlags.Ai, this.raceState);
-    return aiId;
-  });
+    const time5Competed = await getTimeToCompleteCourse(() => makeSimpleMap(5000), brainsAvailable[index], [aiBrain, dumb]);
+    const time10Competed = await getTimeToCompleteCourse(() => makeSimpleMap(10000), brainsAvailable[index], [aiBrain, dumb]);
+    const time20Competed = await getTimeToCompleteCourse(() => makeSimpleMap(20000), brainsAvailable[index], [aiBrain, dumb]);
 
-  // ok, we've stuffed all our AIs into the race, and faked like they're all humans.  let's run the race!
-  const tmStart = new Date().getTime();
-  sg.scheduleRaceStartTime(tmStart);
-  const msTick = 1000 / SERVER_PHYSICS_FRAME_RATE;
-  let tmNow = tmStart;
-  console.log("Fake race started")
-  while(true) {
-    sg.raceState.tick(tmNow);
-    
-    aiBrains.forEach((ai, index) => {
-      const aiId = aiIds[index];
-      const name = brainsAvailable[index];
-      testAssert(!isNaN(aiId) && aiId >= 0, `Sanity check for AI#${brainsAvailable[index]}'s ID ${aiId}`);
-
-      const user = sg.getUser(aiId);
-      testAssert(ai.isNN(), "All these AIs should've loaded their brains");
-      
-      const snapshot = takeTrainingSnapshot(tmNow, user, sg.raceState);
-      const power = ai.getPowerNN(user.getHandicap(), snapshot);
-      testAssert(power >= 0 && power < 1500, `Nobody that plays TourJS sprints at 5x their FTP, but ${name} produced a wattage of ${power.toFixed(1)}`);
-      user.notifyPower(tmNow, power);
-    })
-
-    if(sg.raceState.isAllRacersFinished(tmNow)) {
-      const secondsTaken = (tmNow - tmStart) / 1000;
-      const kmDone = map.getLength() / 1000;
-
-      aiIds.forEach((aiId, index) => {
-        const user = sg.getUser(aiId);
-        const finishTimeSeconds = user.getRaceTimeSeconds(tmStart);
-        const hoursTaken = finishTimeSeconds / 3600;
-        const kmh = kmDone / hoursTaken;
-        const msg = `${user.getName()} from ${brainsAvailable[index]} finished the ${map.getLength()}m course at ${kmh.toFixed(1)}km/h`;
-        testAssert(kmh >= 35 && kmh <= 50, msg + `, which was out of allowed bounds`); // these are reasonable speeds to complete our set 10km course
-        console.log(msg);
-      })
-      break;
-    }
-    tmNow += msTick;
+    index++;
   }
-
+  aiBrains.forEach((aiBrain, index) => {
+    
+  });
 }
