@@ -206,7 +206,12 @@ export class BluetoothFtmsDevice extends BluetoothDeviceShared {
     }
 
 
-    const slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
+    let slopeInWholePercent = this._slopeSource.getLastSlopeInWholePercent() * ftmsPct;
+    if(slopeInWholePercent < 0) {
+      slopeInWholePercent /= 4; // zwift-style, let's not spin out on downhills
+    }
+
+
     console.log("updating FTMS device with slope " + slopeInWholePercent.toFixed(1) + '%');
     const charOut = new DataView(new ArrayBuffer(7));
     charOut.setUint8(0, 0x11); // setIndoorBikesimParams
