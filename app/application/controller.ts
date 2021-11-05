@@ -62,7 +62,7 @@ export default class Application extends Controller.extend({
   bluetoothWarning: false,
   canDoBluetooth: false,
   frame: 0,
-  showCheater: true,
+  showCheater: false,
   isDebug: window.location.hostname === 'localhost',
   
   observeGoodUpdates: Ember.observer('devices.goodUpdates', function(this:Application) {
