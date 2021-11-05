@@ -375,14 +375,15 @@ export function paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, 
       borderColor = 'black';
       nameToDraw = user.getName();
     } else if(isHuman) {
-      sz = 2.5;
+      sz = 3.0;
+      deltaX = -0.25;
       fillColor = human_color;
       borderColor = 'black';
       nameToDraw = user.getName();
       chatToDraw = user.getLastChat(tmNow);
     } else {
       // ai
-      sz = 2;
+      sz = 3.1;
       deltaX = -0.25;
       fillColor = ai_color;
       borderColor = 'transparent';
