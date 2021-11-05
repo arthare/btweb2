@@ -1,9 +1,9 @@
 import Controller from '@ember/controller';
 import { TFEOpAttr } from '@tensorflow/tfjs-node/dist/tfjs_binding';
-import { doNNTrainWithSnapshots, TrainingSnapshot } from 'bt-web2/server-client-common/ServerAISnapshots';
+import { doNNTrainWithSnapshots, TrainingSnapshotV2 } from 'bt-web2/server-client-common/ServerAISnapshots';
 import Ember from 'ember';
 
-const handleFiles = (files:any):Promise<TrainingSnapshot[]> => {
+const handleFiles = (files:any):Promise<TrainingSnapshotV2[]> => {
   console.log("handling files ", files);
 
   return new Promise((resolve, reject) => {
@@ -13,7 +13,7 @@ const handleFiles = (files:any):Promise<TrainingSnapshot[]> => {
       const str = new TextDecoder().decode(res as any);
       // ok, str will be a bunch of valid JSONs, divided by "$$" to split them up
       const chunks = str.split('$$').filter((res) => !!res.trim());
-      const datas:TrainingSnapshot[] = chunks.map((c) => JSON.parse(c));
+      const datas:TrainingSnapshotV2[] = chunks.map((c) => JSON.parse(c));
   
       resolve(datas);
   

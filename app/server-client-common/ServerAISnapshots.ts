@@ -1,8 +1,9 @@
 import { LayersModel, Tensor, Tensor2D } from "@tensorflow/tfjs-node";
 import { getAIStrengthBoostForDistance, RaceState } from "./RaceState";
 import { RideMap } from "./RideMap";
-import { User, UserInterface, UserTypeFlags } from "./User";
+import { DEFAULT_CDA, DEFAULT_CRR, DEFAULT_GRAVITY, DEFAULT_HANDICAP_POWER, DEFAULT_RHO, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./User";
 import { assert2 } from "./Utils";
+//import tf from '@tensorflow/tfjs-node';
 
 function randRange(min:number, max:number):number {
   const span = max - min;
@@ -14,21 +15,17 @@ export function buildModel(tf:any, nInput:number, nOutput:number) {
   // and
   // https://codelabs.developers.google.com/codelabs/tfjs-training-regression/index.html#8
   const model = tf.sequential();
-  model.add(tf.layers.dense({inputShape: [nInput], units: 50}));
-  model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
-  if(Math.random() > 0.5) {
-    model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
-  }
-
-  if(Math.random() > 0.5) {
-    model.add(tf.layers.dense({units: randRange(125,250), activation: 'sigmoid'}));
-  }
+  model.add(tf.layers.dense({inputShape: [nInput], units: nInput}));
+  model.add(tf.layers.gaussianNoise({stddev: 0.05}))
+  model.add(tf.layers.dense({units: randRange(25,75), activation: 'sigmoid'}));
+  model.add(tf.layers.gaussianNoise({stddev: 0.05}))
+  model.add(tf.layers.dense({units: randRange(25,75), activation: 'sigmoid'}));
   model.add(tf.layers.dense({units: nOutput}));
 
   return model;
 }
 
-export function predictFromRawTrainingData(tf:any, model:LayersModel, norms:NormData, data:TrainingSnapshot):number {
+export function predictFromRawTrainingData(tf:any, model:LayersModel, norms:NormData, data:TrainingSnapshotV2):number {
   const preppedData = new TrainingDataPrepped(data, norms.killCols)._myData.map((dt) => dt.data);
   assert2(preppedData.length === norms.inputSpans.length, `Our prepped data had ${preppedData.length} but our trained model expected ${norms.inputSpans.length}`);
   const numbers = makeTensor(tf, [preppedData]);
@@ -37,8 +34,9 @@ export function predictFromRawTrainingData(tf:any, model:LayersModel, norms:Norm
   const predictions = model.predict(normalizedInputs);
   const fixedPreds = unnormalizeData(predictions, norms.labelMin, norms.labelMax);
 
-  const ret = fixedPreds.dataSync()[0];
+  let ret = fixedPreds.dataSync()[0];
 
+  ret = Math.max(0, ret);
   return ret;
 }
 export class NormData {
@@ -76,7 +74,7 @@ export class NormData {
   }
 }
 
-export interface TrainingSnapshot {
+interface TrainingSnapshot {
   tm:number;
 
   // inputs:
@@ -139,9 +137,48 @@ function bound(min:number, val:number, max:number):number {
   return Math.max(min, Math.min(val, max));
 }
 
+function getTerminalVelocity(pctOfFtp:number, slopeInPercent:number):number {
+  
+  let guessSpeed = 0.5;
+  let maxAccelSpeed = guessSpeed;
+  let minDecelSpeed = 0;
+  while(true) {
+    const dragRolling = -DEFAULT_CRR * DEFAULT_RIDER_MASS * DEFAULT_GRAVITY;
+    const dragAero = DEFAULT_CDA * DEFAULT_RHO * 0.5 * guessSpeed * guessSpeed;
+
+    const normalForce = DEFAULT_RIDER_MASS * DEFAULT_GRAVITY;
+    const dragSlope = (slopeInPercent / 100) * normalForce;
+
+    const outputPower = (DEFAULT_HANDICAP_POWER * pctOfFtp);
+    const accelPower = outputPower / Math.max(guessSpeed, 0.5);
+
+    const totalForce = accelPower - dragSlope - dragAero - dragRolling;
+
+    if(Math.abs(totalForce) <= 0.1) {
+      // found our equilibrium
+      //console.log(`Terminal velocity for ${outputPower.toFixed(1)}W and slope ${slopeInPercent.toFixed(1)} is ${(guessSpeed*3.6).toFixed(0)}km/h`)
+      return guessSpeed;
+    } else if(totalForce < 0) {
+      // we'd be decelerating at this speed
+      minDecelSpeed = guessSpeed;
+      guessSpeed = (minDecelSpeed + maxAccelSpeed) / 2;
+    } else {
+      maxAccelSpeed = guessSpeed;
+      if(minDecelSpeed) {
+        // we're narrowing down the bounds now, so we're doing a binary search
+        guessSpeed = (minDecelSpeed + maxAccelSpeed) / 2;
+      } else {
+        // we're hunting for how fast we have to go before we start decelerating
+        guessSpeed *= 2;
+      }
+      
+    }
+  }
+}
+
 export class TrainingDataPrepped {
   _myData:DataWithName[];
-  constructor(snap:TrainingSnapshot, killCols:number[]) {
+  constructor(snap:TrainingSnapshotV2, killCols:number[]) {
     // we need to pre-normalize a bunch of these, as well as filter out crap that doesn't matter
     let temp:any = {...snap};
 
@@ -157,9 +194,22 @@ export class TrainingDataPrepped {
     temp.negAvgSlopeCurrentDownhill = -temp.avgSlopeCurrentDownhill;
     temp.negAvgSlopeCurrentUphill = -temp.avgSlopeCurrentUphill;
     temp.currentSlope = -Math.abs(snap.avgSlopeCurrentDownhill) || Math.abs(snap.avgSlopeCurrentUphill);
+    temp.instantSlope = snap.currentSlope;
     temp.heightDeltaInCurrentHill = Math.abs(snap.metersLeftToClimbCurrentUphill) || -Math.abs(snap.metersLeftToDescentCurrentDownhill);
     temp.heightDeltaRemaining = Math.abs(snap.metersLeftToClimb) || -Math.abs(snap.metersLeftToDescend);
 
+    temp.terminalVelocityAtFtp = getTerminalVelocity(1.0, snap.currentSlope);
+    temp.deltaToTerminalVelocity = snap.speed - temp.terminalVelocityAtFtp;
+
+    if(snap.ridersAheadOfGroup <= 0) {
+      // we're winning!
+      temp.victoryMargin = snap.gapToGroupBehind;
+      temp.victoryOrLossMargin = snap.gapToGroupBehind;
+    } else {
+      // not winning -> victory margin of zero
+      temp.victoryMargin = 0;
+      temp.victoryOrLossMargin = -Math.abs(snap.gapToGroupAhead);
+    }
 
     delete temp.gapToHumanAhead;
     delete temp.gapToHumanBehind;
@@ -437,7 +487,7 @@ export function takeTrainingSnapshot(tmNow:number, user:User, raceState:RaceStat
 
   return ret;
 }
-export function trainingSnapshotToAILabel(data:TrainingSnapshot|any, index:number, array:TrainingSnapshot[]):number[] {
+export function trainingSnapshotToAILabel(data:TrainingSnapshotV2|any, index:number, array:TrainingSnapshotV2[]):number[] {
 
   let sum = 0;
   let count = 0;
@@ -454,7 +504,7 @@ export function trainingSnapshotToAILabel(data:TrainingSnapshot|any, index:numbe
   }
   return [sum / count];
 }
-export function trainingSnapshotToAIInput(data:TrainingSnapshot|any, killCols:number[]):DataWithName[] {
+export function trainingSnapshotToAIInput(data:TrainingSnapshotV2|any, killCols:number[]):DataWithName[] {
   return new TrainingDataPrepped(data, killCols)._myData;
 }
 
@@ -625,7 +675,9 @@ function getRSquared(predict:Float32Array|number[]|Int32Array|Uint8Array, correc
   };
 }
 
-export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas:TrainingSnapshot[], writeResult:(name:string, contents:string)=>void, visCallbacks:any, fnCancelCallback:()=>boolean) {
+const bestIterationsToAchieveScore:any = {};
+
+export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas:TrainingSnapshotV2[], writeResult:(name:string, contents:string)=>void, visCallbacks:any, fnCancelCallback:()=>boolean) {
   // take our training snapshots and convert them into our training inputs
   let inputDataPrepped = datas.map((data) => trainingSnapshotToAIInput(data, []));
   let allLabelsAsNumbers = datas.map(trainingSnapshotToAILabel);
@@ -668,9 +720,11 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
   });
 
   const batchSize = labelTrainingTensor.size;
-  const epochs = 50;
+  const epochs = 300;
 
   let bestSoFar = -1000;
+  let bestOnThisRunSoFar = -1000;
+  let bestEmittedSoFar = -1000;
 
   let loops = 0;
   let rebuilds = 0;
@@ -679,6 +733,7 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
   let trainsSinceLastBest = 0;
   while(true) {
     if(fnCancelCallback()) {
+      emitModel();
       break;
     }
     const fromTheStartEachTime = {
@@ -700,6 +755,19 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
 
     let sequenceParam;
     const rnd = Math.random();
+
+    const ixOurBestSoFar = Math.floor(bestOnThisRunSoFar * 1000);
+    const howLongItTookTheBestToDoThat = bestIterationsToAchieveScore[ixOurBestSoFar];
+    console.log(`Last time, it took ${howLongItTookTheBestToDoThat} iterations to hit ${bestOnThisRunSoFar}`);
+    let limit;
+    if(howLongItTookTheBestToDoThat === undefined) {
+      // we've done the best ever!
+      limit = failsUntilRedo;
+    } else {
+      // someone else has gotten this far, so our limit will be barely longer
+      limit = howLongItTookTheBestToDoThat * 1.05;
+    }
+
     if(trains > failsUntilRedo) {
       console.log("Total model rebuild");
       model.dispose();
@@ -715,6 +783,7 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
       loops = 0;
       trains = 0;
       trainsSinceLastBest = 0;
+      bestOnThisRunSoFar = -1000;
 
     } else if(rnd > 0.9) {
       sequenceParam = fromTheStartEachTime;
@@ -727,15 +796,8 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
     trains++;
     trainsSinceLastBest++;
 
+    async function emitModel() {
 
-    const thisScore = testModel(tf, model, inputEvalTensor, labelEvalTensor, normData, false, inputDataPrepped);
-    const prefix = `${rebuilds}.${trains}: `;
-    if(thisScore.score > bestSoFar && trains > 1) {
-      console.log(prefix + "Metric of prediction = ", thisScore.score.toFixed(8), " best so far ", bestSoFar.toFixed(8));
-
-      // future training cycles should get 25% as many tries as it took us to get here, since they've got to beat us
-      failsUntilRedo = Math.max(trains * 1.25, failsUntilRedo);
-      trainsSinceLastBest = 0;
 
       
       const brainName = `${rootNameOfBot}-${thisScore.score.toFixed(8)}.brain`;
@@ -758,11 +820,42 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
         lines.push(...restOfLines);
         writeResult(`${brainName}-check.txt`, lines.join('\n'));
       }
+      
+    }
 
+    const thisScore = testModel(tf, model, inputEvalTensor, labelEvalTensor, normData, false, inputDataPrepped);
+    const prefix = `${rebuilds}.${trains}: `;
+    bestOnThisRunSoFar = Math.max(bestOnThisRunSoFar, thisScore.score);
+    if(thisScore.score > bestSoFar && trains > 1) {
+
+      const ixStart = Math.floor(bestOnThisRunSoFar*1000);
+      const ixEnd = Math.floor(thisScore.score * 1000);
+      for(var x = ixStart; x < ixEnd; x++) {
+        if(bestIterationsToAchieveScore[''+x] === undefined) {
+          // have never achieved such greatness!
+          bestIterationsToAchieveScore[''+x] = trains;
+        } else {
+          bestIterationsToAchieveScore[''+x] = Math.min(trains, bestIterationsToAchieveScore[''+x]);
+        }
+        
+      }
+
+
+      console.log(prefix + "Metric of prediction = ", thisScore.score.toFixed(8), " best so far ", bestSoFar.toFixed(8));
+
+      // future training cycles should get 25% as many tries as it took us to get here, since they've got to beat us
+      failsUntilRedo = Math.max(trains * 1.25, failsUntilRedo);
+      trainsSinceLastBest = 0;
+
+      if(thisScore.score > bestEmittedSoFar + 0.005) {
+        emitModel();
+        console.log("Stored result @ ", thisScore.score);
+        bestEmittedSoFar = thisScore.score;
+      }
 
       bestSoFar = thisScore.score;
     } else {
-      console.log(prefix + " missed.");
+      console.log(`${prefix} missed (${thisScore.score})`);
     }
     loops++;
   }

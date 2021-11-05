@@ -6,7 +6,7 @@ import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "../../api/ServerConstants";
 import fs from 'fs';
 import { SpanAverage } from "./SpanAverage";
-import { BrainLocation, brainPath, makeTensor, normalizeData, NormData, predictFromRawTrainingData, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshot, trainingSnapshotToAIInput, TrainingSnapshotV2, unnormalizeData } from "./ServerAISnapshots";
+import { BrainLocation, brainPath, makeTensor, normalizeData, NormData, predictFromRawTrainingData, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshotV2, trainingSnapshotToAIInput, unnormalizeData } from "./ServerAISnapshots";
 import * as tf from '@tensorflow/tfjs-node';
 import { LayersModel, Sequential, Tensor, Tensor2D } from '@tensorflow/tfjs-node';
 import { reject } from "rsvp";
@@ -224,7 +224,7 @@ export class ServerUserProvider implements UserProvider {
 export interface AIBrain {
   getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number;
   isNN():boolean;
-  getPowerNN(handicap:number, data:TrainingSnapshot):number;
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number;
   getName(handicap:number):string;
   finishLoadPromise():Promise<any>;
 }
@@ -238,7 +238,8 @@ export class AINNBrain implements AIBrain {
   _finishLoad:Promise<any>;
   constructor(strength:number, brain:string) {
 
-    assert2(strength >= 0.75 && strength <= 1.0);
+    assert2(strength >= 0.75 && strength <= 1.05);
+    strength *= 1.05;
 
     const totalPath = brainPath(brain, BrainLocation.Deployed);
     this._finishLoad = new Promise<void>((resolve, reject) => {
@@ -272,7 +273,7 @@ export class AINNBrain implements AIBrain {
     return this._strength * handicap;
   }
   isNN() {return !!this._model;}
-  getPowerNN(handicap:number, data:TrainingSnapshot|null):number {
+  getPowerNN(handicap:number, data:TrainingSnapshotV2|null):number {
     if(!data) {
       // just default to something basic if we don't have our data yet
       return handicap * 1.0;
@@ -289,8 +290,28 @@ export class AINNBrain implements AIBrain {
   }
   
 }
-
-class AIBoringBrain implements AIBrain {
+export class AIUltraBoringBrain implements AIBrain {
+  _nextChange = 0;
+  _currentOutput = 0;
+  _strength = 0;
+  constructor(strength:number) {
+    this._strength = strength;
+  }
+  finishLoadPromise() {
+    return Promise.resolve();
+  }
+  getPower(timeSeconds:number, handicap:number, dist:number, mapLength:number, slopeWholePercent:number):number {
+    return this._strength * DEFAULT_HANDICAP_POWER;
+  }
+  isNN() {return false;}
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number {
+    throw new Error("Not implemented");
+  }
+  getName(handicap:number):string {
+    return `UltraBore`;
+  }
+}
+export class AIBoringBrain implements AIBrain {
   _nextChange = 0;
   _currentOutput = 0;
   _strength = 0;
@@ -311,7 +332,7 @@ class AIBoringBrain implements AIBrain {
     return this._strength * this._currentOutput;
   }
   isNN() {return false;}
-  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number {
     throw new Error("Not implemented");
   }
   getName(handicap:number):string {
@@ -335,7 +356,7 @@ class AISineBrain implements AIBrain {
     return this._strength * Math.max(0, handicap + mod);
   }
   isNN() {return false;}
-  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number {
     throw new Error("Not implemented");
   }
   getName(handicap:number):string {
@@ -357,7 +378,7 @@ class AIHillBrain implements AIBrain {
     return this._strength * Math.max(0, handicap * modSlope);
   }
   isNN() {return false;}
-  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number {
     throw new Error("Not implemented");
   }
   getName(handicap:number):string {
@@ -388,7 +409,7 @@ class DumbSavey implements AIBrain {
     }
   }
   isNN() {return false;}
-  getPowerNN(handicap:number, data:TrainingSnapshot):number {
+  getPowerNN(handicap:number, data:TrainingSnapshotV2):number {
     throw new Error("Not implemented");
   }
   getName(handicap:number):string {
@@ -397,7 +418,7 @@ class DumbSavey implements AIBrain {
 }
 
 function getNextAIBrain(strength:number, brains:string[]):AIBrain {
-  assert2(strength >= 0.75 && strength <= 1.0);
+  assert2(strength >= 0.75 && strength <= 1.05);
 
   const nAis = 5;
   const val = Math.floor(Math.random() * nAis);
@@ -447,7 +468,7 @@ export class ServerGame {
     const brains = getBrainFolders();
 
     for(var x = 0;x < cAis; x++) {
-      const aiStrength = Math.random()*0.25 + 0.75;
+      const aiStrength = Math.random()*0.25 + 0.80;
       const aiBrain = getNextAIBrain(aiStrength, brains);
 
       const aiId = this.userProvider.addUser({
