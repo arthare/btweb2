@@ -6,6 +6,7 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
+    "declaration": true,
     // skip error: Interface 'WebGL2RenderingContext' incorrectly extends interface 'WebGL2RenderingContextBase'.
     // https://github.com/tensorflow/tfjs/issues/4201
     "skipLibCheck": true
@@ -14,7 +15,6 @@
     "./index.ts",
   ],
   "include": [
-    "./**/*", "../tourjs-react/src/tourjs-shared/ServerGame.ts", "../tourjs-shared/ServerConstants.ts",
   ],
   "lib": ["es2015"]
 }

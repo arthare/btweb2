@@ -1,12 +1,12 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
-import { ServerGame } from '../app/server-client-common/ServerGame';
-import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from '../app/server-client-common/communication';
-import { RaceState } from '../app/server-client-common/RaceState';
-import { ScheduleRacePostRequest } from '../app/server-client-common/ServerHttpObjects';
-import { RideMapHandicap } from '../app/server-client-common/RideMapHandicap';
-import { RideMapElevationOnly, RideMapPartial } from '../app/server-client-common/RideMap';
-import { assert2 } from '../app/server-client-common/Utils';
+import { ServerGame } from '../tourjs-react/src/tourjs-shared/ServerGame';
+import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from '../tourjs-react/src/tourjs-shared/communication';
+import { RaceState } from '../tourjs-react/src/tourjs-shared/RaceState'
+import { ScheduleRacePostRequest } from '../tourjs-react/src/tourjs-shared/ServerHttpObjects';
+import { RideMapHandicap } from '../tourjs-react/src/tourjs-shared/RideMapHandicap';
+import { RideMapElevationOnly, RideMapPartial } from '../tourjs-react/src/tourjs-shared/RideMap';
+import { assert2 } from '../tourjs-react/src/tourjs-shared/Utils';
 import { setCorsHeaders, postStartup } from './HttpUtils';
 import fs from 'fs';
 import md5 from 'md5';

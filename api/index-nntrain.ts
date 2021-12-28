@@ -1,9 +1,9 @@
 import fs from 'fs';
 import FeedForwardNeuralNetworks from 'ml-fnn';
-import { BrainLocation, brainPath, DataWithName, doNNTrainWithSnapshots, TrainingDataPrepped, TrainingSnapshotV2, trainingSnapshotToAIInput, trainingSnapshotToAILabel } from '../app/server-client-common/ServerAISnapshots';
+import { BrainLocation, brainPath, DataWithName, doNNTrainWithSnapshots, TrainingDataPrepped, TrainingSnapshotV2, trainingSnapshotToAIInput, trainingSnapshotToAILabel } from '../tourjs-react/src/tourjs-shared/ServerAISnapshots';
 import * as tf from '@tensorflow/tfjs-node'
 import { LayersModel, Sequential, Tensor, Tensor2D } from '@tensorflow/tfjs-node';
-import { assert2 } from '../app/server-client-common/Utils';
+import { assert2 } from '../tourjs-react/src/tourjs-shared/Utils';
 import  {rSquared} from 'r-squared';
 
 

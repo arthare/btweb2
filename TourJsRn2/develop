@@ -1,2 +1,0 @@
-adb uninstall com.tourjsrn2
-npx react-native run-android
