@@ -3,7 +3,7 @@ set -e
 
 rm -rf dist
 tsc
-node dist/api/index.js self-check
+node dist/index.js self-check
 
 SIGNIN=art@tourjs.ca
 APIHOSTDIR=/home/art/tourjs-api

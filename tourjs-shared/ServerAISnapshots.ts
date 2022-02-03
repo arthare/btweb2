@@ -798,11 +798,11 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
 
       
       const brainName = `${rootNameOfBot}-${thisScore.score.toFixed(8)}.brain`;
-      await model.save(`downloads://${brainName}`);
+      await model.save(`file:///braintrain/${brainName}`);
 
       {// put the norm.json so that we can figure out the norms that this brain was trained with
         normData.killCols = killCols;
-        writeResult(`${brainName}-norm.json`, JSON.stringify(normData.toJSON()));
+        writeResult(`h:\\braintrain\\${brainName}\\norm.json`, JSON.stringify(normData.toJSON()));
         normData.killCols = [];
       }
 
@@ -815,7 +815,7 @@ export async function doNNTrainWithSnapshots(tf:any, rootNameOfBot:string, datas
           return dataLine.map(d => d.toFixed(8)).join('\t');
         });
         lines.push(...restOfLines);
-        writeResult(`${brainName}-check.txt`, lines.join('\n'));
+        writeResult(`h:\\braintrain\\${brainName}\\check.txt`, lines.join('\n'));
       }
       
     }

@@ -6,14 +6,14 @@ import { BrowserRouter, useNavigate } from "react-router-dom";
 import { Auth0Client, User } from '@auth0/auth0-spa-js';
 import { FakeUserProvider, setupRace } from './UtilsGameStarter';
 import { request } from 'https';
-import { ServerMapDescription } from './tourjs-shared/communication';
-import { RaceState } from './tourjs-shared/RaceState';
-import { PureCosineMap } from './tourjs-shared/RideMap';
-import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
-import { paintCanvasFrame, PaintFrameState } from './tourjs-shared/drawing';
-import { DecorationState } from './tourjs-shared/DecorationState';
-import { DecorationFactory, randRange } from './tourjs-shared/DecorationFactory';
-import { defaultThemeConfig } from './tourjs-shared/drawing-constants';
+import { ServerMapDescription } from '../../tourjs-shared/communication';
+import { RaceState } from '../../tourjs-shared/RaceState';
+import { PureCosineMap } from '../../tourjs-shared/RideMap';
+import { RideMapHandicap } from '../../tourjs-shared/RideMapHandicap';
+import { paintCanvasFrame, PaintFrameState } from '../../tourjs-shared/drawing';
+import { DecorationState } from '../../tourjs-shared/DecorationState';
+import { DecorationFactory, randRange } from '../../tourjs-shared/DecorationFactory';
+import { defaultThemeConfig } from '../../tourjs-shared/drawing-constants';
 
 export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any, navigate:any) {
   useEffect(() => {

@@ -12,14 +12,22 @@ export function startNNTrain() {
   let dir = fs.readdirSync(brainPath('', BrainLocation.ForTraining));
   dir = dir.filter((filename) => filename.endsWith('.training'));
 
+  let proms = [];
   dir.forEach(async (file) => {
+    console.log("training with file ", file);
     const contents = fs.readFileSync(brainPath(file, BrainLocation.ForTraining), 'utf8');
     let jsons = contents.split('\n$$\n');
     jsons = jsons.filter((js) => !!(js.trim()));
-    const datas:TrainingSnapshotV2[] = jsons.map((js) => JSON.parse(js));
-    doNNTrainWithSnapshots(tf, file, datas, (name, contents) => fs.writeFileSync(name, contents), null, ()=>false);
+    const datas:TrainingSnapshotV2[] = jsons.map((js) => {
+      try {
+        return JSON.parse(js)
+      } catch(e) {
+        return null;
+      }
+    }).filter((val) => !!val);
+    proms.push(doNNTrainWithSnapshots(tf, file, datas, (name, contents) => fs.writeFileSync(name, contents), null, ()=>false));
 
-    //fs.writeFileSync(brainPath(`${file}.brain`, BrainLocation.ForTraining), JSON.stringify(nn.toJSON()));
-    debugger;
   })
+  console.log(proms.length, " brains are training!");
+  return Promise.all(proms);
 }

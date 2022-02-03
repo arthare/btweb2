@@ -1,6 +1,6 @@
-import { UserProvider, RaceState } from "./tourjs-shared/RaceState";
-import { RideMap } from "./tourjs-shared/RideMap";
-import { UserInterface, DEFAULT_RIDER_MASS, UserTypeFlags, User } from "./tourjs-shared/User";
+import { UserProvider, RaceState } from "../../tourjs-shared/RaceState";
+import { RideMap } from "../../tourjs-shared/RideMap";
+import { UserInterface, DEFAULT_RIDER_MASS, UserTypeFlags, User } from "../../tourjs-shared/User";
 
 
 
