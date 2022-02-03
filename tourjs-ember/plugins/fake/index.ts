@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { PluginDescriptor, PluginType, PluginToBrowserUpdate, BrowserToPluginUpdate } from '../../app/server-client-common/PluginCommunication';
+import { PluginDescriptor, PluginType, PluginToBrowserUpdate, BrowserToPluginUpdate } from '../../app/shared/PluginCommunication';
 import { signUpWithPluginHost, sendPowerToPluginHost } from '../pluginUtils';
 
 export default function startPlugin(serverUrl) {

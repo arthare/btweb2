@@ -14,7 +14,7 @@
     "./index.ts",
   ],
   "include": [
-    "./**/*", "../tourjs-react/src/tourjs-shared/ServerGame.ts", "../tourjs-shared/ServerConstants.ts",
+    "./**/*", "./shared/ServerGame.ts", "./shared/ServerConstants.ts",
   ],
   "lib": ["es2015"]
 }

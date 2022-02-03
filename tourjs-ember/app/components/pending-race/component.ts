@@ -1,9 +1,9 @@
 import Component from '@ember/component';
-import { assert2, formatSecondsHms } from 'bt-web2/server-client-common/Utils';
-import { ServerHttpGameListElement, CurrentRaceState, getElevationFromEvenSpacedSamples, SimpleElevationMap } from 'bt-web2/server-client-common/communication';
+import { assert2, formatSecondsHms } from 'bt-web2/shared/Utils';
+import { ServerHttpGameListElement, CurrentRaceState, getElevationFromEvenSpacedSamples, SimpleElevationMap } from 'bt-web2/shared/communication';
 import { computed } from '@ember/object';
-import { RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
-import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
+import { RideMapElevationOnly } from 'bt-web2/shared/RideMap';
+import { RideMapHandicap } from 'bt-web2/shared/RideMapHandicap';
 
 export default class PendingRace extends Component.extend({
   // anything which *must* be merged to prototype here

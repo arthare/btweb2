@@ -25,41 +25,4 @@ window.assert2 = (f, reason) => {
 
 loadInitializers(App, config.modulePrefix);
 
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
- 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
- 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-async function setupServiceWorker() {
-  await navigator.serviceWorker.register('sw.js');
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.getSubscription();
-  if(subscription) {
-    // we're subscribed, I guess
-    console.log("we're already subscribed");
-    return subscription;
-  } else {
-    
-  const vapidPublicKey = 'BKF-5tBkRM2NuN3z5UM7ksk1wXxGZzlj2VAepn0nu6BLSMm3b6o7ohKi49LZ4JWNtFGeBbiaDlAF14CuYk2WDpA';
-  const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-   
-  registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: convertedVapidKey
-  });
-  }
-
-}
-setupServiceWorker();
-  
 export default App;

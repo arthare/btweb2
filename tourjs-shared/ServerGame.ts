@@ -611,8 +611,9 @@ export class ServerGame {
         case CurrentRaceState.Racing:
         {
           if(this.raceState.isAllHumansFinished(tmNow)) {
-            if(this.raceState.isAllRacersFinished(tmNow)) {
-              // ok, absolutely everyone is finished, so we _really_ don't need a physics update, and we're definitely post-race
+            const sSinceFinish = this.raceState.getSecondsSinceLastNonFinishedHuman(tmNow);
+            if(this.raceState.isAllRacersFinished(tmNow) || sSinceFinish >= 30) {
+              // ok, absolutely everyone is finished (or it's been 60s since the last human finished), so we _really_ don't need a physics update, and we're definitely post-race
               const permanentFinishUpdate = new S2CFinishUpdate(this.userProvider, this._tmRaceStart);
               try{fs.mkdirSync('../finish-data/');}catch(e){}
               
@@ -623,7 +624,6 @@ export class ServerGame {
             } else {
               // some AIs are still going, and some humans may return at some point.
               this.raceState.tick(tmNow);
-              const sSinceFinish = this.raceState.getSecondsSinceLastNonFinishedHuman(tmNow);
               if(sSinceFinish >= 300) {
                 thisRaceState = CurrentRaceState.PostRace;
                 console.log("Been 5 minutes since we last saw an unfinished human on " + this.raceState.getGameId() + ", so we're going to post-race");

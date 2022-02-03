@@ -1,17 +1,17 @@
 import Controller from '@ember/controller';
-import { RideMap } from 'bt-web2/server-client-common/RideMap';
-import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
+import { RideMap } from 'bt-web2/shared/RideMap';
+import { RideMapHandicap } from 'bt-web2/shared/RideMapHandicap';
 import { computed } from '@ember/object';
 import { alias } from '@ember/object/computed';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { RaceState } from 'bt-web2/shared/RaceState';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
-import { UserTypeFlags, UserDisplay } from 'bt-web2/server-client-common/User';
+import { UserTypeFlags, UserDisplay } from 'bt-web2/shared/User';
 import Connection from 'bt-web2/services/connection';
 import ENV from 'bt-web2/config/environment';
 import { map } from 'rsvp';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
-import { S2CFinishUpdate } from 'bt-web2/server-client-common/communication';
+import { S2CFinishUpdate } from 'bt-web2/shared/communication';
 
 export default class Ride extends Controller.extend({
   // anything which *must* be merged to prototype here

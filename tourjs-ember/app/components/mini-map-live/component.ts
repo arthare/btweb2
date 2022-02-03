@@ -1,8 +1,8 @@
 import Component from '@ember/component';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { drawMinimap, DrawMinimapParameters } from 'bt-web2/server-client-common/drawing';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
-import { UserTypeFlags } from 'bt-web2/server-client-common/User';
+import { assert2 } from 'bt-web2/shared/Utils';
+import { drawMinimap, DrawMinimapParameters } from 'bt-web2/shared/drawing';
+import { RaceState } from 'bt-web2/shared/RaceState';
+import { UserTypeFlags } from 'bt-web2/shared/User';
 
 export default class MiniMapLive extends Component.extend({
   // anything which *must* be merged to prototype here

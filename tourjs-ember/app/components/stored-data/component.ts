@@ -1,6 +1,6 @@
 import Component from '@ember/component';
-import { RaceResultSubmission } from 'bt-web2/server-client-common/communication';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { RaceResultSubmission } from 'bt-web2/shared/communication';
+import { assert2 } from 'bt-web2/shared/Utils';
 import Devices, { dumpRaceResultToPWX } from 'bt-web2/services/devices';
 import { apiGet } from 'bt-web2/set-up-ride/route';
 import Ember from 'ember';

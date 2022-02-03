@@ -1,11 +1,11 @@
 import Service from '@ember/service';
-import ConnectionManager, { S2CFinishUpdate, S2CPositionUpdateUser}  from 'bt-web2/server-client-common/communication';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
-import { User, UserInterface } from 'bt-web2/server-client-common/User';
-import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
+import ConnectionManager, { S2CFinishUpdate, S2CPositionUpdateUser}  from 'bt-web2/shared/communication';
+import { RaceState } from 'bt-web2/shared/RaceState';
+import { User, UserInterface } from 'bt-web2/shared/User';
+import { RideMapHandicap } from 'bt-web2/shared/RideMapHandicap';
 import Ember from 'ember';
 import Devices from './devices';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { assert2 } from 'bt-web2/shared/Utils';
 import { computed } from '@ember/object';
 import ENV from 'bt-web2/config/environment';
 import { USERSETUP_KEY_HANDICAP } from 'bt-web2/components/user-set-up-widget/component';

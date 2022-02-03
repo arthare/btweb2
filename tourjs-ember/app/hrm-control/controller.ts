@@ -2,8 +2,8 @@ import Controller from '@ember/controller';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { computed } from '@ember/object';
-import { User, UserInterface } from 'bt-web2/server-client-common/User';
-import { HeartRateEngine } from 'bt-web2/server-client-common/heart-rate-engine';
+import { User, UserInterface } from 'bt-web2/shared/User';
+import { HeartRateEngine } from 'bt-web2/shared/heart-rate-engine';
 
 export default class HrmControl extends Controller.extend({
   // anything which *must* be merged to prototype here

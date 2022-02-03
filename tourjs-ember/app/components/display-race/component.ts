@@ -1,8 +1,8 @@
 import Component from '@ember/component';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { assert2 } from 'bt-web2/shared/Utils';
+import { RaceState } from 'bt-web2/shared/RaceState';
 import { computed } from '@ember/object';
-import { ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
+import { ServerHttpGameListElement } from 'bt-web2/shared/communication';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import Connection from 'bt-web2/services/connection';

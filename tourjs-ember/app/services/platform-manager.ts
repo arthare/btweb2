@@ -1,6 +1,6 @@
 import Service from '@ember/service';
-import { RideMapElevationOnly, RideMapPartial } from 'bt-web2/server-client-common/RideMap';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { RideMapElevationOnly, RideMapPartial } from 'bt-web2/shared/RideMap';
+import { assert2 } from 'bt-web2/shared/Utils';
 
 export interface StravaMapSummary {
   id: number;

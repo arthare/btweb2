@@ -1,6 +1,6 @@
-import { RideMapPartial, RideMap, PureCosineMap } from "../tourjs-react/src/tourjs-shared/RideMap";
-import { ServerMapDescription } from "../tourjs-react/src/tourjs-shared/communication";
-import { RideMapHandicap } from "../tourjs-react/src/tourjs-shared/RideMapHandicap";
+import { RideMapPartial, RideMap, PureCosineMap } from "./shared/RideMap";
+import { ServerMapDescription } from "./shared/communication";
+import { RideMapHandicap } from "./shared/RideMapHandicap";
 
 export function makeSimpleMap(lengthMeters:number):RideMap {
   const pureCosineMap = new PureCosineMap(lengthMeters);

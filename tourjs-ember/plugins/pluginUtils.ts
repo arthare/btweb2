@@ -1,4 +1,4 @@
-import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate } from "../app/server-client-common/PluginCommunication";
+import { PluginDescriptor, PluginToBrowserUpdate, BrowserToPluginUpdate } from "../app/shared/PluginCommunication";
 import fetch from 'node-fetch';
 
 export function signUpWithPluginHost(serverUrl:string, pluginDescriptor:PluginDescriptor):Promise<any> {

@@ -1,5 +1,5 @@
 import Controller from '@ember/controller';
-import { doNNTrainWithSnapshots, TrainingSnapshotV2 } from 'bt-web2/server-client-common/ServerAISnapshots';
+import { doNNTrainWithSnapshots, TrainingSnapshotV2 } from 'bt-web2/shared/ServerAISnapshots';
 import Ember from 'ember';
 
 const handleFiles = (files:any):Promise<TrainingSnapshotV2[]> => {

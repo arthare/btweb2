@@ -1,12 +1,12 @@
 import Component from '@ember/component';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { RaceState } from 'bt-web2/shared/RaceState';
 import Ember from 'ember';
 import Connection from 'bt-web2/services/connection';
-import { doPaintFrameStateUpdates, paintCanvasFrame, PaintFrameState } from 'bt-web2/server-client-common/drawing';
-import { DecorationFactory, Layer, ThemeConfig } from 'bt-web2/server-client-common/DecorationFactory';
-import { DecorationState } from 'bt-web2/server-client-common/DecorationState';
+import { doPaintFrameStateUpdates, paintCanvasFrame, PaintFrameState } from 'bt-web2/shared/drawing';
+import { DecorationFactory, Layer, ThemeConfig } from 'bt-web2/shared/DecorationFactory';
+import { DecorationState } from 'bt-web2/shared/DecorationState';
 import ENV from 'bt-web2/config/environment';
-import { defaultThemeConfig } from 'bt-web2/server-client-common/drawing-constants';
+import { defaultThemeConfig } from 'bt-web2/shared/drawing-constants';
 
 
 export default class MainMap extends Component.extend({

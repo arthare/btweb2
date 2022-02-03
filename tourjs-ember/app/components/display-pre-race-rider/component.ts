@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { UserDisplay } from 'bt-web2/server-client-common/User';
+import { UserDisplay } from 'bt-web2/shared/User';
 
 export default class DisplayPreRaceRider extends Component.extend({
   // anything which *must* be merged to prototype here

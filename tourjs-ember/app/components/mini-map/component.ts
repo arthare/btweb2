@@ -1,10 +1,10 @@
 import Component from '@ember/component';
-import { ServerHttpGameListElement } from 'bt-web2/server-client-common/communication';
+import { ServerHttpGameListElement } from 'bt-web2/shared/communication';
 import { human_color, local_color, ai_color } from '../main-map/component';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { RideMapElevationOnly } from 'bt-web2/server-client-common/RideMap';
+import { assert2 } from 'bt-web2/shared/Utils';
+import { RideMapElevationOnly } from 'bt-web2/shared/RideMap';
 import Ember from 'ember';
-import { drawMinimap } from 'bt-web2/server-client-common/drawing';
+import { drawMinimap } from 'bt-web2/shared/drawing';
 
 export default class MiniMap extends Component.extend({
   // anything which *must* be merged to prototype here

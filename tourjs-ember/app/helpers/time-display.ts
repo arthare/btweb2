@@ -1,5 +1,5 @@
 import { helper } from '@ember/component/helper';
-import { formatSecondsHms } from 'bt-web2/server-client-common/Utils';
+import { formatSecondsHms } from 'bt-web2/shared/Utils';
 
 export function timeDisplay(params/*, hash*/) {
   if(params.length < 1) {

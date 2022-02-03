@@ -1,7 +1,7 @@
 import Component from '@ember/component';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { User, UserDisplay } from 'bt-web2/server-client-common/User';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { assert2 } from 'bt-web2/shared/Utils';
+import { User, UserDisplay } from 'bt-web2/shared/User';
+import { RaceState } from 'bt-web2/shared/RaceState';
 import { computed } from '@ember/object';
 
 export default class UserDashboard extends Component.extend({

@@ -1,20 +1,20 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../tourjs-react/src/tourjs-shared/communication';
-import { assert2, testAssert } from '../tourjs-react/src/tourjs-shared/Utils';
-import { RaceState, UserProvider } from '../tourjs-react/src/tourjs-shared/RaceState';
-import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from '../tourjs-react/src/tourjs-shared/User';
-import { RideMapHandicap } from '../tourjs-react/src/tourjs-shared/RideMapHandicap';
-import { RideMap, RideMapPartial } from '../tourjs-react/src/tourjs-shared/RideMap';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from './shared/communication';
+import { assert2, testAssert } from './shared/Utils';
+import { RaceState, UserProvider } from './shared/RaceState';
+import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from './shared/User';
+import { RideMapHandicap } from './shared/RideMapHandicap';
+import { RideMap, RideMapPartial } from './shared/RideMap';
 import { makeSimpleMap } from './ServerUtils';
-import { SERVER_PHYSICS_FRAME_RATE } from '../tourjs-react/src/tourjs-shared/ServerConstants';
-import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from '../tourjs-react/src/tourjs-shared/ServerGame';
+import { SERVER_PHYSICS_FRAME_RATE } from './shared/ServerConstants';
+import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from './shared/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { setUpCors } from './HttpUtils';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
-import { takeTrainingSnapshot } from '../tourjs-react/src/tourjs-shared/ServerAISnapshots';
+import { takeTrainingSnapshot } from './shared/ServerAISnapshots';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
@@ -112,71 +112,6 @@ export function startGameServer() {
     }
     return false;
   }
-
-  function populatePrescheduledRaces() {
-    console.log("populating presched races?");
-    const msRaceStartInterval = 15 * 60000;
-
-    // this will get us a precise timestamp every 15 minutes
-    const tmNow = new Date().getTime();
-    const tmNowish = Math.floor(tmNow / msRaceStartInterval)*msRaceStartInterval;
-
-    let nPreschedule = 6;
-    for(var x = tmNowish; x < tmNowish + nPreschedule*msRaceStartInterval; x += msRaceStartInterval) {
-      if(x < tmNow) {
-        console.log("skipping scheduling a race at ", new Date(x), " because it is in the past");
-        continue; // in the past, we don't care
-      }
-      if(hasRaceAtTime(x)) {
-        // ok we already have this one
-        console.log("We already have a race at ", new Date(x), " so we won't make a new one");
-      } else {
-        // gotta make a new race!
-        const c15s = Math.floor(x / msRaceStartInterval);
-        let map:RideMap;
-        if(c15s & 1) {
-          map = makeSimpleMap(100)
-        } else {
-          map = makeSimpleMap(20000);
-        }
-        let date = new Date(x);
-        console.log("making new race at ", date);
-        const name = `${(map.getLength() / 1000).toFixed(1)}km on CosineMap. ${date.toISOString()}`;
-        const gameId = name.replace(/\s/gi, '_');
-        const sg = new ServerGame(map, gameId, name, 10);
-        sg.scheduleRaceStartTime(x);
-        console.log("making prescheduled race at ", date.toLocaleTimeString());
-        races.set(gameId, sg);
-      }
-    }
-
-    // let's also clear out old/useless rides
-    let killKeys = [];
-    races.forEach((race:ServerGame, gameId:string) => {
-      if(race.getRaceScheduledStartTime() >= 0 &&
-        race.getRaceScheduledStartTime() < tmNow - msRaceStartInterval &&
-        race.getLastRaceState() === CurrentRaceState.PreRace) {
-        // race never started
-        console.log("killing " + gameId + " because it never started, and its start time is in the past");
-        killKeys.push(gameId);
-      } else if(race.getLastRaceState() === CurrentRaceState.PostRace &&
-                race.raceState.getSecondsSinceLastNonFinishedHuman(tmNow) >= 300) {
-        // last human finished 5 minutes ago
-        console.log("killing " + gameId + " because the last human finished 5 minutes ago");
-        killKeys.push(gameId);
-      }
-    })
-
-    killKeys.forEach((key) => {
-      const race:ServerGame = races.get(key);
-      race.stop();
-      races.delete(key);
-    })
-
-
-    setTimeout(populatePrescheduledRaces, msRaceStartInterval);
-  }
-  populatePrescheduledRaces();
 
 
   const lastSentTo:Map<number,Rng> = new Map<number,Rng>();

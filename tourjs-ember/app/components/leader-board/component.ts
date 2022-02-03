@@ -1,7 +1,7 @@
 import Component from '@ember/component';
-import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
-import { RaceState } from 'bt-web2/server-client-common/RaceState';
+import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
+import { assert2 } from 'bt-web2/shared/Utils';
+import { RaceState } from 'bt-web2/shared/RaceState';
 import { computed } from '@ember/object';
 
 function formatDelta(secondsAhead:number) {

@@ -1,4 +1,4 @@
-import { Layer } from "./DecorationFactory";
+import { Layer, randRange } from "./DecorationFactory";
 import { DecorationState } from "./DecorationState";
 import { RaceState } from "./RaceState";
 import { RideMap } from "./RideMap";

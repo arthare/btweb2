@@ -1,0 +1,1 @@
+{"version":3,"sources":["sw.js"],"names":["self","CACHE_BUSTER","addEventListener","event","skipWaiting","clients","claim"],"mappings":"CAAC,WACC,aAGAA,KAAKC,aADS,oCAEdD,KAAKE,iBAAiB,WAAW,SAAsCC,GACrE,OAAOH,KAAKI,iBAEdJ,KAAKE,iBAAiB,YAAY,SAAsCC,GACtE,OAAOH,KAAKK,QAAQC,WATxB","file":"sw.js"}

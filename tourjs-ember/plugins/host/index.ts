@@ -1,6 +1,6 @@
 const express = require('express');
 import * as core from 'express-serve-static-core';
-import {PluginToBrowserUpdate, PluginType, PluginDescriptor, BrowserToPluginUpdate} from '../../app/server-client-common/PluginCommunication';
+import {PluginToBrowserUpdate, PluginType, PluginDescriptor, BrowserToPluginUpdate} from '../../app/shared/PluginCommunication';
 import {setCorsHeaders, postStartup} from '../../api/ServerHttp';
 import fetch from 'node-fetch';
 const app = express()

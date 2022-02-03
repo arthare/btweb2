@@ -1,12 +1,49 @@
 import Controller from '@ember/controller';
-import { PureCosineMap, IntoAHillMap } from 'bt-web2/server-client-common/RideMap';
-import { RaceState, UserProvider } from 'bt-web2/server-client-common/RaceState';
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
-import { ServerMapDescription } from 'bt-web2/server-client-common/communication';
-import { RideMapHandicap } from 'bt-web2/server-client-common/RideMapHandicap';
+import { PureCosineMap, IntoAHillMap } from 'bt-web2/shared/RideMap';
+import { RaceState, UserProvider } from 'bt-web2/shared/RaceState';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
+import { ServerMapDescription } from 'bt-web2/shared/communication';
+import { RideMapHandicap } from 'bt-web2/shared/RideMapHandicap';
 import Devices from 'bt-web2/services/devices';
 import Ember from 'ember';
 
+
+export class FakeUserProvider implements UserProvider {
+  users: UserInterface[];
+  _local:UserInterface|null;
+
+  constructor(localUserOverride:UserInterface|null) {
+    this._local = localUserOverride;
+    this.users = [
+      localUserOverride ? localUserOverride : new User("Local User", DEFAULT_RIDER_MASS, 100, UserTypeFlags.Local),
+      new User("Human Remote", DEFAULT_RIDER_MASS, 280, UserTypeFlags.Remote),
+      //new User("Slow Fella", DEFAULT_RIDER_MASS, 900, UserTypeFlags.Remote),
+      //new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
+    ];
+
+    for(var x = 0;x < 1; x++) {
+      const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, 75, UserTypeFlags.Ai | UserTypeFlags.Remote);
+      this.users.push(aiUser);
+    }
+    this.users.forEach((user, index) => {
+      user.setId(index);
+      user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAY0lEQVR42u3QAREAAAQEsJdcdHI4W4RVMp3HSoAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECLhvAcDdX8EOJRgWAAAAAElFTkSuQmCC', '');
+    });
+  }
+
+  getUsers(tmNow: number): UserInterface[] {
+    return this.users.slice();
+  }  
+  
+  getUser(id: number): UserInterface | null {
+    return this.users.find((user) => user.getId() === id) || null;
+  }
+  getLocalUser():UserInterface|null {
+    return this._local || null;
+  }
+
+
+}
 
 export default class TestHacks extends Controller.extend({
   // anything which *must* be merged to prototype here

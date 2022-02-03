@@ -1,12 +1,12 @@
 import Service from '@ember/service';
 import { BluetoothKickrDevice, ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
 import { UserSetupParameters } from 'bt-web2/components/user-set-up-widget/component';
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/server-client-common/User';
-import { UserProvider, RaceState } from 'bt-web2/server-client-common/RaceState';
-import { RaceResultSubmission, S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/server-client-common/communication';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
+import { UserProvider, RaceState } from 'bt-web2/shared/RaceState';
+import { RaceResultSubmission, S2CPositionUpdate, S2CPositionUpdateUser } from 'bt-web2/shared/communication';
 import Ember from 'ember';
-import { WorkoutFileSaver, samplesToPWX } from 'bt-web2/server-client-common/FileSaving';
-import { assert2 } from 'bt-web2/server-client-common/Utils';
+import { WorkoutFileSaver, samplesToPWX } from 'bt-web2/shared/FileSaving';
+import { assert2 } from 'bt-web2/shared/Utils';
 import { apiPost } from 'bt-web2/set-up-ride/route';
 
 
