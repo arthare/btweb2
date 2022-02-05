@@ -1,1 +1,0 @@
-export const SERVER_PHYSICS_FRAME_RATE = 30;

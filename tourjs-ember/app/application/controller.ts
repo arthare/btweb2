@@ -3,7 +3,7 @@ import Ember from 'ember';
 import Devices, { DeviceFlags } from 'bt-web2/services/devices';
 import { getDeviceFactory } from 'bt-web2/pojs/DeviceFactory';
 import { ConnectedDeviceInterface, PowerDataDistributor, BTDeviceState } from 'bt-web2/pojs/WebBluetoothDevice';
-import { UserDisplay } from 'bt-web2/shared/User';
+import { UserDisplay } from 'bt-web2/tourjs-shared/User';
 import { computed } from '@ember/object';
 import Connection from 'bt-web2/services/connection';
 import md5 from 'ember-md5';

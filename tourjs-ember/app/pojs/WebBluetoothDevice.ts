@@ -1,5 +1,5 @@
 import { writeToCharacteristic, monitorCharacteristic, serviceUuids } from "./DeviceUtils";
-import { assert2 } from 'bt-web2/shared/Utils';
+import { assert2 } from 'bt-web2/tourjs-shared/Utils';
 
 export enum BTDeviceState {
   Ok,

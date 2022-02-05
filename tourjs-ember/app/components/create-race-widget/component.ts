@@ -1,14 +1,14 @@
 import Component from '@ember/component';
 import { computed } from '@ember/object';
-import { RideMapElevationOnly, PureCosineMap, RideMapPartial, RideMap } from 'bt-web2/shared/RideMap';
-import { SimpleElevationMap } from 'bt-web2/shared/communication';
-import { ScheduleRacePostRequest } from 'bt-web2/shared/ServerHttpObjects';
+import { RideMapElevationOnly, PureCosineMap, RideMapPartial, RideMap } from 'bt-web2/tourjs-shared/RideMap';
+import { SimpleElevationMap } from 'bt-web2/tourjs-shared/communication';
+import { ScheduleRacePostRequest } from 'bt-web2/tourjs-shared/ServerHttpObjects';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { apiPost } from 'bt-web2/set-up-ride/route';
 import PlatformManager, { ElevDistanceMap, StravaMapSummary } from 'bt-web2/services/platform-manager';
 import { writeToCharacteristic } from 'bt-web2/pojs/DeviceUtils';
-import { randRange } from 'bt-web2/shared/DecorationFactory';
+import { randRange } from 'bt-web2/tourjs-shared/DecorationFactory';
 
 export class RideMapResampleDistance extends RideMapPartial {
   _src:RideMapElevationOnly;

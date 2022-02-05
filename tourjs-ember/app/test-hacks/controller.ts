@@ -1,9 +1,9 @@
 import Controller from '@ember/controller';
-import { PureCosineMap, IntoAHillMap } from 'bt-web2/shared/RideMap';
-import { RaceState, UserProvider } from 'bt-web2/shared/RaceState';
-import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
-import { ServerMapDescription } from 'bt-web2/shared/communication';
-import { RideMapHandicap } from 'bt-web2/shared/RideMapHandicap';
+import { PureCosineMap, IntoAHillMap } from 'bt-web2/tourjs-shared/RideMap';
+import { RaceState, UserProvider } from 'bt-web2/tourjs-shared/RaceState';
+import { User, UserTypeFlags, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/tourjs-shared/User';
+import { ServerMapDescription } from 'bt-web2/tourjs-shared/communication';
+import { RideMapHandicap } from 'bt-web2/tourjs-shared/RideMapHandicap';
 import Devices from 'bt-web2/services/devices';
 import Ember from 'ember';
 

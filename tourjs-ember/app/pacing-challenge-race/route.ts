@@ -1,7 +1,7 @@
 import Route from '@ember/routing/route';
-import { RaceState } from 'bt-web2/shared/RaceState';
-import { RideMap, MapBounds, RideMapPartial } from 'bt-web2/shared/RideMap';
-import { User } from 'bt-web2/shared/User';
+import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
+import { RideMap, MapBounds, RideMapPartial } from 'bt-web2/tourjs-shared/RideMap';
+import { User } from 'bt-web2/tourjs-shared/User';
 import Devices from 'bt-web2/services/devices';
 import Ember from 'ember';
 

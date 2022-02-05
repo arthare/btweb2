@@ -1,7 +1,7 @@
 import Component from '@ember/component';
 import { getDeviceFactory } from 'bt-web2/pojs/DeviceFactory';
 import { ConnectedDeviceInterface } from 'bt-web2/pojs/WebBluetoothDevice';
-import { User, UserInterface } from 'bt-web2/shared/User';
+import { User, UserInterface } from 'bt-web2/tourjs-shared/User';
 import Connection from 'bt-web2/services/connection';
 import Devices, { DeviceFlags } from 'bt-web2/services/devices';
 import Ember from 'ember';

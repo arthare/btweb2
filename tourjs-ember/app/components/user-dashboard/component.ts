@@ -1,7 +1,7 @@
 import Component from '@ember/component';
-import { assert2 } from 'bt-web2/shared/Utils';
-import { User, UserDisplay } from 'bt-web2/shared/User';
-import { RaceState } from 'bt-web2/shared/RaceState';
+import { assert2 } from 'bt-web2/tourjs-shared/Utils';
+import { User, UserDisplay } from 'bt-web2/tourjs-shared/User';
+import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import { computed } from '@ember/object';
 
 export default class UserDashboard extends Component.extend({

@@ -2,7 +2,7 @@
 // 1) start HTTP server that serves up our last wattage
 // 2) hook up to waterrower (find COM port, etc)
 
-import { PluginToBrowserUpdate, PluginDescriptor, PluginType } from "../../app/shared/PluginCommunication";
+import { PluginToBrowserUpdate, PluginDescriptor, PluginType } from "../../app/tourjs-shared/PluginCommunication";
 import { sendPowerToPluginHost, signUpWithPluginHost } from "../pluginUtils";
 
 // 3) probably do some dumping to text

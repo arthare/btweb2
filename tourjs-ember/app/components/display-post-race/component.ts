@@ -2,11 +2,11 @@ import Component from '@ember/component';
 import Ember from 'ember';
 import Connection from 'bt-web2/services/connection';
 import {computed} from '@ember/object';
-import { S2CFinishUpdate, S2CPositionUpdateUser } from 'bt-web2/shared/communication';
-import { formatSecondsHms } from 'bt-web2/shared/Utils';
-import { DistanceHistoryElement, DraftSavings, User, UserDisplay, UserInterface, UserTypeFlags } from 'bt-web2/shared/User';
-import { RaceState, UserProvider } from 'bt-web2/shared/RaceState';
-import { RideMap } from 'bt-web2/shared/RideMap';
+import { S2CFinishUpdate, S2CPositionUpdateUser } from 'bt-web2/tourjs-shared/communication';
+import { formatSecondsHms } from 'bt-web2/tourjs-shared/Utils';
+import { DistanceHistoryElement, DraftSavings, User, UserDisplay, UserInterface, UserTypeFlags } from 'bt-web2/tourjs-shared/User';
+import { RaceState, UserProvider } from 'bt-web2/tourjs-shared/RaceState';
+import { RideMap } from 'bt-web2/tourjs-shared/RideMap';
 import RaceResults from 'bt-web2/race-results/route';
 
 class FinishUser implements UserInterface {

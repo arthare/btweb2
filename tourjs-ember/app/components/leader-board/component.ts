@@ -1,7 +1,7 @@
 import Component from '@ember/component';
-import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
-import { assert2 } from 'bt-web2/shared/Utils';
-import { RaceState } from 'bt-web2/shared/RaceState';
+import { UserDisplay, UserTypeFlags, User, DistanceHistoryElement, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/tourjs-shared/User';
+import { assert2 } from 'bt-web2/tourjs-shared/Utils';
+import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import { computed } from '@ember/object';
 
 function formatDelta(secondsAhead:number) {

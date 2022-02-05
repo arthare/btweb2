@@ -2,7 +2,7 @@ import Component from '@ember/component';
 import Devices, { PowerTimerAverage } from 'bt-web2/services/devices';
 import {computed} from '@ember/object';
 import Ember from 'ember';
-import { DEFAULT_GRAVITY, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/shared/User';
+import { DEFAULT_GRAVITY, DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS } from 'bt-web2/tourjs-shared/User';
 
 interface PacingChallengeDisplayData {
   powerRemaining:string;

@@ -1,14 +1,14 @@
 import Controller from '@ember/controller';
-import { User, UserTypeFlags, DEFAULT_CDA, DEFAULT_RHO, DEFAULT_HANDICAP_POWER, DEFAULT_GRAVITY, DEFAULT_CRR, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/shared/User';
-import { RideMapPartial, RideMap, MapBounds } from 'bt-web2/shared/RideMap';
-import { UserProvider, RaceState } from 'bt-web2/shared/RaceState';
+import { User, UserTypeFlags, DEFAULT_CDA, DEFAULT_RHO, DEFAULT_HANDICAP_POWER, DEFAULT_GRAVITY, DEFAULT_CRR, DEFAULT_RIDER_MASS, UserInterface } from 'bt-web2/tourjs-shared/User';
+import { RideMapPartial, RideMap, MapBounds } from 'bt-web2/tourjs-shared/RideMap';
+import { UserProvider, RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { PacingChallengeOverlayData } from 'bt-web2/components/pacing-challenge-overlay/component';
 import { computed } from '@ember/object';
 import { race } from 'rsvp';
 import { apiPost } from 'bt-web2/set-up-ride/route';
-import { PacingChallengeResultSubmission } from 'bt-web2/shared/communication';
+import { PacingChallengeResultSubmission } from 'bt-web2/tourjs-shared/communication';
 
 export class PacingChallengeShortMap extends RideMapPartial implements RideMap {
   getPowerTransform(who: User): (power: number) => number {
