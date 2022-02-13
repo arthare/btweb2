@@ -3,16 +3,20 @@ import { assert2 } from 'bt-web2/tourjs-shared/Utils';
 import { drawMinimap, DrawMinimapParameters } from 'bt-web2/tourjs-shared/drawing';
 import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import { UserTypeFlags } from 'bt-web2/tourjs-shared/User';
+import { DrawingInterface } from 'bt-web2/tourjs-shared/drawing-interface';
+import { createDrawer } from 'bt-web2/tourjs-shared/drawing-factory';
 
 export default class MiniMapLive extends Component.extend({
   // anything which *must* be merged to prototype here
   classNames: ['mini-map-live__container'],
   raceState:<RaceState|null>null,
+  drawer:<DrawingInterface|null>null,
 }) {
   // normal class body definition here
   didInsertElement() {
     assert2(this.get('raceState'));
 
+    this.set('drawer', createDrawer());
     this._doFrame();
   }
 
@@ -27,6 +31,10 @@ export default class MiniMapLive extends Component.extend({
       throw new Error("canvas not found");
     }
 
+    const drawer = this.get('drawer');
+    if(!drawer) {
+      throw new Error("drawer not found");
+    }
     const w = this.element.clientWidth;
     const h = this.element.clientHeight;
     canvas.width = w;
@@ -73,7 +81,7 @@ export default class MiniMapLive extends Component.extend({
             humanPositions,
             aiPositions,
           }
-          drawMinimap(drawMiniParams);
+          drawer.drawMinimap(drawMiniParams);
         })
       }
 

@@ -4,7 +4,7 @@ import { human_color, local_color, ai_color } from '../main-map/component';
 import { assert2 } from 'bt-web2/tourjs-shared/Utils';
 import { RideMapElevationOnly } from 'bt-web2/tourjs-shared/RideMap';
 import Ember from 'ember';
-import { drawMinimap } from 'bt-web2/tourjs-shared/drawing';
+import { createDrawer } from 'bt-web2/tourjs-shared/drawing-factory';
 
 export default class MiniMap extends Component.extend({
   // anything which *must* be merged to prototype here
@@ -40,7 +40,8 @@ export default class MiniMap extends Component.extend({
 
     const ctx = canvas.getContext('2d');
 
-    drawMinimap({ ctx, 
+    const drawer = createDrawer();
+    drawer.drawMinimap({ ctx, 
                    elevations, 
                    w, 
                    h, 
