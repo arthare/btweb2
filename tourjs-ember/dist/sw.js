@@ -1,13 +1,2 @@
-(function () {
-  'use strict';
-
-  const VERSION = '1644773417323|0.11257640713083594';
-  self.CACHE_BUSTER = VERSION;
-  self.addEventListener('install', function installEventListenerCallback(event) {
-    return self.skipWaiting();
-  });
-  self.addEventListener('activate', function installEventListenerCallback(event) {
-    return self.clients.claim();
-  });
-
-}());
+!function(){"use strict";self.CACHE_BUSTER="1645213300903|0.1455359057860286",self.addEventListener("install",(function(e){return self.skipWaiting()})),self.addEventListener("activate",(function(e){return self.clients.claim()}))}();
+//# sourceMappingURL=sw-6948750f580c440871358c7284e5af7d.map

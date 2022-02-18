@@ -2,7 +2,7 @@
   {{display-pre-race frame=frame localRiders=localRidersPreRace nonLocalHumans=nonLocalHumans ais=ais}}
 {{else if connection.racing}}
   {{#if _raceState}}
-    {{display-race raceState=_raceState overlay="leader-board"}}
+    {{display-race raceState=_raceState overlay="leader-board" mode="3d"}}
   {{else}}
     Connecting...
   {{/if}}

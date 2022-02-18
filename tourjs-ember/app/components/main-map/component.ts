@@ -15,27 +15,31 @@ export default class MainMap extends Component.extend({
   connection: <Connection><unknown>Ember.inject.service('connection'),
   classNames: ['main-map__container'],
   tagName: 'canvas',
+  mode: <string>"2d",
 
   raceState: <RaceState|null>null,
 }) {
   // normal class body definition here
   didInsertElement() {
+    console.log("main-map didInsertElement");
     const canvas:HTMLCanvasElement = <HTMLCanvasElement>this.element;
     if(!canvas.parentElement) {
+      console.log("no canvas for main-map");
       return;
     }
-    canvas.width = canvas.parentElement?.clientWidth;
-    canvas.height = canvas.parentElement?.clientHeight;
+    canvas.width = canvas.parentElement?.clientWidth * window.devicePixelRatio;
+    canvas.height = canvas.parentElement?.clientHeight * window.devicePixelRatio;
     //canvas.height = canvas.clientHeight;
 
     const raceState:RaceState|null = this.get('raceState');
     if(!raceState) {
+      console.log("no race-state for main-map");
       return;
     }
     const decorationFactory = new DecorationFactory(defaultThemeConfig);
     const decorationState = new DecorationState(raceState?.getMap(), decorationFactory);
     let lastTime = 0;
-    const drawer = createDrawer();
+    const drawer = createDrawer(this.get('mode'));
     const paintState = new PaintFrameState();
     let frame = 0;
     const handleAnimationFrame = (time:number) => {

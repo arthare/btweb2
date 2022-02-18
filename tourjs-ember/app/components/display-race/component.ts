@@ -13,9 +13,11 @@ export default class DisplayRace extends Component.extend({
   raceState: <RaceState|null>null,
   devices: <Devices><unknown>Ember.inject.service('devices'),
   connection: <Connection><unknown>Ember.inject.service('connection'),
+  mode: <string>"2d",
 }) {
   // normal class body definition here
   didInsertElement() {
+    console.log("display-race init");
     const rs = this.get('raceState');
     assert2(rs);
 

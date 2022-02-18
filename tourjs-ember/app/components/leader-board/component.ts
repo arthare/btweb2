@@ -4,9 +4,12 @@ import { assert2 } from 'bt-web2/tourjs-shared/Utils';
 import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import { computed } from '@ember/object';
 
-function formatDelta(secondsAhead:number) {
+function formatDelta(secondsAhead:number, fuzzy:boolean = false) {
   const prefix = secondsAhead >= 0 ? '' : '-';
 
+  if(fuzzy) {
+    return `${secondsAhead.toFixed(0)}s`;
+  }
   if(secondsAhead > -10 && secondsAhead < 10) {
     return `${prefix}${Math.abs(secondsAhead).toFixed(2)}s`
   } else if(secondsAhead > -60 && secondsAhead < 60) {
@@ -158,7 +161,17 @@ export default class LeaderBoard extends Component.extend({
           } else {
             const secondsAhead = localUser.getSecondsAgoToCross(tmNow, user.getDistance());
             if(secondsAhead !== null && secondsAhead > 1) {
-              display.secondsDelta = formatDelta(-secondsAhead);
+
+              if(secondsAhead < 4) {
+                display.secondsDelta = formatDelta(-secondsAhead);
+
+              } else {
+                // Phil had a good idea: make it harder for the person ahead to judge people behind if they're far behind
+                let chunkified = Math.floor(Math.sqrt(secondsAhead)) + 1;
+                chunkified = Math.pow(chunkified,2);
+                display.secondsDelta = formatDelta(-Math.ceil(chunkified), true);
+
+              }
             }
           }
         }

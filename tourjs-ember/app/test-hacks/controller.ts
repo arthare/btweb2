@@ -27,7 +27,7 @@ export class FakeUserProvider implements UserProvider {
     }
     this.users.forEach((user, index) => {
       user.setId(index);
-      user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAY0lEQVR42u3QAREAAAQEsJdcdHI4W4RVMp3HSoAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECLhvAcDdX8EOJRgWAAAAAElFTkSuQmCC', '');
+      user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAADpSURBVEhL7ZZBEkQwEEUtcwTLOUqWjuAIbmGlHMPWDRzNMv7Ib2WQQWOqZszbdaL7hVRaIncxPyao67ooCgZ7aJrm0VNVFYeEFwGqR5HmnVAaicAYwyHhnE9UlqUXZFnGIeGze3AFf8EqdxMojvo+geKo320PFJwmQMe21q606yPEcYz9D7brkH87fbd+wlhgPPjVDl8dMBYYo7SfVjt8OmAsMB5+SUDnYHJIAI448jxn5hsBGDvA4i1hjL9M8OmeNE05J0yFE8cukiRp25aFhKkA6BxY+7w6WBB4tmvmV5UxQcFZfLvAuQ7+9Jkk3ToNzAAAAABJRU5ErkJggg==', '');
     });
   }
 
@@ -54,6 +54,7 @@ export default class TestHacks extends Controller.extend({
 }) {
   // normal class body definition here
   controllerInit() {
+    console.log("test-hacks controller init");
     const baseMap = new PureCosineMap(5000);
     const fullMap = new RideMapHandicap(new ServerMapDescription(baseMap));
     

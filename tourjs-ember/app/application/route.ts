@@ -10,7 +10,7 @@ export default class Application extends Route.extend({
 }) {
   // normal class body definition here
   beforeModel(params:any) {
-    console.log(params);
+    console.log("Params to application/beforemodel ", params);
 
     const image = localStorage.getItem(USERSETUP_KEY_IMAGE) || null;
     const name = localStorage.getItem(USERSETUP_KEY_NAME);
@@ -42,7 +42,8 @@ export default class Application extends Route.extend({
         if(params.to.name === 'ride') {
           // this is allowed - the ride screen now has inline signup
         } else {
-          return this.transitionTo('set-up-user');
+          console.log("transitioning to set-up-user");
+          //return this.transitionTo('set-up-user');
         }
       }
 
