@@ -21,21 +21,4 @@
       </button>
     </div>
   </div>
-  <div class="application__user-status {{if localUser 'user-valid'}} {{if showCheater 'cheater'}}">
-    {{#if showCheater}}
-      <div class="application__user-status--cheater"></div>
-    {{/if}}
-    {{localUser.name}}<br />
-    <i class="fas fa-bolt"></i>{{localUser.lastPower}} 
-    {{#if localUser.hrm}}
-      <i class="fas fa-heart"></i>{{localUser.hrm}} 
-    {{/if}}
-    <a href='#' {{action 'connectDevice'}}>Power/Trainer</a> 
-    <a href='#' {{action 'connectHrm'}}>HRM</a> 
-    <br />
-
-
-    Handicap {{localUser.handicap}} 
-    {{#link-to 'set-up-user'}}Change{{/link-to}}
-  </div>
 </div>

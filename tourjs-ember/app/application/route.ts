@@ -42,8 +42,7 @@ export default class Application extends Route.extend({
         if(params.to.name === 'ride') {
           // this is allowed - the ride screen now has inline signup
         } else {
-          console.log("transitioning to set-up-user");
-          //return this.transitionTo('set-up-user');
+          this.transitionTo('set-up-user');
         }
       }
 

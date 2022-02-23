@@ -184,12 +184,12 @@ export default class UserSetUp extends Component.extend({
     try {
       const data = window.localStorage.getItem(USERSETUP_PAST_USERS);
       if(!data) {
-        return {};
+        return null;
       }
       const users = JSON.parse(data);
       return users; // this will be a hash from names to user objects (things that we would pass to onDone())
     } catch(e) {
-      return {};
+      return null;
     }
   }),
 }) {

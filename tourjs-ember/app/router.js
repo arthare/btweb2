@@ -56,6 +56,7 @@ Router.map(function() {
   this.route('kickr-setup');
   this.route('race-results', {path:'/race-results/:key'});
   this.route('ai');
+  this.route('no-bluetooth');
 });
 
 export default Router;

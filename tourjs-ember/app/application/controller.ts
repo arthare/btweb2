@@ -165,10 +165,15 @@ export default class Application extends Controller.extend({
 
     if(!window.navigator || !window.navigator.bluetooth || !window.navigator.bluetooth.getAvailability) {
       this.set('canDoBluetooth', false);
+      this.transitionToRoute('no-bluetooth');
     } else {
       navigator.bluetooth.getAvailability().then((available) => {
         console.log("Bluetooth is available? ", available);
         this.set('canDoBluetooth', available);
+
+        if(!available) {
+          this.transitionToRoute('no-bluetooth');
+        }
       })
     }
     this._tick();

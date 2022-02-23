@@ -4,6 +4,7 @@
   </div>
   {{#if pastUsers}}
     <h3>This PC has had other users in the past</h3>
+    {{log "past users" pastUsers}}
     {{#each-in pastUsers as |name user|}}
       <button {{action 'useOldUser' user}}>{{name}}</button>
     {{/each-in}}
