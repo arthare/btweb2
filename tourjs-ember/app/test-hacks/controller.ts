@@ -6,6 +6,7 @@ import { ServerMapDescription } from 'bt-web2/tourjs-shared/communication';
 import { RideMapHandicap } from 'bt-web2/tourjs-shared/RideMapHandicap';
 import Devices from 'bt-web2/services/devices';
 import Ember from 'ember';
+import { MathUtils } from 'three';
 
 
 export class FakeUserProvider implements UserProvider {
@@ -16,13 +17,15 @@ export class FakeUserProvider implements UserProvider {
     this._local = localUserOverride;
     this.users = [
       localUserOverride ? localUserOverride : new User("Local User", DEFAULT_RIDER_MASS, 100, UserTypeFlags.Local),
-      new User("Human Remote", DEFAULT_RIDER_MASS, 280, UserTypeFlags.Remote),
+      new User("Human Remote", DEFAULT_RIDER_MASS, 260, UserTypeFlags.Remote),
+      new User("Human Remote", DEFAULT_RIDER_MASS, 260, UserTypeFlags.Remote),
+      new User("Human Remote", DEFAULT_RIDER_MASS, 240, UserTypeFlags.Remote),
       //new User("Slow Fella", DEFAULT_RIDER_MASS, 900, UserTypeFlags.Remote),
       //new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
     ];
 
-    for(var x = 0;x < 1; x++) {
-      const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, 75, UserTypeFlags.Ai | UserTypeFlags.Remote);
+    for(var x = 0;x < 0; x++) {
+      const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, 200 + Math.random()*150, UserTypeFlags.Ai | UserTypeFlags.Remote);
       this.users.push(aiUser);
     }
     this.users.forEach((user, index) => {
@@ -73,7 +76,7 @@ export default class TestHacks extends Controller.extend({
               // there's already a device for this guy
             } else {
               user.notifyHrm(tmNow, Math.random() + 170 + index*5);
-              user.notifyPower(tmNow, Math.random()*50 + 100 + index*2);
+              user.notifyPower(tmNow, Math.random()*50 + 300 + index*2);
             }
           }
         })

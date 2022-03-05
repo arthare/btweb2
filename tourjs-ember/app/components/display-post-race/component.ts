@@ -4,7 +4,7 @@ import Connection from 'bt-web2/services/connection';
 import {computed} from '@ember/object';
 import { S2CFinishUpdate, S2CPositionUpdateUser } from 'bt-web2/tourjs-shared/communication';
 import { formatSecondsHms } from 'bt-web2/tourjs-shared/Utils';
-import { DistanceHistoryElement, DraftSavings, User, UserDisplay, UserInterface, UserTypeFlags } from 'bt-web2/tourjs-shared/User';
+import { DistanceHistoryElement, DrafteeStat, DraftSavings, User, UserDisplay, UserInterface, UserTypeFlags } from 'bt-web2/tourjs-shared/User';
 import { RaceState, UserProvider } from 'bt-web2/tourjs-shared/RaceState';
 import { RideMap } from 'bt-web2/tourjs-shared/RideMap';
 import RaceResults from 'bt-web2/race-results/route';
@@ -58,7 +58,9 @@ class FinishUser implements UserInterface {
   getBigImageMd5(): string | null  {debugger; throw new Error('Method not implemented.');}
   getLastHandicapChangeTime(): number  {debugger; throw new Error('Method not implemented.');}
   physicsTick(tmNow: number, map: RideMap, otherUsers: UserInterface[]): void  {debugger; throw new Error('Method not implemented.');}
-  public notifyDrafteeThisCycle(tmNow: number, id: number): void  {debugger; throw new Error('Method not implemented.');}
+  public getDrafteeStats():DrafteeStat[] {return [];};
+  public getLastDraftLength(): number {return 0;}
+  public notifyDrafteeThisCycle(tmNow: number, id: number, pctSaved:DrafteeStat): void  {debugger; throw new Error('Method not implemented.');}
   public getDrafteeCount(tmNow: number): number  {debugger; throw new Error('Method not implemented.');}
   public getSecondsAgoToCross(tmNow: number, distance: number): number | null  {debugger; throw new Error('Method not implemented.');}
   public isDraftingLocalUser(): boolean {debugger; throw new Error('Method not implemented.');}

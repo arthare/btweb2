@@ -78,7 +78,9 @@
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "^3.9.0",
+    "@types/auth0-js": "^9.14.6",
     "@types/three": "^0.137.0",
+    "auth0-js": "^9.19.0",
     "geolib": "^3.3.1",
     "ml-fnn": "^5.0.0",
     "react-native-orientation": "^3.1.3",

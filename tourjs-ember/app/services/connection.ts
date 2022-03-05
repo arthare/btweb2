@@ -9,11 +9,13 @@ import { assert2 } from 'bt-web2/tourjs-shared/Utils';
 import { computed } from '@ember/object';
 import ENV from 'bt-web2/config/environment';
 import { USERSETUP_KEY_HANDICAP } from 'bt-web2/components/user-set-up-widget/component';
+import { TourJsSignin } from 'bt-web2/tourjs-client-shared/signin-client';
 
 export default class Connection extends Service.extend({
   // anything which *must* be merged to prototype here
   devices: <Devices><unknown>Ember.inject.service(),
 }) {
+
   _connectManager:ConnectionManager = new ConnectionManager((newFtp:number) => this._onHandicapChange(newFtp),
                                                             () => this._onLastServerRaceStateChange(),
                                                             () => this._onNetworkUpdateComplete(),

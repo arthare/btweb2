@@ -2,15 +2,6 @@ import Route from '@ember/routing/route';
 import ENV from 'bt-web2/config/environment';
 import { apiGetInternal, apiPostInternal, ServerHttpGameList, ServerHttpGameListElement } from 'bt-web2/tourjs-shared/communication';
 
-export function apiPost(endPoint:string, data?:any):Promise<any> {
-  const apiRoot:string = ENV.apiRoot;
-  return apiPostInternal(apiRoot, endPoint, data);
-}
-
-export function apiGet(endPoint:string, data?:any):Promise<any> {
-  const apiRoot:string = ENV.apiRoot;
-  return apiGetInternal(apiRoot, endPoint, data);
-}
 export function refreshRaceList() {
   return apiGet('race-list').then((result:ServerHttpGameList) => {
     result.races = result.races.sort((a, b) => {

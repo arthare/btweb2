@@ -2,10 +2,10 @@ import Component from '@ember/component';
 import { RaceState } from 'bt-web2/tourjs-shared/RaceState';
 import Ember from 'ember';
 import Connection from 'bt-web2/services/connection';
-import { DecorationFactory, Layer, ThemeConfig } from 'bt-web2/tourjs-shared/DecorationFactory';
+import { DecorationFactory, Layer, ThemeConfig } from 'bt-web2/tourjs-client-shared/DecorationFactory';
 import { DecorationState } from 'bt-web2/tourjs-shared/DecorationState';
 import ENV from 'bt-web2/config/environment';
-import { defaultThemeConfig } from 'bt-web2/tourjs-shared/drawing-constants';
+import { defaultThemeConfig } from 'bt-web2/tourjs-client-shared/drawing-constants';
 import { createDrawer } from 'bt-web2/tourjs-shared/drawing-factory';
 import { PaintFrameState } from 'bt-web2/tourjs-shared/drawing-interface';
 

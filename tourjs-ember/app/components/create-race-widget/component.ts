@@ -8,7 +8,7 @@ import Devices from 'bt-web2/services/devices';
 import { apiPost } from 'bt-web2/set-up-ride/route';
 import PlatformManager, { ElevDistanceMap, StravaMapSummary } from 'bt-web2/services/platform-manager';
 import { writeToCharacteristic } from 'bt-web2/pojs/DeviceUtils';
-import { randRange } from 'bt-web2/tourjs-shared/DecorationFactory';
+import { randRange } from 'bt-web2/tourjs-client-shared/DecorationFactory';
 
 export class RideMapResampleDistance extends RideMapPartial {
   _src:RideMapElevationOnly;

@@ -3,7 +3,7 @@ import Ember from 'ember';
 import Devices from 'bt-web2/services/devices';
 import { computed } from '@ember/object';
 import { User, UserInterface } from 'bt-web2/tourjs-shared/User';
-import { HeartRateEngine } from 'bt-web2/tourjs-shared/heart-rate-engine';
+import { HeartRateEngine } from 'bt-web2/tourjs-client-shared/heart-rate-engine';
 
 export default class HrmControl extends Controller.extend({
   // anything which *must* be merged to prototype here
