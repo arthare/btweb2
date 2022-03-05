@@ -1,13 +1,13 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
-import { ServerGame } from '../tourjs-ember/app/tourjs-shared/ServerGame';
-import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from '../tourjs-ember/app/tourjs-shared/communication';
-import { RaceState } from '../tourjs-ember/app/tourjs-shared/RaceState'
-import { ScheduleRacePostRequest } from '../tourjs-ember/app/tourjs-shared/ServerHttpObjects';
-import { RideMapHandicap } from '../tourjs-ember/app/tourjs-shared/RideMapHandicap';
-import { RideMapElevationOnly, RideMapPartial } from '../tourjs-ember/app/tourjs-shared/RideMap';
-import { assert2 } from '../tourjs-ember/app/tourjs-shared/Utils';
-import { setCorsHeaders, postStartup } from './HttpUtils';
+import { ServerGame } from './tourjs-shared/ServerGame';
+import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from './tourjs-shared/communication';
+import { RaceState } from './tourjs-shared/RaceState'
+import { ScheduleRacePostRequest } from './tourjs-shared/ServerHttpObjects';
+import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
+import { RideMapElevationOnly, RideMapPartial } from './tourjs-shared/RideMap';
+import { assert2 } from './tourjs-shared/Utils';
+import { setCorsHeaders, postStartup, resWriteOut } from './HttpUtils';
 import fs from 'fs';
 import md5 from 'md5';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,9 +48,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
       
     });
 
-    res.writeHead(200, 'ok');
-    res.write(JSON.stringify(ret));
-    res.end();
+    resWriteOut(res, ret);
   })
   
   class PacingChallengeMapRecords {

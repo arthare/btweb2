@@ -10,8 +10,8 @@ ReactDOM.render(
   <Auth0Provider domain="dev-enlwsasz.us.auth0.com" clientId="sVfg9SlUyknsFxwh74CDlseT0aL7iWS8" redirectUri={window.location.origin}>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AppLogin />} />
-        <Route path="/menu" element={<AppMenu />} />
+        <Route path="/login" element={<AppLogin />} />
+        <Route path="/" element={<AppMenu />} />
         <Route path="/test-hacks" element={<AppTestHacks />} />
       </Routes>
     </BrowserRouter>

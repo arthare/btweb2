@@ -1,20 +1,21 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from '../tourjs-ember/app/tourjs-shared/communication';
-import { assert2, testAssert } from '../tourjs-ember/app/tourjs-shared/Utils';
-import { RaceState, UserProvider } from '../tourjs-ember/app/tourjs-shared/RaceState';
-import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from '../tourjs-ember/app/tourjs-shared/User';
-import { RideMapHandicap } from '../tourjs-ember/app/tourjs-shared/RideMapHandicap';
-import { RideMap, RideMapPartial } from '../tourjs-ember/app/tourjs-shared/RideMap';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from './tourjs-shared/communication';
+import { assert2, testAssert } from './tourjs-shared/Utils';
+import { RaceState, UserProvider } from './tourjs-shared/RaceState';
+import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from './tourjs-shared/User';
+import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
+import { RideMap, RideMapPartial } from './tourjs-shared/RideMap';
 import { makeSimpleMap } from './ServerUtils';
-import { SERVER_PHYSICS_FRAME_RATE } from '../tourjs-ember/app/tourjs-shared/ServerConstants';
-import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from '../tourjs-ember/app/tourjs-shared/ServerGame';
+import { SERVER_PHYSICS_FRAME_RATE } from './tourjs-shared/ServerConstants';
+import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from './tourjs-shared/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { setUpCors } from './HttpUtils';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
-import { takeTrainingSnapshot } from '../tourjs-ember/app/tourjs-shared/ServerAISnapshots';
+import { takeTrainingSnapshot } from './tourjs-shared/ServerAISnapshots';
+import { setupAuth0 } from './index-auth0';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
@@ -408,7 +409,9 @@ export function startGameServer() {
 
   setUpCors(app);
   setUpServerHttp(app, races);
+  setupAuth0(app);
   app.listen(PORTS.GENERAL_HTTP_PORT);
+  console.log(`Listening at localhost:${PORTS.GENERAL_HTTP_PORT}`);
 
 }
 

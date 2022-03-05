@@ -6,14 +6,15 @@ import { BrowserRouter, useNavigate } from "react-router-dom";
 import { Auth0Client, User } from '@auth0/auth0-spa-js';
 import { FakeUserProvider, setupRace } from './UtilsGameStarter';
 import { request } from 'https';
-import { ServerMapDescription } from '../../tourjs-shared/communication';
-import { RaceState } from '../../tourjs-shared/RaceState';
-import { PureCosineMap } from '../../tourjs-shared/RideMap';
-import { RideMapHandicap } from '../../tourjs-shared/RideMapHandicap';
-import { paintCanvasFrame, PaintFrameState } from '../../tourjs-shared/drawing';
-import { DecorationState } from '../../tourjs-shared/DecorationState';
-import { DecorationFactory, randRange } from '../../tourjs-shared/DecorationFactory';
-import { defaultThemeConfig } from '../../tourjs-shared/drawing-constants';
+import { ServerMapDescription } from './tourjs-shared/communication';
+import { RaceState } from './tourjs-shared/RaceState';
+import { PureCosineMap } from './tourjs-shared/RideMap';
+import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
+import { createDrawer } from './tourjs-client-shared/drawing-factory';
+import { DecorationState } from './tourjs-client-shared/DecorationState';
+import { DecorationFactory, randRange } from './tourjs-client-shared/DecorationFactory';
+import { defaultThemeConfig } from './tourjs-client-shared/drawing-constants';
+import { DrawingInterface, PaintFrameState } from './tourjs-client-shared/drawing-interface';
 
 export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any, navigate:any) {
   useEffect(() => {
@@ -27,7 +28,7 @@ export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any
 }
 
 
-export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void) {
+export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void) {
 
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
@@ -42,14 +43,14 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
   raceState.tick(tmThisFrame);
 
   if(ref.current) {
-    paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
+    drawer.paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
   }
 
   if(raceState.isAllRacersFinished(tm)) {
     // we're done.  no need for further action
     fnOnRaceDone();
   } else {
-    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, decorationState, paintState, ref, raceState, fnOnRaceDone));
+    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone));
   }
 }
 
@@ -76,12 +77,15 @@ function App() {
       const fnMakeMap = async () =>  new RideMapHandicap(new ServerMapDescription(new PureCosineMap(5000)));
       const fnMakeUserProvider = async () => new FakeUserProvider(null);
   
+      const drawer = createDrawer("3d");
+
       setupRace(fnMakeMap, fnMakeUserProvider, "Test-Hacks Race").then((newRaceState) => {
-        setRaceState(newRaceState);
         const decFactory = new DecorationFactory(defaultThemeConfig);
         const decState = new DecorationState(newRaceState.getMap(), decFactory);
         const paintState = new PaintFrameState();
-        requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tm, decState, paintState, canvasRef, newRaceState, fnOnRaceDone));
+        
+        setRaceState(newRaceState);
+        requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, newRaceState, fnOnRaceDone));
       })
     }
   }, [canvasRef]);

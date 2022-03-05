@@ -33,7 +33,7 @@ export function postStartup(req:core.Request, res:core.Response):Promise<any> {
     
   return new Promise((resolve, reject) => {
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', handleCors(req, ["https://tourjs.ca", "https://www.tourjs.ca"]));
+      res.setHeader('Access-Control-Allow-Origin', handleCors(req, ["https://tourjs.ca", "https://www.tourjs.ca", "https://dev.tourjs.ca:3000"]));
       res.setHeader('Access-Control-Allow-Headers', '*');
       var body = [];
       req.on('data', (chunk:any) => {
@@ -47,3 +47,8 @@ export function postStartup(req:core.Request, res:core.Response):Promise<any> {
   })
 }
 
+export function resWriteOut(res:core.Response, out:any) {
+  res.writeHead(200, 'ok');
+  res.write(JSON.stringify(out));
+  res.end();
+}
