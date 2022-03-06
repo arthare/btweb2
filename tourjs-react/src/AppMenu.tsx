@@ -10,7 +10,7 @@ function App() {
 
   const authContext = useContext(AppUserContextInstance);
 
-  const [authState] = authContext.gate(useState, useEffect, navigate);
+  const [authState] = authContext.gate(useAuth0, useState, useEffect, navigate);
 
   useEffect(() => {
 
