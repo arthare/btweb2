@@ -1,0 +1,62 @@
+@mixin EditRow() {
+  display: flex;
+  flex-direction: row;
+  white-space:nowrap;
+}
+
+.UserProfileMini {
+  &__Container {
+    display: flex;
+    flex-direction: row;
+    background-color: #add8e6;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 2px 2px 2px black;
+    height: 80px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  &__NameHandi {
+    flex: 1 1 0px;
+    display: flex;
+    flex-direction:column;
+    text-align: left;
+  }
+  &__Image {
+    position: relative;
+    flex: 0 0 80px;
+    height: 100%;
+    text-align: center;
+    &:hover {
+      color: white;
+    }
+
+    &--Element {
+      max-height: 80px;
+      max-width: 80px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+  }
+  &__Name {
+    @include EditRow();
+  }
+  &__Handicap {
+    @include EditRow();
+  }
+  &__Selector {
+    font-size: 60px;
+    padding: 8px;
+
+    &--Icon {
+      &.Selected {
+        color: green;
+      }
+      &.Unselected {
+        color: grey;
+      }
+    }
+  }
+}

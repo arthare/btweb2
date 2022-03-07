@@ -5,9 +5,13 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AppMenu from "./AppMenu";
 import AppTestHacks from './AppTestHacks';
+import Helmet from 'react-helmet';
 
 ReactDOM.render(
   <Auth0Provider domain="dev-enlwsasz.us.auth0.com" clientId="sVfg9SlUyknsFxwh74CDlseT0aL7iWS8" redirectUri={window.location.origin}>
+    <Helmet>
+      <script src="https://kit.fontawesome.com/d8b18df8ff.js" crossOrigin={"anonymous" as any}></script>
+    </Helmet>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<AppLogin />} />

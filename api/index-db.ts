@@ -1,6 +1,6 @@
 import mysql from 'mysql2';
 import fs from 'fs';
-import { TourJsAccount } from './tourjs-shared/signin-types';
+import { TourJsAccount, TourJsAlias } from './tourjs-shared/signin-types';
 
 
 function createConfig() {
@@ -74,6 +74,74 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
         } else {
           // hmmm, no user exists.
           reject("No database user exists.  Todo: create new users");
+        }
+      })
+    })
+
+  } catch(e) {
+    throw e;
+  } finally {
+    if(db) {
+      db.end();
+    }
+  }
+}
+
+
+export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJsAlias> {
+  
+  let db;
+  const user = await dbGetUserAccount(sub);
+  if(!user) {
+    throw new Error("You are not signed into the right account in order to modify that alias");
+  }
+  const foundAlias = user.aliases.find((oldAlias) => oldAlias.id === alias.id);
+  if(!foundAlias) {
+    throw new Error("There doesn't appear to be an alias on that account with that id");
+  }
+
+  try {
+    db = await getDb();
+
+    return new Promise<TourJsAlias>((resolve, reject) => {
+      db.query(`UPDATE aliases set name=?, handicap=?, image=? where id=?`, [alias.name, alias.handicap, alias.imageBase64, alias.id], (err, res:any) => {
+        if(err) {
+          reject(err);
+        } else {
+          // updated!
+          resolve(alias);
+        }
+      })
+    })
+
+  } catch(e) {
+    throw e;
+  } finally {
+    if(db) {
+      db.end();
+    }
+  }
+}
+
+export async function dbInsertAlias(sub:string, alias:TourJsAlias):Promise<TourJsAlias> {
+  
+  let db;
+  const user = await dbGetUserAccount(sub);
+  if(!user) {
+    throw new Error("You are not signed into the right account in order to modify that alias");
+  }
+
+  try {
+    db = await getDb();
+
+    return new Promise<TourJsAlias>((resolve, reject) => {
+      db.query(`insert into aliases (name, handicap, image) values (?,?,?)`, [alias.name, alias.handicap, alias.imageBase64], (err, res:any) => {
+        if(err) {
+          reject(err);
+        } else {
+          // updated!
+          alias.id = res.insertId;
+          resolve(alias);
         }
       })
     })

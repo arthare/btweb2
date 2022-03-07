@@ -1,19 +1,21 @@
 import { Auth0ContextInterface, useAuth0, User as Auth0User } from "@auth0/auth0-react";
 import { Auth0Client } from "@auth0/auth0-spa-js";
 import { NavigateFunction } from "react-router-dom";
-import { apiGet } from "./tourjs-client-shared/api-get";
-import { TourJsAccount } from "./tourjs-shared/signin-types";
+import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
+import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
 
 
 
 export class AppUserContextType {
 
+  _myAccount:TourJsAccount|null = null;
+  _idSelectedAlias = -1;
+
   constructor() {
 
   }
-  gate(fnUseAuth0:()=>Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):TourJsAccount[] {
+  gate(auth0:Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):TourJsAccount[] {
 
-    const auth0 = fnUseAuth0();
     let [authState, setAuthState] = fnUseState(null);
 
     fnUseEffect(() => {
@@ -26,8 +28,16 @@ export class AppUserContextType {
             console.log("auth0 done loading");
             if(auth0.isAuthenticated) {
               console.log("you are authenticated! ", auth0.user);
-              const tourJsUser = await apiGet('user-account', {sub:auth0.user.sub});
-              setAuthState(tourJsUser);
+              if(!this._myAccount) {
+                const tourJsUser = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
+                this._myAccount = tourJsUser;
+                this._idSelectedAlias = this._myAccount.aliases[0]?.id || -1;
+
+                setAuthState(tourJsUser);
+              } else {
+                setAuthState(this._myAccount);
+              }
+              
             } else {
               console.log("you are not authenticated");
               auth0.loginWithRedirect();
@@ -39,5 +49,19 @@ export class AppUserContextType {
     }, [auth0.isLoading, auth0.isAuthenticated])
 
     return [authState];
+  }
+
+  getSelectedAlias():TourJsAlias|null {
+    if(this._myAccount) {
+      return this._myAccount.aliases.find((alias) => alias.id === this._idSelectedAlias);
+    } else {
+      return null;
+    }
+  }
+  setSelectedAlias(alias:TourJsAlias) {
+    this._idSelectedAlias = alias.id;
+  }
+  get selectedAliasId() {
+    return this._idSelectedAlias;
   }
 }
