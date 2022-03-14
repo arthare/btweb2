@@ -29,10 +29,38 @@ function getDb():Promise<mysql.Connection> {
 }
 
 
+export async function dbCreateUserAccount(sub:string, nickname:string):Promise<TourJsAccount> {
+  
+  let db;
+  try {
+    db = await getDb();
+
+    await new Promise<void>((resolve, reject) => {
+      db.query(`insert into users (sub, username) values (?,?)`, [sub, nickname], (err, res:any) => {
+        if(err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      })
+    })
+  } catch(e) {
+    throw e;
+  } finally {
+    if(db) {
+      db.end();
+    }
+  }
+
+  // if we got here, insertId should be valid
+  return await dbGetUserAccount(sub);
+}
+
 export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   
   interface RawRowResult {
     users_username:string;
+    users_id:number;
     alias_id:number;
     alias_name:string;
     alias_handicap:number;
@@ -46,6 +74,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
     return new Promise<TourJsAccount>((resolve, reject) => {
       db.query(`SELECT 
                     users.username as users_username,
+                    users.id as users_id,
                     aliases.id as alias_id,
                     aliases.name as alias_name,
                     aliases.handicap as alias_handicap,
@@ -61,6 +90,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
         } else if(res.length >= 1) {
           let ret:TourJsAccount = {
             username: res[0].users_username,
+            accountid: res[0].users_id,
             aliases: res.map((resRow) => {
               return {
                 id:resRow.alias_id,
@@ -123,19 +153,22 @@ export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJ
   }
 }
 
-export async function dbInsertAlias(sub:string, alias:TourJsAlias):Promise<TourJsAlias> {
+export async function dbInsertAlias(sub:string, alias:TourJsAlias, auth0UserData:any):Promise<TourJsAlias> {
   
   let db;
-  const user = await dbGetUserAccount(sub);
-  if(!user) {
-    throw new Error("You are not signed into the right account in order to modify that alias");
+  let user:TourJsAccount;
+  try {
+    user = await dbGetUserAccount(sub);
+  } catch(e) {
+    // no user exists.  so let's create one
+    user = await dbCreateUserAccount(sub, auth0UserData.nickname)
   }
 
   try {
     db = await getDb();
 
     return new Promise<TourJsAlias>((resolve, reject) => {
-      db.query(`insert into aliases (name, handicap, image) values (?,?,?)`, [alias.name, alias.handicap, alias.imageBase64], (err, res:any) => {
+      db.query(`insert into aliases (name, handicap, image, userid) values (?,?,?,?)`, [alias.name, alias.handicap, alias.imageBase64, user.accountid], (err, res:any) => {
         if(err) {
           reject(err);
         } else {

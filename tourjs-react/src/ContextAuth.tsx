@@ -6,7 +6,7 @@ import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
 
 
 
-export class AppUserContextType {
+export class AppAuthContextType {
 
   _myAccount:TourJsAccount|null = null;
   _idSelectedAlias = -1;
@@ -14,7 +14,7 @@ export class AppUserContextType {
   constructor() {
 
   }
-  gate(auth0:Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):TourJsAccount[] {
+  gate(auth0:Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):[TourJsAccount, (acct:TourJsAccount)=>void] {
 
     let [authState, setAuthState] = fnUseState(null);
 
@@ -48,7 +48,20 @@ export class AppUserContextType {
       doIt();
     }, [auth0.isLoading, auth0.isAuthenticated])
 
-    return [authState];
+    return [authState, setAuthState];
+  }
+
+  async refreshAliases(auth0:Auth0ContextInterface<Auth0User>, setAuthState:(TourJsAccount)=>void) {
+    const tourJsUser:TourJsAccount = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
+    setAuthState(tourJsUser);
+    this._myAccount = tourJsUser;
+
+    const selectionStillValid = tourJsUser.aliases.find((alias) => alias.id === this._idSelectedAlias);
+    if(!selectionStillValid) {
+      if(tourJsUser.aliases.length > 0) {
+        this.setSelectedAlias(tourJsUser.aliases[0]);
+      }
+    }
   }
 
   getSelectedAlias():TourJsAlias|null {

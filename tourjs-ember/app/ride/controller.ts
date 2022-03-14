@@ -60,7 +60,6 @@ export default class Ride extends Controller.extend({
       this.set('hasSentPwx', false);
       return this._raceState;
     }
-
     return this.connection.connect(targetHost, gameId, "TheJoneses", user, fnOnNewRaceState).then(fnOnNewRaceState, (failure: any) => {
       const yn = confirm(`Failed to connect to ${targetHost}.  Start setup again?`);
       if (yn) {

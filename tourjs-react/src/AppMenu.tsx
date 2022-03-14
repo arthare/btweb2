@@ -3,50 +3,36 @@ import logo from './logo.svg';
 import './AppLogin.scss';
 import { useAuth0 } from "@auth0/auth0-react";
 import { BrowserRouter, useNavigate } from "react-router-dom";
-import { AppUserContextInstance } from './AppLogin';
+import { AppAuthContextInstance } from './AppLogin';
 import UserProfileMini from './Components/UserProfileMini';
 import { TourJsAlias } from './tourjs-shared/signin-types';
-import { AppUserContextType } from './ContextUser';
+import { AppAuthContextType } from './ContextAuth';
 import { secureApiPost } from './tourjs-client-shared/api-get';
+import UserProfilePicker from './Components/UserProfilePicker';
+import RacePicker from './Components/RacePicker';
+import { ServerHttpGameListElement } from './tourjs-shared/communication';
 
 function App() {
   const navigate = useNavigate();
 
-  const authContext = useContext<AppUserContextType>(AppUserContextInstance);
+  const authContext = useContext<AppAuthContextType>(AppAuthContextInstance);
   const auth0 = useAuth0();
 
-  const [authState] = authContext.gate(auth0, useState, useEffect, navigate);
-  const [selectedAliasId, setSelectedAliasId] = useState<number>(-1);
+  const [authState, setAuthState] = authContext.gate(auth0, useState, useEffect, navigate);
 
-  useEffect(() => {
-    if(authContext) {
-      setSelectedAliasId(authContext.selectedAliasId);
-    }
-  }, [authContext]);
-
-
-  const onChangeAlias = (alias:TourJsAlias) => {
-    // we gotta tell the server about this change
-    console.log("we should tell the server they want to change to ", alias);
-
-    secureApiPost('alias', auth0, alias);
+  const onRefreshUser = () => {
+    authContext.refreshAliases(auth0, setAuthState);
   }
-  const onSelectAlias = (alias:TourJsAlias, index:number) => {
-    authContext.setSelectedAlias(alias);
-    setSelectedAliasId(alias.id);
+  const onPickRace = (race:ServerHttpGameListElement) => {
+    navigate(`/race/${ race.gameId}`);
   }
+
   return (
     <div className="App">
       <h3>Wheels With Friends</h3>
-      {authState && (<>
-        <p>Welcome <b>{authState.username}</b>!  You have {authState.aliases.length} rider profiles.</p>
-        {authState.aliases.map((alias, ix) => {
-          return <UserProfileMini alias={alias} fnOnUpdate={(alias:TourJsAlias) => onChangeAlias(alias)} selected={selectedAliasId === alias.id} fnOnSelect={()=>onSelectAlias(alias, ix)} />
-        })}
-      </>) || (
-        <p>Logging in...</p>
-      )}
+      <UserProfilePicker auth0={auth0} authState={authState} fnOnChangeUser={() => onRefreshUser()}/>
 
+      <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)}/>
     </div>
   );
 }

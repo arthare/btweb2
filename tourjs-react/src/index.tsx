@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AppMenu from "./AppMenu";
 import AppTestHacks from './AppTestHacks';
 import Helmet from 'react-helmet';
+import AppRace from "./AppRace";
 
 ReactDOM.render(
   <Auth0Provider domain="dev-enlwsasz.us.auth0.com" clientId="sVfg9SlUyknsFxwh74CDlseT0aL7iWS8" redirectUri={window.location.origin}>
@@ -17,6 +18,7 @@ ReactDOM.render(
         <Route path="/login" element={<AppLogin />} />
         <Route path="/" element={<AppMenu />} />
         <Route path="/test-hacks" element={<AppTestHacks />} />
+        <Route path="/race/:gameId" element={<AppRace />} />
       </Routes>
     </BrowserRouter>
   </Auth0Provider>

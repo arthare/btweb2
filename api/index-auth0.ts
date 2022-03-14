@@ -31,14 +31,16 @@ export function setupAuth0(app: core.Express) {
   app.post('/alias', [checkJwt], async (req, res) => {
     console.log("a post happened");
     const data = await postStartup(req, res);
-    const sub = req.auth?.payload?.sub as string
+    const {alias, user} = data;
+
+    const sub = req.auth?.payload?.sub as string;
     let result;
-    if(data.id) {
+    if(data.id >= 0) {
       // they're editing an existing alias
-      result = await dbUpdateAlias(sub, data);
+      result = await dbUpdateAlias(sub, alias);
     } else {
       console.log("they're not editing an alias");
-      result = await dbInsertAlias(sub, data);
+      result = await dbInsertAlias(sub, alias, user);
     }
     resWriteOut(res, result);
   })
