@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat } from './tourjs-shared/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat, SERVER_UPDATE_RATE_HZ } from './tourjs-shared/communication';
 import { assert2, testAssert } from './tourjs-shared/Utils';
 import { RaceState, UserProvider } from './tourjs-shared/RaceState';
 import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from './tourjs-shared/User';
@@ -19,6 +19,7 @@ import { setupAuth0 } from './index-auth0';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
+
 
 export function startGameServer() {
   
@@ -193,7 +194,6 @@ export function startGameServer() {
 
     } else if(tmSinceName >= 30000) {
 
-      console.log("been ", tmSinceName, " since last name update for ", user.getName());
       const response:S2CNameUpdate = new S2CNameUpdate(tmNow, game.userProvider);
       user.noteLastNameUpdate(tmNow);
 
@@ -252,7 +252,7 @@ export function startGameServer() {
       
 
       if(stillConnected) {
-        setTimeout(sendUpdate, 250);
+        setTimeout(sendUpdate, 1000 / SERVER_UPDATE_RATE_HZ);
       }
     }
 
@@ -310,15 +310,15 @@ export function startGameServer() {
             // lets see if this user is maybe already in this game
             let newId;
             let selectedUser;
-            if(payload.imageBase64) {
-              const existingUser = selectedUser = game.findUserByImage(tmNow, payload.imageBase64, payload.riderName, payload.riderHandicap);
+            if(payload.sub) {
+              const existingUser = selectedUser = game.userProvider.getUsers(tmNow).find((su) => su.getSub() === payload.sub);
               if(existingUser) {
                 newId = existingUser.getId();
                 console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
               }
             }
             
-            if(!newId) {
+            if(!selectedUser) {
               // we didn't find an existing user by any means.  Let's stick this guy with the lead AI, which should be in a non-winning position
               const allUsers = game.userProvider.getUsers(tmNow);
               let distanceToAssign = 0;
@@ -424,6 +424,7 @@ async function getTimeToCompleteCourse(fnMakeMap:()=>RideMap, name:string, ais:A
     const aiIds = [];
     for(var ai of ais) {
       aiIds.push(sg.userProvider.addUser({
+        sub: `AI_${uuidv4()}`,
         riderName:`Test AI`,
         accountId:"-1",
         riderHandicap: 300,

@@ -6,8 +6,6 @@ import { BrowserRouter, useNavigate } from "react-router-dom";
 import { AppAuthContextType } from './ContextAuth';
 import { AppPlayerContextType } from './ContextPlayer';
 
-export const AppAuthContextInstance = React.createContext<AppAuthContextType>(new AppAuthContextType());
-export const AppPlayerContextInstance = React.createContext<AppPlayerContextType>(new AppPlayerContextType());
 
 function App() {
   

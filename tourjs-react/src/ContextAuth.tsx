@@ -12,22 +12,19 @@ export class AppAuthContextType {
   _idSelectedAlias = -1;
 
   constructor() {
-
+    console.log("constructing AppAuthContextType");
   }
   gate(auth0:Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):[TourJsAccount, (acct:TourJsAccount)=>void] {
 
-    let [authState, setAuthState] = fnUseState(null);
+    let [authState, setAuthState] = fnUseState(this._myAccount);
 
     fnUseEffect(() => {
       const doIt = async () => {
         if(auth0) {
           if(auth0.isLoading) {
             // nothing to do
-            console.log("auth0 loading");
           } else {
-            console.log("auth0 done loading");
             if(auth0.isAuthenticated) {
-              console.log("you are authenticated! ", auth0.user);
               if(!this._myAccount) {
                 const tourJsUser = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
                 this._myAccount = tourJsUser;
@@ -39,7 +36,6 @@ export class AppAuthContextType {
               }
               
             } else {
-              console.log("you are not authenticated");
               auth0.loginWithRedirect();
             }
           }
@@ -72,6 +68,7 @@ export class AppAuthContextType {
     }
   }
   setSelectedAlias(alias:TourJsAlias) {
+    console.log("they have picked alias = ", alias);
     this._idSelectedAlias = alias.id;
   }
   get selectedAliasId() {

@@ -13,7 +13,7 @@ ssh $SIGNIN "mkdir -p $APIHOSTDIR && mkdir -p $APIHOSTDIR/brains && rm -rf $APIH
 scp -r ./deploy-brains/* $SIGNIN:$APIHOSTDIR/deploy-brains/
 scp -r dist/* $SIGNIN:$APIHOSTDIR
 scp pm2.json $SIGNIN:$APIHOSTDIR/pm2.json
-scp ssl-config.json $SIGNIN:$APIHOSTDIR/ssl-config.json
+scp ssl-config-prod.json $SIGNIN:$APIHOSTDIR/ssl-config.json
 scp db-config.json $SIGNIN:$APIHOSTDIR/db-config.json
 scp package.json $SIGNIN:$APIHOSTDIR/package.json
 scp package-lock.json $SIGNIN:$APIHOSTDIR/package-lock.json

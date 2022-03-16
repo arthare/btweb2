@@ -32,7 +32,6 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
 
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
-  console.log("frame @ ", tm % 10000, " dt = ", dt);
 
 
   const localUser = raceState.getLocalUser();

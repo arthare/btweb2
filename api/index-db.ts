@@ -60,6 +60,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   
   interface RawRowResult {
     users_username:string;
+    users_sub:string;
     users_id:number;
     alias_id:number;
     alias_name:string;
@@ -74,6 +75,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
     return new Promise<TourJsAccount>((resolve, reject) => {
       db.query(`SELECT 
                     users.username as users_username,
+                    users.sub as users_sub,
                     users.id as users_id,
                     aliases.id as alias_id,
                     aliases.name as alias_name,
@@ -90,6 +92,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
         } else if(res.length >= 1) {
           let ret:TourJsAccount = {
             username: res[0].users_username,
+            sub: res[0].users_sub,
             accountid: res[0].users_id,
             aliases: res.map((resRow) => {
               return {

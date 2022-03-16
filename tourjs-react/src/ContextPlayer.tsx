@@ -49,7 +49,7 @@ export class AppPlayerContextType implements UserProvider {
       newUser.setImage(image, null);
     }
     newUser.setId(pos.id);
-    newUser.absorbPositionUpdate(tmNow, pos);
+    newUser.absorbPositionUpdate(tmNow, tmNow, pos);
     this.users.push(newUser);
   }
   addUser(user:UserSetupParameters) {

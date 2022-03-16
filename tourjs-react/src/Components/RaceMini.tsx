@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { createDrawer } from "../tourjs-client-shared/drawing-factory";
 import { ServerHttpGameListElement, SimpleElevationMap } from "../tourjs-shared/communication";
 
@@ -69,7 +70,7 @@ export default function RaceMini(props:{race:ServerHttpGameListElement, fnOnPick
                 </tr>
                 <tr>
                   <td>Link</td>
-                  <td><a href={`/race/${props.race.gameId}`}>Link</a></td>
+                  <td><Link to={`/race/${props.race.gameId}`}>Link</Link></td>
                 </tr>
               </tbody>
             </table>

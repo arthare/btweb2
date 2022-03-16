@@ -1,16 +1,13 @@
 import { Auth0ContextInterface, User as Auth0User } from "@auth0/auth0-react";
 import { useContext, useEffect, useState } from "react";
-import { AppAuthContextInstance, AppPlayerContextInstance } from "../AppLogin";
+import { AppAuthContextInstance, AppPlayerContextInstance } from "../index-contextLoaders";
 import { AppAuthContextType } from "../ContextAuth";
 import { AppPlayerContextType, UserSetupParameters } from "../ContextPlayer";
 import { secureApiPost } from "../tourjs-client-shared/api-get";
 import { TourJsAccount, TourJsAlias } from "../tourjs-shared/signin-types";
 import UserProfileMini from "./UserProfileMini";
 
-export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:Auth0ContextInterface<Auth0User>, fnOnChangeUser:()=>void}) { 
-
-  const authContext = useContext<AppAuthContextType>(AppAuthContextInstance);
-  const playerContext = useContext<AppPlayerContextType>(AppPlayerContextInstance);
+export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:Auth0ContextInterface<Auth0User>, fnOnChangeUser:()=>void, authContext:AppAuthContextType, playerContext:AppPlayerContextType}) { 
 
   const [selectedAliasId, setSelectedAliasId] = useState<number>(-1);
   const onChangeAlias = (alias:TourJsAlias) => {
@@ -21,7 +18,7 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
     props.fnOnChangeUser();
   }
   const onSelectAlias = (alias:TourJsAlias, index:number) => {
-    authContext.setSelectedAlias(alias);
+    props.authContext.setSelectedAlias(alias);
     setSelectedAliasId(alias.id);
 
     const setupParams:UserSetupParameters = {
@@ -30,7 +27,7 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
       imageBase64:alias.imageBase64 || null,
       bigImageMd5:null,
     }
-    playerContext.addUser(setupParams);
+    props.playerContext.addUser(setupParams);
   }
 
   const onAddNew = async () => {
@@ -54,11 +51,11 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
   }
 
   useEffect(() => {
-    if(props.authState && authContext && props.authState.aliases.length > 0) {
+    if(props.authState && props.authContext && props.authState.aliases.length > 0) {
       // ok, we've got aliases.  let's just pick the first one
       onSelectAlias(props.authState.aliases[0], 0);
     }
-  }, [props.authState, authContext])
+  }, [props.authState, props.authContext])
 
 
   return (<>

@@ -32,7 +32,6 @@ export default function InRaceView(props:{raceState:RaceState}) {
   }, [canvasRef]);
   
   return <div>
-    <p>It'z the in-race view!  You're at {user && user.getDistance().toFixed(1)}m</p>
     <canvas ref={canvasRef}  className="InRaceView__Canvas"/>
     </div>
 }
