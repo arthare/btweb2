@@ -1,0 +1,4 @@
+{
+  "privateKeyPath": "/etc/letsencrypt/live/tourjs.ca/privkey.pem",
+  "fullChain": "/etc/letsencrypt/live/tourjs.ca/fullchain.pem"
+}
