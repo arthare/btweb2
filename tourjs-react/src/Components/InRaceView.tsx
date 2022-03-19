@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { tickGameAnimationFrame } from "../AppTestHacks";
+import { tickGameAnimationFrame } from "../AppRace";
 import { DecorationFactory } from "../tourjs-client-shared/DecorationFactory";
 import { DecorationState } from "../tourjs-client-shared/DecorationState";
 import { defaultThemeConfig } from "../tourjs-client-shared/drawing-constants";

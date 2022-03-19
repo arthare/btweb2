@@ -84,7 +84,7 @@ function UserProfileMini(props:{alias: TourJsAlias, fnOnUpdate:(newValue:TourJsA
         {props.selected && (
           <FontAwesomeIcon className="UserProfileMini__Selector--Icon Selected" icon={faCircleCheck} />
         ) || (
-          <FontAwesomeIcon className="UserProfileMini__Selector--Icon Unselected" icon={faCircle} onClick={() => {console.log("onselect!"); props.fnOnSelect()}} />
+          <FontAwesomeIcon className="UserProfileMini__Selector--Icon Unselected" icon={faCircleCheck} onClick={() => {console.log("onselect!"); props.fnOnSelect()}} />
         )}
       </div>
     </div>

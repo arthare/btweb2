@@ -35,11 +35,12 @@ export function setupAuth0(app: core.Express) {
 
     const sub = req.auth?.payload?.sub as string;
     let result;
-    if(data.id >= 0) {
+    if(alias.id >= 0) {
       // they're editing an existing alias
+      console.log("they're editing an existing alias ", data);
       result = await dbUpdateAlias(sub, alias);
     } else {
-      console.log("they're not editing an alias");
+      console.log("they're not editing an alias", data);
       result = await dbInsertAlias(sub, alias, user);
     }
     resWriteOut(res, result);

@@ -1,0 +1,39 @@
+@mixin Card() {
+  box-shadow: 3px 3px 3px rgba(0,0,0,0.5);
+  margin-bottom: 32px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.5);
+  border-left: 1px solid rgba(0,0,0,0.5);;
+  border-bottom: 1px solid black;
+  border-right: 1px solid black;
+
+  padding: 12px;
+
+  border-radius: 8px;
+  background-color: #f4f4f4;
+
+  & h2 {
+    margin-top: 0px;
+    margin-bottom: 8px;
+  }
+  & p{
+    margin-top: 4px;
+  }
+}
+
+@mixin CtaButton() {
+  width: 100%;
+  border-radius: 16px;
+  min-height: 48px;
+  font-size: 24px;
+
+}
+
+
+button {
+  @include CtaButton();
+}
+
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}

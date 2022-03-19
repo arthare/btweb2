@@ -1,0 +1,7 @@
+@import './CommonStyle.scss';
+
+.UserProfilePicker {
+  &__Container {
+    @include Card();
+  }
+}

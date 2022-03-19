@@ -6,6 +6,14 @@ import { AppPlayerContextType, UserSetupParameters } from "../ContextPlayer";
 import { secureApiPost } from "../tourjs-client-shared/api-get";
 import { TourJsAccount, TourJsAlias } from "../tourjs-shared/signin-types";
 import UserProfileMini from "./UserProfileMini";
+import './UserProfilePicker.scss';
+
+enum UserProfileState {
+  LoggingIn,
+  NoAliases,
+  NoAliasSelected,
+  AliasSelected,
+}
 
 export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:Auth0ContextInterface<Auth0User>, fnOnChangeUser:()=>void, authContext:AppAuthContextType, playerContext:AppPlayerContextType}) { 
 
@@ -52,25 +60,48 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
 
   useEffect(() => {
     if(props.authState && props.authContext && props.authState.aliases.length > 0) {
-      // ok, we've got aliases.  let's just pick the first one
-      onSelectAlias(props.authState.aliases[0], 0);
+      // ok, we've got aliases.
     }
   }, [props.authState, props.authContext])
 
 
-  return (<>
-    {props.authState && (<>
-      <p>Welcome <b>{props.authState.username}</b>!  You have {props.authState.aliases.length} rider profiles.</p>
+  let state:UserProfileState = UserProfileState.NoAliases;
+  if(!props.authState) {
+    state = UserProfileState.LoggingIn;
+  } else if(props.authState?.aliases?.length > 0) {
+    if(props.authContext.getSelectedAlias()) {
+      state = UserProfileState.AliasSelected;
+    } else {
+      state = UserProfileState.NoAliasSelected;
+    }
+  }
+  
+
+  return (<div className="UserProfilePicker__Container">
+    <h2>User Setup</h2>
+    {state === UserProfileState.LoggingIn && (
+      <p>Logging in...</p>
+    )}
+    {state === UserProfileState.NoAliasSelected && (<>
+      <p>Welcome <b>{props.authState.username}</b>!  You have {props.authState.aliases.length} rider profiles.  Pick one to ride today.</p>
       {props.authState.aliases.map((alias, ix) => {
-        return <UserProfileMini key={ix} alias={alias} fnOnUpdate={(alias:TourJsAlias) => onChangeAlias(alias)} selected={selectedAliasId === alias.id} fnOnSelect={() => onSelectAlias(alias, ix)} />
+        return <UserProfileMini key={ix} alias={alias} fnOnUpdate={(alias:TourJsAlias) => onChangeAlias(alias)} selected={false} fnOnSelect={() => onSelectAlias(alias, ix)} />
       })}
       
       <div className="UserProfilePicker__AddNew">
         <button className="UserProfilePicker__AddNew--Button" onClick={() => onAddNew()}>Add New</button>
       </div>
-      
-      </>) || (
-        <p>Logging in...</p>
-      )}
-  </>)
+    </>)}
+    {state === UserProfileState.NoAliases && (<>
+      <p>Welcome <b>{props.authState.username}</b>!  You need to set up a rider profile (name and handicap).</p>
+      <div className="UserProfilePicker__AddNew">
+        <button className="UserProfilePicker__AddNew--Button" onClick={() => onAddNew()}>Add New</button>
+      </div>
+    </>)}
+    {state === UserProfileState.AliasSelected && (<>
+      <p>You're going to ride with {props.authContext?.getSelectedAlias().name}</p>
+      <UserProfileMini alias={props.authContext.getSelectedAlias()} fnOnUpdate={(alias:TourJsAlias) => onChangeAlias(alias)} selected={true} fnOnSelect={() => {}} />
+      <button className="UserProfilePicture__Change" onClick={()=>{props.authContext.setSelectedAlias(null); setSelectedAliasId(-1)}}>Change My Selected Profile</button>
+    </>)}
+  </div>)
 }

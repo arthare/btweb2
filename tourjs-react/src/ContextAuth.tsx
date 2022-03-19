@@ -1,17 +1,19 @@
 import { Auth0ContextInterface, useAuth0, User as Auth0User } from "@auth0/auth0-react";
 import { Auth0Client } from "@auth0/auth0-spa-js";
+import EventEmitter from "events";
 import { NavigateFunction } from "react-router-dom";
 import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
 import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
 
 
 
-export class AppAuthContextType {
+export class AppAuthContextType extends EventEmitter {
 
   _myAccount:TourJsAccount|null = null;
   _idSelectedAlias = -1;
 
   constructor() {
+    super();
     console.log("constructing AppAuthContextType");
   }
   gate(auth0:Auth0ContextInterface<Auth0User>, fnUseState, fnUseEffect, fnNavigate:NavigateFunction):[TourJsAccount, (acct:TourJsAccount)=>void] {
@@ -28,7 +30,7 @@ export class AppAuthContextType {
               if(!this._myAccount) {
                 const tourJsUser = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
                 this._myAccount = tourJsUser;
-                this._idSelectedAlias = this._myAccount.aliases[0]?.id || -1;
+                this._idSelectedAlias = -1;
 
                 setAuthState(tourJsUser);
               } else {
@@ -67,9 +69,14 @@ export class AppAuthContextType {
       return null;
     }
   }
-  setSelectedAlias(alias:TourJsAlias) {
-    console.log("they have picked alias = ", alias);
-    this._idSelectedAlias = alias.id;
+  setSelectedAlias(alias:TourJsAlias|null) {
+    if(!alias) {
+      this._idSelectedAlias = -1;
+    } else {
+      console.log("they have picked alias = ", alias);
+      this._idSelectedAlias = alias.id;
+    }
+    this.emit('aliasChange');
   }
   get selectedAliasId() {
     return this._idSelectedAlias;

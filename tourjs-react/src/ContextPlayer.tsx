@@ -1,5 +1,6 @@
 import { Auth0ContextInterface, useAuth0, User as Auth0User } from "@auth0/auth0-react";
 import { Auth0Client } from "@auth0/auth0-spa-js";
+import EventEmitter from "events";
 import { NavigateFunction } from "react-router-dom";
 import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
 import { ConnectedDeviceInterface } from "./tourjs-client-shared/WebBluetoothDevice";
@@ -18,13 +19,17 @@ export interface UserSetupParameters {
 }
 
 
-export class AppPlayerContextType implements UserProvider {
+export class AppPlayerContextType extends EventEmitter implements UserProvider {
   devices:ConnectedDeviceInterface[] = [];
   users:UserInterface[] = [];
   workoutSaver:WorkoutFileSaver = null;
+  powerDevice:ConnectedDeviceInterface = null;
+  hrmDevice:ConnectedDeviceInterface = null;
+
+  
 
   constructor() {
-
+    super();
   }
 
 
@@ -42,6 +47,50 @@ export class AppPlayerContextType implements UserProvider {
     return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
   }
 
+  setPowerDevice(dev:ConnectedDeviceInterface) {
+    const user = this.localUser;
+    if(user) {
+      this.disconnectPowerDevice(); // disconnect the old one
+      this.powerDevice = dev;
+      dev.setCadenceRecipient(user);
+      dev.setPowerRecipient((tmNow, watts) => {
+        console.log("power received!");
+        if(dev === this.powerDevice) {
+          // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying
+          this.emit('deviceDataChange');
+          user.notifyPower(tmNow, watts);
+        } else {
+          dev.disconnect();
+        }
+      });
+      this.emit('deviceChange');
+    }
+  }
+  setHrmDevice(dev:ConnectedDeviceInterface) {
+    const user = this.localUser;
+    if(user) {
+      this.disconnectHrmDevice();
+      dev.setHrmRecipient(user);
+      this.hrmDevice = dev;
+    }
+  }
+  disconnectPowerDevice() {
+    if(this.powerDevice) {
+      const dev = this.powerDevice;
+      dev.disconnect();
+      this.powerDevice = null;
+      this.emit('deviceChange');
+    }
+  }
+  disconnectHrmDevice() {
+    if(this.hrmDevice) {
+      const dev = this.hrmDevice;
+      dev.disconnect();
+      this.hrmDevice = null;
+      this.emit('deviceChange');
+    }
+  }
+  
   addRemoteUser(pos:S2CPositionUpdateUser, image:string|null) {
     const tmNow = new Date().getTime();
     const newUser = new User("Unknown User " + pos.id, DEFAULT_RIDER_MASS, DEFAULT_HANDICAP_POWER, UserTypeFlags.Remote);

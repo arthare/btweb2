@@ -36,8 +36,8 @@ export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListE
 
   return (<div>
     <h3>Upcoming Races</h3>
-    {races && races.races.map((race) => {
-        return <RaceMini race={race} fnOnPickRace={() => onPickRace(race)} />
+    {races && races.races.map((race, index) => {
+        return <RaceMini key={index} race={race} fnOnPickRace={() => onPickRace(race)} />
     })}
     {error && <div>{error}</div>}
   </div>)

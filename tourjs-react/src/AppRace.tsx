@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useContext, useEffect, useState } from "react";
+import { RefObject, useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useNavigate } from "react-router-dom";
 import { AppAuthContextInstance, AppPlayerContextInstance } from "./index-contextLoaders";
@@ -10,6 +10,9 @@ import UserProfilePicker from "./Components/UserProfilePicker";
 import { AppAuthContextType } from "./ContextAuth";
 import { AppPlayerContextType } from "./ContextPlayer";
 import ConnectionManager, { S2CPositionUpdateUser, ServerHttpGameListElement } from "./tourjs-shared/communication";
+import { DrawingInterface, PaintFrameState } from "./tourjs-client-shared/drawing-interface";
+import { DecorationState } from "./tourjs-client-shared/DecorationState";
+import { RaceState } from "./tourjs-shared/RaceState";
 
 function isProduction() {
   console.log("hostname = ", window.location.hostname);
@@ -26,6 +29,25 @@ function getGameServerHost() {
     return 'localhost';
   } else {
     return 'tourjs.ca';
+  }
+}
+
+export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void) {
+
+  const tm = tmThisFrame;
+  const dt = (tmThisFrame - tmLastFrame) / 1000;
+  
+  raceState.tick(tmThisFrame);
+
+  if(ref.current) {
+    drawer.paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
+  }
+
+  if(raceState.isAllRacersFinished(tm)) {
+    // we're done.  no need for further action
+    fnOnRaceDone();
+  } else {
+    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone));
   }
 }
 

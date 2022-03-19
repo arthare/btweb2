@@ -15,6 +15,7 @@ import { DecorationState } from './tourjs-client-shared/DecorationState';
 import { DecorationFactory, randRange } from './tourjs-client-shared/DecorationFactory';
 import { defaultThemeConfig } from './tourjs-client-shared/drawing-constants';
 import { DrawingInterface, PaintFrameState } from './tourjs-client-shared/drawing-interface';
+import { tickGameAnimationFrame } from './AppRace';
 
 export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any, navigate:any) {
   useEffect(() => {
@@ -28,30 +29,6 @@ export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any
 }
 
 
-export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void) {
-
-  const tm = tmThisFrame;
-  const dt = (tmThisFrame - tmLastFrame) / 1000;
-
-
-  const localUser = raceState.getLocalUser();
-  if(localUser) {
-    localUser.notifyPower(tmThisFrame, localUser.getHandicap() * randRange(0.75, 1.25));
-  }
-  
-  raceState.tick(tmThisFrame);
-
-  if(ref.current) {
-    drawer.paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
-  }
-
-  if(raceState.isAllRacersFinished(tm)) {
-    // we're done.  no need for further action
-    fnOnRaceDone();
-  } else {
-    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone));
-  }
-}
 
 
 
