@@ -235,8 +235,9 @@ function InRaceLeaderboardGap(props:{raceState:RaceState, tmNow:number, leftGrou
       </div>
     }
   }
-  
-  return <>Gap</>
+  return <div className="InRaceLeaderboardGap__Container">
+    <div>↔</div>
+  </div>
 }
 
 function InRaceLeaderboard(props:{frames:number, tmNow:number, raceState:RaceState}) {
