@@ -64,6 +64,9 @@ export default function AppRace(props:any) {
   const [userAccount, setUserAccount] = authContext.gate(auth0, useState, useEffect, navigate);
   const [connManager, setConnManager] = useState<ConnectionManager|null>(null);
   const [frames, setFrames] = useState<number>(0);
+  const [forceRefreshVersion, setForceRefreshVersion] = useState<number>(0);
+
+  const [authState, setAuthState] = authContext.gate(auth0, useState, useEffect, navigate);
 
   const onNewRaceState = () => {
     //console.log("onNewRaceState");
@@ -94,6 +97,7 @@ export default function AppRace(props:any) {
   }, [connManager?._lastTimeStamp])
   useEffect(() => {
     // startup!
+    console.log("connection startup ", userAccount, authContext, playerContext, connManager);
     let interval;
     const doIt = async () => {
       console.log(authContext, userAccount, playerContext, playerContext?.localUser);
@@ -107,6 +111,7 @@ export default function AppRace(props:any) {
         
         let wsUrl = isProduction() ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
   
+        console.log("building connection manager ", wsUrl);
         const newConnManager = new ConnectionManager((handicap:number) => onLocalHandicapChange(handicap), () => onLastServerRaceStateChange(), (fromWho:ConnectionManager, count:number) => onNetworkUpdateComplete(fromWho, count), (client:S2CPositionUpdateUser, image:string|null) => onNotifyNewClient(client, image));
         setConnManager(newConnManager);
   
@@ -120,23 +125,19 @@ export default function AppRace(props:any) {
         connManager.disconnect();
       }
     }
-  }, [userAccount, authContext, playerContext, playerContext?.localUser, connManager]);
+  }, [userAccount, authContext, playerContext, playerContext?.localUser, forceRefreshVersion, connManager]);
   
-  return <div>
+  return <div className={`AppRace__Container ${forceRefreshVersion}`}>
     {!playerContext || !authContext && (
       <div>Loading...</div>
     )}
     {playerContext && authContext && (
       <>
-        {!playerContext.localUser && (<>
-          <div>You need to select a rider!</div>
-          <UserProfilePicker authContext={authContext} playerContext={playerContext} authState={userAccount} auth0={auth0} fnOnChangeUser={()=>{}} />
-        </>)}
-        {playerContext.localUser && (<>
-          <div>You're going to race as {playerContext?.localUser.getName()} {frames}</div>
-        </>)}
+        {playerContext && !playerContext.localUser && (
+          <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={()=>authContext.refreshAliases(auth0, setAuthState)} />
+        )}
         {connManager && connManager.preRace && (
-          <PreRaceView raceState={connManager.getRaceState()}></PreRaceView>
+          <PreRaceView raceState={connManager.getRaceState()} tmStart={connManager.msOfStart}></PreRaceView>
         )}
         {connManager && connManager.racing && (
           <InRaceView raceState={connManager.getRaceState()}/>
@@ -146,7 +147,5 @@ export default function AppRace(props:any) {
         )}
       </>
     )}
-
-    Time to race!
     </div>
 }

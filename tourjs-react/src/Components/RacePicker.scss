@@ -1,0 +1,7 @@
+@import './CommonStyle.scss';
+
+.RacePicker {
+  &__Container {
+    @include Card();
+  }
+}

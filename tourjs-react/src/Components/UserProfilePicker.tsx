@@ -36,6 +36,14 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
       bigImageMd5:null,
     }
     props.playerContext.addUser(setupParams);
+    props.fnOnChangeUser();
+  }
+
+  const onLogOut = () => {
+    props.auth0.logout();
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   }
 
   const onAddNew = async () => {
@@ -83,7 +91,7 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
       <p>Logging in...</p>
     )}
     {state === UserProfileState.NoAliasSelected && (<>
-      <p>Welcome <b>{props.authState.username}</b>!  You have {props.authState.aliases.length} rider profiles.  Pick one to ride today.</p>
+      <p>Welcome <b>{props.authState.username}</b>!  You have {props.authState.aliases.length} rider profiles.  Pick one to ride today. <a href='#' onClick={() => onLogOut()}>Logout</a></p>
       {props.authState.aliases.map((alias, ix) => {
         return <UserProfileMini key={ix} alias={alias} fnOnUpdate={(alias:TourJsAlias) => onChangeAlias(alias)} selected={false} fnOnSelect={() => onSelectAlias(alias, ix)} />
       })}

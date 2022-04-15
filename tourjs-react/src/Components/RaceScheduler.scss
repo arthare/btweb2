@@ -1,0 +1,47 @@
+@import './CommonStyle.scss';
+
+.RaceScheduler {
+  &__Container {
+    @include Card();
+    display: flex;
+    flex-direction: column;
+    & p {
+      margin-bottom: 0px;
+      color: grey;
+      font-style:italic;
+      font-size: 12px;
+    }
+  }
+  &__Map {
+    height: 128px;
+    width: 100%;
+
+    &--Container {
+    }
+  }
+  &__ButtonRow {
+    display: flex;
+    flex-direction: row;
+  }
+
+  &__When {
+    &--Container {
+      display: flex;
+      flex-direction: column;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    &--Date {
+      //width: 100%;
+      font-size: 24px;
+      padding: 4px;
+    }
+    &--Time {
+      font-size: 24px;
+      padding: 4px;
+    }
+  }
+
+  &__Manipulate {
+  }
+}

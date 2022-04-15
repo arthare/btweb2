@@ -1,12 +1,14 @@
+@import './CommonStyle.scss';
+
 .RaceMini {
   &__Container {
+    @include Card();
     display: flex;
-    flex-direction: row;
-    height: 128px;
-    max-width: 100%;
+    flex-direction: column;
   }
   &__Img {
-    flex: 1 1 0px;
+    flex: 0 0 64px;
+    height: 128px;
   }
   &__RaceDesc {
     flex: 1 1 0px;

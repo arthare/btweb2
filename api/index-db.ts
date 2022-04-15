@@ -30,7 +30,7 @@ function getDb():Promise<mysql.Connection> {
 
 
 export async function dbCreateUserAccount(sub:string, nickname:string):Promise<TourJsAccount> {
-  
+  console.log("creating user account with stats ", sub, nickname);
   let db;
   try {
     db = await getDb();
@@ -44,6 +44,7 @@ export async function dbCreateUserAccount(sub:string, nickname:string):Promise<T
         }
       })
     })
+
   } catch(e) {
     throw e;
   } finally {
@@ -52,12 +53,23 @@ export async function dbCreateUserAccount(sub:string, nickname:string):Promise<T
     }
   }
 
-  // if we got here, insertId should be valid
-  return await dbGetUserAccount(sub);
+  console.log("created user account with stats ", sub, nickname);
+
+  // all user accounts need an alias
+  const firstAlias:TourJsAlias = {
+    name:nickname,
+    handicap:150,
+    imageBase64:'',
+    id:-1,
+  }
+  await dbInsertAlias(sub, firstAlias, nickname);
+
+  return dbGetUserAccount(sub);
 }
 
 export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   
+  console.log("getting user account with sub ", sub);
   interface RawRowResult {
     users_username:string;
     users_sub:string;
@@ -72,7 +84,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   try {
     db = await getDb();
 
-    return new Promise<TourJsAccount>((resolve, reject) => {
+    return await new Promise<TourJsAccount>((resolve, reject) => {
       db.query(`SELECT 
                     users.username as users_username,
                     users.sub as users_sub,
@@ -87,6 +99,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
                 WHERE
                     aliases.userid = users.id
                         AND users.sub = ?`, [sub], (err, res:RawRowResult[]) => {
+        console.log("dbGetUserAccount got results for sub ", sub, err, res);
         if(err) {
           reject(err);
         } else if(res.length >= 1) {
@@ -105,17 +118,42 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
           }
           resolve(ret);
         } else {
-          // hmmm, no user exists.
-          reject("No database user exists.  Todo: create new users");
+          // hmmm, no user exists.  or possible just no aliases exist
+
+          db.query(`SELECT 
+                        users.username as users_username,
+                        users.sub as users_sub,
+                        users.id as users_id
+                    FROM
+                        users
+                    WHERE
+                        users.sub = ?`, [sub], (err, res:RawRowResult[]) => {
+            if(err) {
+              reject(err);
+            } else if(res.length >= 1) {
+              let ret:TourJsAccount = {
+                username: res[0].users_username,
+                sub: res[0].users_sub,
+                accountid: res[0].users_id,
+                aliases: [],
+              }
+              resolve(ret);
+            } else {
+              reject("No DB users exist");
+            }
+          })
         }
       })
     })
 
   } catch(e) {
+    console.log("dbGetUserAccount error ", e);
     throw e;
   } finally {
     if(db) {
+      console.log("dbGetUserAccount closing db");
       db.end();
+      console.log("dbGetUserAccount closed db");
     }
   }
 }
@@ -156,15 +194,19 @@ export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJ
   }
 }
 
-export async function dbInsertAlias(sub:string, alias:TourJsAlias, auth0UserData:any):Promise<TourJsAlias> {
+export async function dbInsertAlias(sub:string, alias:TourJsAlias, nicknameOfUserAccount:string):Promise<TourJsAlias> {
   
+  console.log("dbInsertAlias start");
   let db;
   let user:TourJsAccount;
   try {
     user = await dbGetUserAccount(sub);
+    console.log("dbInsertAlias got user ", user);
   } catch(e) {
     // no user exists.  so let's create one
-    user = await dbCreateUserAccount(sub, auth0UserData.nickname)
+    console.log("dbInsertAlias got error ", e);
+    user = await dbCreateUserAccount(sub, nicknameOfUserAccount);
+    console.log("dbInsertAlias tried fresh insert");
   }
 
   try {

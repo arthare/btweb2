@@ -1,0 +1,16 @@
+@import './CommonStyle.scss';
+
+@keyframes PulseRed {
+  0% { background-color: rgb(255,50,50) }
+  50% { background-color: white}
+  100% {background-color:rgb(255,50,50)}
+}
+.NoBleHelper {
+  &__Container {
+    @include Card();
+    color: black;
+    animation-name: PulseRed;
+    animation-duration:1s;
+    animation-iteration-count: infinite;
+  }
+}

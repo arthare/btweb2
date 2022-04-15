@@ -28,7 +28,7 @@ export class AppAuthContextType extends EventEmitter {
           } else {
             if(auth0.isAuthenticated) {
               if(!this._myAccount) {
-                const tourJsUser = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
+                const tourJsUser = await secureApiGet('user-account', auth0, {sub:auth0.user.sub, nickname: auth0.user.nickname || auth0.user.email});
                 this._myAccount = tourJsUser;
                 this._idSelectedAlias = -1;
 
@@ -50,7 +50,7 @@ export class AppAuthContextType extends EventEmitter {
   }
 
   async refreshAliases(auth0:Auth0ContextInterface<Auth0User>, setAuthState:(TourJsAccount)=>void) {
-    const tourJsUser:TourJsAccount = await secureApiGet('user-account', auth0, {sub:auth0.user.sub});
+    const tourJsUser:TourJsAccount = await secureApiGet('user-account', auth0, {sub:auth0.user.sub, nickname: auth0.user.nickname || auth0.user.email});
     setAuthState(tourJsUser);
     this._myAccount = tourJsUser;
 

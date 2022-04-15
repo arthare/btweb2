@@ -13,6 +13,8 @@ import RacePicker from './Components/RacePicker';
 import { ServerHttpGameListElement } from './tourjs-shared/communication';
 import { AppPlayerContextType } from './ContextPlayer';
 import PowerDevicePicker from './Components/PowerDevicePicker';
+import { RaceScheduler } from './Components/RaceScheduler';
+import NoBleHelper from './Components/NoBleHelper';
 
 
 function App() {
@@ -25,6 +27,7 @@ function App() {
   const [authState, setAuthState] = authContext.gate(auth0, useState, useEffect, navigate);
   const [deviceReady, setDeviceReady] = useState<boolean>(false);
   const [playerReady, setPlayerReady] = useState<boolean>(false);
+  const [raceListVersion, setRaceListVersion] = useState<number>(0);
   
 
   const onRefreshUser = () => {
@@ -34,6 +37,9 @@ function App() {
   }
   const onPickRace = (race:ServerHttpGameListElement) => {
     navigate(`/race/${ race.gameId}`);
+  }
+  const onNewRaceCreated = () => {
+    setRaceListVersion(raceListVersion+1);
   }
 
   useEffect(() => {
@@ -50,19 +56,16 @@ function App() {
     }
   }, [playerContext])
 
+
   return (
     <div className="AppMenu__Container">
       <h3>Wheels With Friends</h3>
       {authContext && playerContext && (<>
+        <NoBleHelper />
         <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={() => onRefreshUser()}/>
         <PowerDevicePicker playerContext={playerContext} authContext={authContext} />
-
-        {playerContext.powerDevice && (
-          <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)}/>
-        ) || (<>
-          <h2>Get Riding!</h2>
-          <div>In order to race, you need to connect your power device above</div>
-        </>)}
+        <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)} allowSelection={!!playerContext.powerDevice} raceListRefresher={raceListVersion} />
+        <RaceScheduler authState={authState} fnOnCreation={()=>onNewRaceCreated()} />
         
       </>)}
     </div>

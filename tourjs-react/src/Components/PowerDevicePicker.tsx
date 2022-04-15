@@ -9,6 +9,7 @@ import { ConnectedDeviceInterface } from '../tourjs-client-shared/WebBluetoothDe
 
 import './PowerDevicePicker.scss';
 import { AppAuthContextType } from '../ContextAuth';
+import NoBleHelper from './NoBleHelper';
 
 
 enum BluetoothDevicePickerState {
@@ -82,6 +83,7 @@ enum PowerDevicePickerState {
 export default function PowerDevicePicker(props:{authContext:AppAuthContextType, playerContext:AppPlayerContextType}) {
 
   let [state, setState] = useState<PowerDevicePickerState>(PowerDevicePickerState.NoAliasYet);
+  let [bleSupported, setBleSupported] = useState<boolean>(false);
 
   const onConnectPm = async ():Promise<ConnectedDeviceInterface> => {
     const device = await getDeviceFactory().findPowermeter();
@@ -93,6 +95,7 @@ export default function PowerDevicePicker(props:{authContext:AppAuthContextType,
     props.playerContext.setHrmDevice(device);
     return device;
   }
+
 
   useEffect(() => {
 
@@ -118,19 +121,19 @@ export default function PowerDevicePicker(props:{authContext:AppAuthContextType,
       <h2>Device Setup</h2>
       {state === PowerDevicePickerState.Ready && (<>
         <BluetoothDevicePicker playerContext={props.playerContext} 
-                               icon={faBolt} 
-                               deviceName="Power Meter" 
-                               fnOnAttemptConnect={onConnectPm} 
-                               fnGetLastData={() => props.playerContext.localUser.getLastPower().toFixed() + 'W'}
-                               fnDisconnect={()=>props.playerContext.disconnectPowerDevice()} 
-                               />
+                              icon={faBolt} 
+                              deviceName="Power Meter" 
+                              fnOnAttemptConnect={onConnectPm} 
+                              fnGetLastData={() => props.playerContext.localUser.getLastPower().toFixed() + 'W'}
+                              fnDisconnect={()=>props.playerContext.disconnectPowerDevice()} 
+                              />
         <BluetoothDevicePicker playerContext={props.playerContext} 
-                               icon={faHeart} 
-                               deviceName="Heart Rate Monitor" 
-                               fnOnAttemptConnect={onConnectHrm} 
-                               fnGetLastData={() => props.playerContext.localUser.getLastHrm(new Date().getTime()).toFixed() + 'bpm'}
-                               fnDisconnect={()=>props.playerContext.disconnectHrmDevice()} 
-                               />
+                              icon={faHeart} 
+                              deviceName="Heart Rate Monitor" 
+                              fnOnAttemptConnect={onConnectHrm} 
+                              fnGetLastData={() => props.playerContext.localUser.getLastHrm(new Date().getTime()).toFixed() + 'bpm'}
+                              fnDisconnect={()=>props.playerContext.disconnectHrmDevice()} 
+                              />
       </>)}
       {state === PowerDevicePickerState.NoAliasYet && (<>
         <p>You still have to pick the profile you're riding with today.</p>
