@@ -32,12 +32,13 @@ function getGameServerHost() {
   }
 }
 
-export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void) {
+export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void, fnOnFrame:(tmFrame, frame:number)=>void) {
 
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
   
   raceState.tick(tmThisFrame);
+  fnOnFrame(tm, paintState.frameCount++);
 
   if(ref.current) {
     drawer.paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
@@ -47,7 +48,7 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
     // we're done.  no need for further action
     fnOnRaceDone();
   } else {
-    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone));
+    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone, fnOnFrame));
   }
 }
 

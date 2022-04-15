@@ -56,7 +56,7 @@ function PreRaceSection(props:{name:string, children:any}) {
   </div>
 }
 
-function TimeDisplay(props:{ms:number}) {
+export function TimeDisplay(props:{ms:number}) {
 
   let str = '';
   let ms = props.ms;

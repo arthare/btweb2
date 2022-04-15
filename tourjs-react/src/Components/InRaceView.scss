@@ -1,7 +1,61 @@
 .InRaceView {
+  &__Container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    flex-direction:column;
+  }
   &__Canvas {
     width: 100vw;
     height: 100vh;
-    background-color: red;
+  }
+  &__Leaderboard-Container {
+    position: absolute;
+    bottom: 0px;
+    height: 50px;
+    background-color: rgba(0,0,0,0.35);
+    width: 100%;
+  }
+}
+
+.InRaceLeaderboard {
+  &__Container {
+    display: flex;
+    flex-direction: row;
+    overflow-x: hidden;
+  }
+}
+.InRaceLeaderboardGroup {
+  &__Container {
+    font-size: 12px;
+    color: white;
+    text-align: center;
+    color: rgba(255,255,255,0.8);
+    text-shadow: 1px 1px 1px black;
+
+    &.Local {
+      font-weight: bold;
+      font-size: 14px;
+      color: white;
+    }
+    &.Human {
+      font-size: 14px;
+      color: white;
+    }
+  }
+  &__GroupMember {
+    width: 14px;
+    margin-right: -6px;
+  }
+}
+.InRaceLeaderboardGap {
+  &__Container {
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    line-height: 12px;
+    padding-top: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
   }
 }

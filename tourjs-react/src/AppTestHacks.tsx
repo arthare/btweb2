@@ -16,6 +16,7 @@ import { DecorationFactory, randRange } from './tourjs-client-shared/DecorationF
 import { defaultThemeConfig } from './tourjs-client-shared/drawing-constants';
 import { DrawingInterface, PaintFrameState } from './tourjs-client-shared/drawing-interface';
 import { tickGameAnimationFrame } from './AppRace';
+import InRaceView from './Components/InRaceView';
 
 export function useBounceSignin(auth0:Auth0ContextInterface<User>, useEffect:any, navigate:any) {
   useEffect(() => {
@@ -47,31 +48,19 @@ function App() {
 
   useEffect(() => {
     // startup: let's get our game state up and running
-    if(canvasRef?.current) {
-      canvasRef.current.width = canvasRef?.current?.clientWidth;
-      canvasRef.current.height = canvasRef?.current?.clientHeight;
-      const fnMakeMap = async () =>  new RideMapHandicap(new ServerMapDescription(new PureCosineMap(5000)));
-      const fnMakeUserProvider = async () => new FakeUserProvider(null);
-  
-      const drawer = createDrawer("3d");
+    const fnMakeMap = async () =>  new RideMapHandicap(new ServerMapDescription(new PureCosineMap(5000)));
+    const fnMakeUserProvider = async () => new FakeUserProvider(null);
 
-      setupRace(fnMakeMap, fnMakeUserProvider, "Test-Hacks Race").then((newRaceState) => {
-        const decFactory = new DecorationFactory(defaultThemeConfig);
-        const decState = new DecorationState(newRaceState.getMap(), decFactory);
-        const paintState = new PaintFrameState();
-        
-        setRaceState(newRaceState);
-        requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, newRaceState, fnOnRaceDone));
-      })
-    }
-  }, [canvasRef]);
+    setupRace(fnMakeMap, fnMakeUserProvider, "Test-Hacks Race").then((newRaceState) => {
+      setRaceState(newRaceState);
+    })
+  }, []);
 
   return (
     <div className="AppTestHacks__Container">
       <div className="AppTestHacks__GameContainer">
-        It's test-hacks!
-
-        <canvas ref={canvasRef} className="AppTestHacks__Canvas" />
+        {raceState && <InRaceView raceState={raceState}/>}
+        {!raceState && <div>Setting up race state</div>}
       </div>
     </div>
   );
