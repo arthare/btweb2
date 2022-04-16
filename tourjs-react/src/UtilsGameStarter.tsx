@@ -17,7 +17,7 @@ export class FakeUserProvider implements UserProvider {
       //new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
     ];
 
-    for(var x = 0;x < 10; x++) {
+    for(var x = 0;x < 30; x++) {
       const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, 75 + Math.random()*10, UserTypeFlags.Ai | UserTypeFlags.Remote);
       this.users.push(aiUser);
     }
@@ -25,6 +25,7 @@ export class FakeUserProvider implements UserProvider {
       user.setId(index);
       user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAY0lEQVR42u3QAREAAAQEsJdcdHI4W4RVMp3HSoAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECLhvAcDdX8EOJRgWAAAAAElFTkSuQmCC', '');
       user.notifyPower(new Date().getTime(), Math.random() * user.getHandicap())
+      user.setDistance(Math.random() * 7000);
     });
   }
 

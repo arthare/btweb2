@@ -55,18 +55,27 @@ function PreRaceSection(props:{name:string, children:any}) {
     </div>
   </div>
 }
-
+export function DistanceDisplay(props:{meters:number}) {
+  const d = Math.abs(props.meters);
+  if(d < 1000) {
+    return <>{d.toLocaleString(undefined, {maximumFractionDigits: 0}) + 'm'}</>;
+  } else if(d < 10000) {
+    return <>{(d/1000).toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2}) + 'km'}</>;
+  } else {
+    return <>{(d/1000).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1}) + 'km'}</>;
+  }
+}
 export function TimeDisplay(props:{ms:number}) {
 
   let str = '';
   let ms = props.ms;
-  if(ms < 10000) {
+  if(ms < 60000) {
     str = (ms / 1000).toFixed(1) + 's';
   } else {
     const minutes = Math.floor(ms / 60000);
     ms -= minutes * 60000;
     const seconds = ms / 1000;
-    str = `${minutes}m ${seconds.toFixed(1)}s`;
+    str = `${minutes}m ${seconds.toFixed(0)}s`;
   }
 
   return <>{str}</>

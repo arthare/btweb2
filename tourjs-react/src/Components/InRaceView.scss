@@ -1,3 +1,12 @@
+@keyframes bouncing-text {
+  0% {
+    text-align: left;
+  }
+  100% {
+    text-align: right;
+  }
+}
+
 .InRaceView {
   &__Container {
     position: relative;
@@ -12,7 +21,7 @@
   &__Leaderboard-Container {
     position: absolute;
     bottom: 0px;
-    height: 50px;
+    height: 58px;
     background-color: rgba(0,0,0,0.35);
     width: 100%;
   }
@@ -20,28 +29,51 @@
 
 .InRaceLeaderboard {
   &__Container {
-    display: flex;
-    flex-direction: row;
+    display: block;
+    text-align: center;
     overflow-x: hidden;
+    padding: 4px;
   }
 }
 .InRaceLeaderboardGroup {
   &__Container {
+    display: inline-block;
     font-size: 12px;
     color: white;
     text-align: center;
     color: rgba(255,255,255,0.8);
     text-shadow: 1px 1px 1px black;
+    width: 90px;
+    box-sizing:border-box;
 
     &.Local {
       font-weight: bold;
       font-size: 14px;
       color: white;
+      box-shadow: 0px 0px 2px black;
+      background-color: rgba(0,0,0,0.1);
     }
     &.Human {
       font-size: 14px;
       color: white;
     }
+  }
+  &__Leader {
+    display: block;
+    max-width:90px;
+    height: 14px;
+    overflow: hidden;
+    transition: direction 0.5s;
+    direction: rtl;
+    &.Odd {
+      direction:ltr;
+    }
+  }
+  &__Marquee {
+    display: inline-block;
+    white-space:nowrap;
+    height: 100%;
+    margin: 0;
   }
   &__GroupMember {
     width: 14px;
@@ -50,11 +82,12 @@
 }
 .InRaceLeaderboardGap {
   &__Container {
+    display: inline-block;
     text-align: center;
     color: white;
     font-size: 14px;
     line-height: 12px;
-    padding-top: 10px;
+    padding-top: 6px;
     margin-left: 10px;
     margin-right: 10px;
   }
