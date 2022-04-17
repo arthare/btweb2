@@ -30,7 +30,6 @@ function getDb():Promise<mysql.Connection> {
 
 
 export async function dbCreateUserAccount(sub:string, nickname:string):Promise<TourJsAccount> {
-  console.log("creating user account with stats ", sub, nickname);
   let db;
   try {
     db = await getDb();
@@ -53,7 +52,6 @@ export async function dbCreateUserAccount(sub:string, nickname:string):Promise<T
     }
   }
 
-  console.log("created user account with stats ", sub, nickname);
 
   // all user accounts need an alias
   const firstAlias:TourJsAlias = {
@@ -69,7 +67,6 @@ export async function dbCreateUserAccount(sub:string, nickname:string):Promise<T
 
 export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   
-  console.log("getting user account with sub ", sub);
   interface RawRowResult {
     users_username:string;
     users_sub:string;
@@ -99,7 +96,6 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
                 WHERE
                     aliases.userid = users.id
                         AND users.sub = ?`, [sub], (err, res:RawRowResult[]) => {
-        console.log("dbGetUserAccount got results for sub ", sub, err, res);
         if(err) {
           reject(err);
         } else if(res.length >= 1) {
@@ -151,9 +147,7 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
     throw e;
   } finally {
     if(db) {
-      console.log("dbGetUserAccount closing db");
       db.end();
-      console.log("dbGetUserAccount closed db");
     }
   }
 }
@@ -196,17 +190,14 @@ export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJ
 
 export async function dbInsertAlias(sub:string, alias:TourJsAlias, nicknameOfUserAccount:string):Promise<TourJsAlias> {
   
-  console.log("dbInsertAlias start");
   let db;
   let user:TourJsAccount;
   try {
     user = await dbGetUserAccount(sub);
-    console.log("dbInsertAlias got user ", user);
   } catch(e) {
     // no user exists.  so let's create one
     console.log("dbInsertAlias got error ", e);
     user = await dbCreateUserAccount(sub, nicknameOfUserAccount);
-    console.log("dbInsertAlias tried fresh insert");
   }
 
   try {

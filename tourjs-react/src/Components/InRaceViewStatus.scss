@@ -1,0 +1,11 @@
+.InRaceViewStatus {
+  &__Container {
+    display: flex;
+    flex-direction: row;
+  }
+  &__InfoChunk {
+    color: white;
+    flex: 1 1 0px;
+    text-align: center;
+  }
+}

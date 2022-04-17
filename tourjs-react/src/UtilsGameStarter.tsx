@@ -1,6 +1,7 @@
 import { UserProvider, RaceState } from "./tourjs-shared/RaceState";
 import { RideMap } from "./tourjs-shared/RideMap";
 import { UserInterface, DEFAULT_RIDER_MASS, UserTypeFlags, User } from "./tourjs-shared/User";
+import { testPatternDataUri } from "./UtilsConstants";
 
 
 
@@ -23,7 +24,7 @@ export class FakeUserProvider implements UserProvider {
     }
     this.users.forEach((user, index) => {
       user.setId(index);
-      user.setImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAY0lEQVR42u3QAREAAAQEsJdcdHI4W4RVMp3HSoAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECLhvAcDdX8EOJRgWAAAAAElFTkSuQmCC', '');
+      user.setImage(testPatternDataUri, '');
       user.notifyPower(new Date().getTime(), Math.random() * user.getHandicap())
       user.setDistance(Math.random() * 7000);
     });

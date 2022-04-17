@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import { takeTrainingSnapshot } from './tourjs-shared/ServerAISnapshots';
 import { setupAuth0 } from './index-auth0';
+import { dbGetUserAccount } from './index-db';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
@@ -208,7 +209,6 @@ export function startGameServer() {
       if(userWithoutImageSent) {
         // ok, the recipient user here hasn't received an image for userWithoutImageSent yet
 
-        console.log("sending ", userWithoutImageSent.getName(), " image to ", user.getName());
         const response:S2CImageUpdate = new S2CImageUpdate(userWithoutImageSent);
         return sendResponse(user, tmNow, wsConnection, BasicMessageType.S2CImageUpdate, game, response);
       }
@@ -273,7 +273,6 @@ export function startGameServer() {
             // ok, we gotta repeat this message to this user
             const ws = user.getWebSocket();
             if(ws) {
-              console.log("sent chat to ", user.getName(), user.getId());
               sendResponse(user, tmNow, user.getWebSocket() as any, messageType, game, msg);
             }
           }
@@ -411,7 +410,14 @@ export function startGameServer() {
   setUpServerHttp(app, races);
   setupAuth0(app);
   app.listen(PORTS.GENERAL_HTTP_PORT);
-  console.log(`Listening at localhost:${PORTS.GENERAL_HTTP_PORT}`);
+  console.log(`Listening at localhost:${PORTS.GENERAL_HTTP_PORT} - with the version that should have auth0`);
+
+
+  dbGetUserAccount('asdf').then((userAccount) => {
+    console.log("startup: successfully got useraccount");
+  }).catch((failure) => {
+    console.error("Failure to get useraccount asdf ", failure);
+  })
 
 }
 

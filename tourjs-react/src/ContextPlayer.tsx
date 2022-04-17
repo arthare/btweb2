@@ -6,7 +6,7 @@ import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
 import { ConnectedDeviceInterface } from "./tourjs-client-shared/WebBluetoothDevice";
 import { S2CPositionUpdateUser } from "./tourjs-shared/communication";
 import { WorkoutFileSaver } from "./tourjs-shared/FileSaving";
-import { UserProvider } from "./tourjs-shared/RaceState";
+import { RaceState, UserProvider } from "./tourjs-shared/RaceState";
 import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
 import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-shared/User";
 
@@ -25,6 +25,7 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
   workoutSaver:WorkoutFileSaver = null;
   powerDevice:ConnectedDeviceInterface = null;
   hrmDevice:ConnectedDeviceInterface = null;
+  _localUser:UserInterface|null = null;
 
   
 
@@ -44,27 +45,34 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
   }
 
   get localUser() {
-    return this.users.find((user) => user.getUserType() & UserTypeFlags.Local);
+    return this._localUser;
   }
 
   setPowerDevice(dev:ConnectedDeviceInterface) {
-    const user = this.localUser;
-    if(user) {
-      this.disconnectPowerDevice(); // disconnect the old one
-      this.powerDevice = dev;
-      dev.setCadenceRecipient(user);
-      dev.setPowerRecipient((tmNow, watts) => {
-        console.log("power received!");
-        if(dev === this.powerDevice) {
-          // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying
-          this.emit('deviceDataChange');
-          user.notifyPower(tmNow, watts);
-        } else {
-          dev.disconnect();
+    
+    console.log("setting power device");
+    this.disconnectPowerDevice(); // disconnect the old one
+    this.powerDevice = dev;
+    dev.setPowerRecipient((tmNow, watts) => {
+      
+      const activeRaceState = RaceState.getActiveRaceState();
+      if(activeRaceState) {
+        const user = activeRaceState.getLocalUser();
+        if(user) {
+          console.log("power received!");
+          if(dev === this.powerDevice) {
+            dev.setCadenceRecipient(user);
+            // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying
+            this.emit('deviceDataChange');
+            user.notifyPower(tmNow, watts);
+          } else {
+            dev.disconnect();
+          }
         }
-      });
-      this.emit('deviceChange');
-    }
+      }
+    });
+    this.emit('deviceChange');
+    
   }
   setHrmDevice(dev:ConnectedDeviceInterface) {
     const user = this.localUser;
@@ -109,14 +117,20 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
     if(alreadyHaveLocal) {
       // get rid of the "local" user that we already have
       console.log("we already have a local user ", alreadyHaveLocal);
-      this.users = this.users.filter((user) => user.getId() !== alreadyHaveLocal.getId());
     }
 
     this.workoutSaver = new WorkoutFileSaver(newUser, new Date().getTime());
     if(user.imageBase64) {
       newUser.setImage(user.imageBase64, user.bigImageMd5);
     }
-    this.users.push(newUser);
+    this.setLocalUser(newUser);
+  }
+  setLocalUser(user:UserInterface) {
+    console.log("ContextPlayer now knows who your player is!", user);
+    const alreadyHaveLocal = this.localUser;
+    this.users = this.users.filter((user) => user.getId() !== alreadyHaveLocal?.getId());
+    this.users.push(user);
+    this._localUser = user;
   }
   getUsers(tmNow: number): UserInterface[] {
     return this.users;

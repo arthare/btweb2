@@ -22,7 +22,7 @@ export default class StravaAuth extends Route.extend({
             stravaAuthCode:value,
           });
 
-          const targetOrigin = debuggin ? "http://localhost:4200" : "https://www.tourjs.ca";
+          const targetOrigin = debuggin ? "http://localhost:4200" : "https://tourjs.ca";
           console.log("posting auth code " + value + " to opener", targetOrigin);
           window.opener.postMessage(msg, targetOrigin);
         }

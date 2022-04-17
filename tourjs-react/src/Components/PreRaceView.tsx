@@ -6,6 +6,8 @@ import RaceMini from "./RaceMini";
 import './PreRaceView.scss'
 import RobotFace from '../AppImg/robot.png'
 import HumanNoFace from '../AppImg/no-face.png';
+import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
+import { AppPlayerContextType } from "../ContextPlayer";
 
 function PreRacePerson(props:{user:UserInterface}) {
 
@@ -81,7 +83,7 @@ export function TimeDisplay(props:{ms:number}) {
   return <>{str}</>
 }
 
-export default function PreRaceView(props:{raceState:RaceState, tmStart:number}) {
+export default function PreRaceView(props:{raceState:RaceState, tmStart:number, playerContext:AppPlayerContextType}) {
 
   const tmNow = new Date().getTime();
 
@@ -90,8 +92,21 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number})
   const notHumans = allUsers.filter((user) => (user.getUserType() & UserTypeFlags.Ai));
   const map = props.raceState.getMap();
 
+  const onAddPowermeter = async () => {
+    const device = await getDeviceFactory().findPowermeter();
+    props.playerContext.setPowerDevice(device);
+    return device;
+
+  }
+  const onAddHrm = async () => {
+    const device = await getDeviceFactory().findHrm();
+    props.playerContext.setPowerDevice(device);
+    return device;
+  }
+
   return <div>
     <h1>Pre-Race Lobby</h1>
+
     <PreRaceSection name="Map">
       <table className="PreRaceView__MapDetails">
         <tbody>
@@ -114,6 +129,28 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number})
           </tr>
         </tbody>
       </table>
+    </PreRaceSection>
+    <PreRaceSection name="Devices">
+      <div className="PreRaceView__DeviceButtons">
+        <button onClick={() => onAddPowermeter()}>Add Powermeter</button>
+        <button onClick={() => onAddHrm()}>Add Heart Rate</button>
+      </div>
+      <div className="PreRaceView__DeviceStatus">
+        <h3>Current Device Status</h3>
+        <table>
+          <tbody>
+            <tr>
+              <td className="PreRacePerson__Data-Container--Key">Power</td>
+              <td className="PreRacePerson__Data-Container--Value">{props.playerContext.localUser.getLastPower().toFixed(0)}W</td>
+            </tr>
+            <tr>
+              <td className="PreRacePerson__Data-Container--Key">Heart Rate</td>
+              <td className="PreRacePerson__Data-Container--Value">{props.playerContext.localUser.getLastHrm(new Date().getTime()).toFixed(0)}bpm</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
     </PreRaceSection>
     <PreRaceSection name="Humans" >
       {humans.map((user) => {

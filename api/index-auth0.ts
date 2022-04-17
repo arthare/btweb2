@@ -55,7 +55,6 @@ export function setupAuth0(app: core.Express) {
   })
 
   app.post('/alias', [checkJwt], async (req, res) => {
-    console.log("a post happened");
     const data = await postStartup(req, res);
     const {alias, user} = data;
 
@@ -63,10 +62,8 @@ export function setupAuth0(app: core.Express) {
     let result;
     if(alias.id >= 0) {
       // they're editing an existing alias
-      console.log("they're editing an existing alias ", data);
       result = await dbUpdateAlias(sub, alias);
     } else {
-      console.log("they're not editing an alias", data);
       result = await dbInsertAlias(sub, alias, user);
     }
     resWriteOut(res, result);

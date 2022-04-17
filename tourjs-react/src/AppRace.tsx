@@ -138,7 +138,7 @@ export default function AppRace(props:any) {
           <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={()=>authContext.refreshAliases(auth0, setAuthState)} />
         )}
         {connManager && connManager.preRace && (
-          <PreRaceView raceState={connManager.getRaceState()} tmStart={connManager.msOfStart}></PreRaceView>
+          <PreRaceView raceState={connManager.getRaceState()} tmStart={connManager.msOfStart} playerContext={playerContext}></PreRaceView>
         )}
         {connManager && connManager.racing && (
           <InRaceView raceState={connManager.getRaceState()}/>

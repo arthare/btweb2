@@ -190,7 +190,7 @@ export default class PlatformManager extends Service.extend({
         } else {
           // we'll need to trigger an iframe to sign in
           const clientId = '3055';
-          const redirectUri = window.location.hostname.includes('localhost') ? 'https://www.tourjs.ca/strava-auth?stayOpen=1' : 'https://www.tourjs.ca/strava-auth'
+          const redirectUri = window.location.hostname.includes('localhost') ? 'https://tourjs.ca/strava-auth?stayOpen=1' : 'https://tourjs.ca/strava-auth'
           const targetUrl = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=read`;
           //const targetUrl = `localhost:4200/bt-web/strava-auth?code=1234`;
           console.log("going to ", targetUrl);
