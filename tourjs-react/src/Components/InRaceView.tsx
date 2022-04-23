@@ -39,12 +39,14 @@ export default function InRaceView(props:{raceState:RaceState}) {
       const decState = new DecorationState(props.raceState.getMap(), decFactory);
       const paintState = new PaintFrameState();
       
+      let lastFrames = 0;
       requestAnimationFrame((tm) => {
         tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, props.raceState, ()=>{}, (tmFrame, frame)=>{
-          const tenthFrames = Math.floor(frame / 20);
-          if(tenthFrames !== frames) {
+          const tenthFrames = Math.floor(tmFrame / 500);
+          if(tenthFrames !== lastFrames) {
             setTm(tmFrame);
             setFrames(tenthFrames)
+            lastFrames = tenthFrames;
           }
         })
       });
