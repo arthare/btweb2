@@ -9,9 +9,14 @@ import Helmet from 'react-helmet';
 import AppRace from "./AppRace";
 import ContextLoaders from './index-contextLoaders';
 
+let origin = window.location.origin;
+if(!origin.includes('dev.')) {
+  origin = 'https://tourjs.ca';
+}
+
 ReactDOM.render(<>
     <ContextLoaders>
-      <Auth0Provider domain="dev-enlwsasz.us.auth0.com" clientId="sVfg9SlUyknsFxwh74CDlseT0aL7iWS8" redirectUri={window.location.origin}>
+      <Auth0Provider domain="dev-enlwsasz.us.auth0.com" clientId="sVfg9SlUyknsFxwh74CDlseT0aL7iWS8" redirectUri={origin}>
         <Helmet>
           <script src="https://kit.fontawesome.com/d8b18df8ff.js" crossOrigin={"anonymous" as any}></script>
         </Helmet>
