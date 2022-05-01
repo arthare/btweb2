@@ -23,6 +23,17 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
     console.log("we should tell the server they want to change to ", alias);
 
     secureApiPost('alias', props.auth0, {user:props.auth0.user, alias});
+
+    if(alias.id === props.authContext.selectedAliasId) {
+      // they modified the alias that we currently have selected, so we should tell the playerContext about it
+      const setupParams:UserSetupParameters = {
+        name:alias.name,
+        handicap:alias.handicap,
+        imageBase64:alias.imageBase64 || null,
+        bigImageMd5:null,
+      }
+      props.playerContext.addUser(setupParams);
+    }
     props.fnOnChangeUser();
   }
   const onSelectAlias = (alias:TourJsAlias, index:number) => {

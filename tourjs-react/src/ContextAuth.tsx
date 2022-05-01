@@ -59,6 +59,10 @@ export class AppAuthContextType extends EventEmitter {
       if(tourJsUser.aliases.length > 0) {
         this.setSelectedAlias(tourJsUser.aliases[0]);
       }
+    } else {
+      // your selection is still valid, but since we're refreshing, it might have changed in stats or picture or something
+      console.log("your selected alias is still valid, with stats ", selectionStillValid);
+      this.emit('aliasChange');
     }
   }
 

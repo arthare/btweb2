@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat, SERVER_UPDATE_RATE_HZ } from './tourjs-shared/communication';
 import { assert2, testAssert } from './tourjs-shared/Utils';
 import { RaceState, UserProvider } from './tourjs-shared/RaceState';
-import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from './tourjs-shared/User';
+import { DEFAULT_HANDICAP_POWER, HandicapChangeReason, User, UserInterface, UserTypeFlags } from './tourjs-shared/User';
 import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
 import { RideMap, RideMapPartial } from './tourjs-shared/RideMap';
 import { makeSimpleMap } from './ServerUtils';
@@ -314,6 +314,10 @@ export function startGameServer() {
               if(existingUser) {
                 newId = existingUser.getId();
                 console.log(payload.riderName, " was already in this ride at distance ", existingUser.getDistance());
+                if(payload.riderHandicap !== existingUser.getHandicap()) {
+                  // ok, if you're going to come in with a higher handicap, we'll always permit that
+                  existingUser.setHandicap(payload.riderHandicap, HandicapChangeReason.UserJoined);
+                }
               }
             }
             

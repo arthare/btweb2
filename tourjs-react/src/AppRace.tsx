@@ -112,7 +112,7 @@ export default function AppRace(props:any) {
         
         let wsUrl = isProduction() ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
   
-        console.log("building connection manager ", wsUrl);
+        console.log("building connection manager ", wsUrl, " connecting with ", playerContext.localUser);
         const newConnManager = new ConnectionManager((handicap:number) => onLocalHandicapChange(handicap), () => onLastServerRaceStateChange(), (fromWho:ConnectionManager, count:number) => onNetworkUpdateComplete(fromWho, count), (client:S2CPositionUpdateUser, image:string|null) => onNotifyNewClient(client, image));
         setConnManager(newConnManager);
   
