@@ -19,6 +19,7 @@ import { InRaceLeaderboard } from "./InRaceViewLeaderboard";
 import { InRaceViewStatus } from "./InRaceViewStatus";
 import { AppPlayerContextType } from "../ContextPlayer";
 import { AppPlayerContextInstance } from "../index-contextLoaders";
+import { RaceMapLive } from "./RaceMapLive";
 
 
 export default function InRaceView(props:{raceState:RaceState}) {
@@ -27,6 +28,9 @@ export default function InRaceView(props:{raceState:RaceState}) {
   
   let [frames, setFrames] = useState<number>(0);
   let [tm, setTm] = useState<number>(0);
+  let [hasSavedPwx, setHasSavedPwx] = useState<boolean>(false);
+  let [localUserHasFinished, setLocalUserHasFinished] = useState<boolean>(false);
+
 
   useEffect(() => {
     // startup: let's get our game state up and running
@@ -41,7 +45,15 @@ export default function InRaceView(props:{raceState:RaceState}) {
       
       let lastFrames = 0;
       requestAnimationFrame((tm) => {
+
         tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, props.raceState, ()=>{}, (tmFrame, frame)=>{
+
+          const localUser = props.raceState.getLocalUser();
+          const map = props.raceState.getMap();
+          if(localUser && map && localUser.getDistance() >= map.getLength()) {
+            setLocalUserHasFinished(true);
+          }
+
           const tenthFrames = Math.floor(tmFrame / 500);
           if(tenthFrames !== lastFrames) {
             setTm(tmFrame);
@@ -53,10 +65,32 @@ export default function InRaceView(props:{raceState:RaceState}) {
     }
   }, [canvasRef]);
 
+  useEffect(() => {
+    if(props.raceState){
+      const localUser = props.raceState.getLocalUser();
+      const map = props.raceState.getMap();
+      if(localUser && map) {
+        if(!hasSavedPwx) {
+          // we haven't saved the PWX yet!  let's check if it would be appropriate to do so
+          if(localUser.getDistance() >= map.getLength() || localUserHasFinished) {
+            // time to dump the PWX!  we're past the end of the map and we haven't saved the PWX yet
+
+
+            setLocalUserHasFinished(true);
+            setHasSavedPwx(true);
+          }
+        }
+      }
+    }
+  }, [frames, hasSavedPwx, localUserHasFinished]);
+
   return <div className="InRaceView__Container">
       <canvas ref={canvasRef}  className="InRaceView__Canvas"/>
       <div className="InRaceView__Status-Container">
         {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+      </div>
+      <div className="InRaceView__Minimap-Container">
+        {props.raceState && <RaceMapLive className="" raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
       </div>
       <div className="InRaceView__Leaderboard-Container">
         {props.raceState && <InRaceLeaderboard frames={frames} raceState={props.raceState} tmNow={tm} />}

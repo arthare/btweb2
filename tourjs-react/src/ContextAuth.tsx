@@ -21,6 +21,7 @@ export class AppAuthContextType extends EventEmitter {
     let [authState, setAuthState] = fnUseState(this._myAccount);
 
     fnUseEffect(() => {
+      console.log("got a useEffect about ", auth0.isLoading, auth0.isAuthenticated);
       const doIt = async () => {
         if(auth0) {
           if(auth0.isLoading) {
@@ -38,7 +39,25 @@ export class AppAuthContextType extends EventEmitter {
               }
               
             } else {
-              auth0.loginWithRedirect();
+              setTimeout(async () => {
+                console.log("going to try for access token");
+                let at;
+                try {
+                  at = await auth0.getAccessTokenSilently();
+                } catch(e:any) {
+                  console.log("access token silent failure: ", e);
+                  at = await auth0.loginWithPopup();
+                  console.log("popup result");
+                }
+                
+                console.log("access token acquire ", at);
+                if(!at) {
+                  console.log("gonna refresh!");
+                  auth0.loginWithRedirect();
+                }
+                
+              }, 5000);
+
             }
           }
         }

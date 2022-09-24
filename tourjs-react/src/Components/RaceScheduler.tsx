@@ -14,6 +14,7 @@ import { AppAuthContextInstance, AppPlayerContextInstance } from "../index-conte
 import { AppAuthContextType } from "../ContextAuth";
 import { TourJsAccount } from "../tourjs-shared/signin-types";
 import { apiPost } from "../tourjs-client-shared/api-get";
+import { DataStorage } from "@tensorflow/tfjs-node";
 
 export function randRangeSeeded(rng:seedrandom.prng, min:number, max:number) {
   const span = max - min;
@@ -64,6 +65,21 @@ function getHillRating(map:RideMapElevationOnly):string {
     return `Mountainous ${pct.toFixed(1)}%`;
   }
 }
+function leftPad(n:number, targetLen:number, withValue:string='0'):string {
+  let ret = '' + n;
+  while(ret.length < targetLen) {
+    ret = withValue + ret;
+  }
+  return ret;
+}
+
+function toDateString(dt:Date) {
+  return `${dt.getFullYear()}-${leftPad(dt.getMonth()+1,2)}-${leftPad(dt.getDate(),2)}`
+}
+function toRaceTime(dt:Date) {
+  let hr = dt.getHours();
+  return `${leftPad(hr,2)}:${leftPad(dt.getMinutes(),2)}`;
+}
 
 export function RaceScheduler(props:{authState:TourJsAccount, fnOnCreation:()=>void}) {
   let [hidden, setHidden] = useState<boolean>(true);
@@ -76,8 +92,8 @@ export function RaceScheduler(props:{authState:TourJsAccount, fnOnCreation:()=>v
   let [seed, setSeed] = useState<number>(initialSeed);
   let [raceMap, setRaceMap] = useState<RideMapElevationOnly>(makeRandomMapByLength(initialSeed, initialDistance));
   let [targetLength, setTargetLength] = useState<number>(initialDistance);
-  let [raceDate, setRaceDate] = useState<string>(new Date().toDateString());
-  let [raceTime, setRaceTime] = useState<string>(new Date().toTimeString());
+  let [raceDate, setRaceDate] = useState<string>(toDateString(new Date()));
+  let [raceTime, setRaceTime] = useState<string>(toRaceTime(new Date(new Date().getTime() + 15*60000)));
   let [working, setWorking] = useState<boolean>(false);
   let [raceName, setRaceName] = useState<string>(``);
 
@@ -130,6 +146,8 @@ export function RaceScheduler(props:{authState:TourJsAccount, fnOnCreation:()=>v
   useEffect(() => {
     setRaceMap(makeRandomMapByLength(seed, targetLength));
   }, [targetLength, seed])
+
+  console.log("race date ", raceDate, " race time ", raceTime);
 
   return (<div className="RaceScheduler__Container">
     <h2>Scheduling A Race</h2>

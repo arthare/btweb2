@@ -2,10 +2,10 @@ import { Auth0ContextInterface, useAuth0, User as Auth0User } from "@auth0/auth0
 import { Auth0Client } from "@auth0/auth0-spa-js";
 import EventEmitter from "events";
 import { NavigateFunction } from "react-router-dom";
-import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
+import { apiGet, apiPost, secureApiGet } from "./tourjs-client-shared/api-get";
 import { ConnectedDeviceInterface } from "./tourjs-client-shared/WebBluetoothDevice";
-import { S2CPositionUpdateUser } from "./tourjs-shared/communication";
-import { WorkoutFileSaver } from "./tourjs-shared/FileSaving";
+import { RaceResultSubmission, S2CPositionUpdateUser } from "./tourjs-shared/communication";
+import { samplesToPWX, WorkoutFileSaver } from "./tourjs-shared/FileSaving";
 import { RaceState, UserProvider } from "./tourjs-shared/RaceState";
 import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
 import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-shared/User";
@@ -18,6 +18,23 @@ export interface UserSetupParameters {
   bigImageMd5:string|null;
 }
 
+export function dumpRaceResultToPWX(submission:RaceResultSubmission) {
+  
+  const pwx = samplesToPWX("Workout", submission);
+
+  const lengthMeters = submission.samples[submission.samples.length - 1].distance - submission.samples[0].distance;
+
+  var data = new Blob([pwx], {type: 'application/octet-stream'});
+  var url = window.URL.createObjectURL(data);
+  const linky = document.createElement('a');
+  linky.href = url;
+  linky.download = `TourJS-${submission.activityName}-${lengthMeters.toFixed(0)}m-${new Date(submission.samples[0].tm).toDateString()}.pwx`;
+  linky.target="_blank";
+  document.body.appendChild(linky);
+  linky.click();
+  document.body.removeChild(linky);
+}
+
 
 export class AppPlayerContextType extends EventEmitter implements UserProvider {
   devices:ConnectedDeviceInterface[] = [];
@@ -26,6 +43,7 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
   powerDevice:ConnectedDeviceInterface = null;
   hrmDevice:ConnectedDeviceInterface = null;
   _localUser:UserInterface|null = null;
+  _hasSavedPwxForRide:Map<string,boolean> = new Map();
 
   
 
@@ -48,6 +66,44 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
     return this._localUser;
   }
 
+  private _dumpPwx(activityName:string, tmNow:number, user:UserInterface, workoutSaver:WorkoutFileSaver) {
+    debugger;
+    if(workoutSaver && user) {
+      const samples = workoutSaver.getWorkout();
+      
+      let ixLastNonzeroPower = samples.length - 1;
+      while(ixLastNonzeroPower > 0 && samples[ixLastNonzeroPower].power <= 0) {
+        ixLastNonzeroPower--;
+      }
+
+      const strStart = new Date(samples[0].tm).toLocaleString();
+      const strEnd = new Date(samples[ixLastNonzeroPower].tm).toLocaleString();
+
+      const lengthMeters = samples[samples.length - 1].distance - samples[0].distance;
+      const userImage = user.getImage();
+
+      const submission:RaceResultSubmission = {
+        rideName: `${user.getName()} doing ${activityName} for ${lengthMeters.toFixed(0)}m from ${strStart} to ${strEnd}`,
+        riderName: user.getName(),
+        tmStart: samples[0].tm,
+        tmEnd: samples[ixLastNonzeroPower].tm,
+        activityName,
+        handicap: user.getHandicap(),
+        samples,
+        deviceName: "tourjs-react",
+        bigImageMd5: user.getBigImageMd5() || '',
+      }
+
+      dumpRaceResultToPWX(submission);
+
+      // let's also send this to the main server.  This only happens if the user has an image.
+      // the image acts as their authentication.
+      if(userImage) {
+        apiPost('submit-ride-result', submission);
+      }
+    }
+  }
+
   setPowerDevice(dev:ConnectedDeviceInterface) {
     
     console.log("setting power device");
@@ -57,7 +113,32 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
       
       const activeRaceState = RaceState.getActiveRaceState();
       if(activeRaceState) {
+        const gameId = activeRaceState.getGameId();
+        
+        if(!this._hasSavedPwxForRide.has(gameId)) {
+          this._hasSavedPwxForRide.set(gameId, false);
+        }
+
         const user = activeRaceState.getLocalUser();
+        if(user) {
+          if(!this.workoutSaver) {
+            this.workoutSaver = new WorkoutFileSaver(user, tmNow);
+          }
+          this.workoutSaver.tick(tmNow);
+        }
+
+        if(user?.getDistance() >= activeRaceState.getMap()?.getLength()) {
+          // this user has finished their race
+          const hasSavedPwxForRide = this._hasSavedPwxForRide.get(gameId);
+          if(!hasSavedPwxForRide) {
+            console.log("this user has finished '" + gameId + "' and we haven't saved their PWX yet");
+
+            this._dumpPwx("Ride", tmNow, user, this.workoutSaver);
+            this._hasSavedPwxForRide.set(gameId, true);
+          }
+          
+        }
+
         if(user) {
           console.log("power received!");
           if(dev === this.powerDevice) {
@@ -130,6 +211,7 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
     const alreadyHaveLocal = this.localUser;
     this.users = this.users.filter((user) => user.getId() !== alreadyHaveLocal?.getId());
     this.users.push(user);
+    this.workoutSaver = new WorkoutFileSaver(user, new Date().getTime());
     this._localUser = user;
   }
   getUsers(tmNow: number): UserInterface[] {

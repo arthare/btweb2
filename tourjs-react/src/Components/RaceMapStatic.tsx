@@ -23,9 +23,7 @@ export function RaceMapStatic(props:{map:RideMapElevationOnly, className:string}
 
     const w = imgRef.current.clientWidth;
     const h = imgRef.current.clientHeight;
-    console.log("rendering with image width ", w);
 
-    console.log("wh ", w, h);
     canvas.width = w;
     canvas.height = h;
 

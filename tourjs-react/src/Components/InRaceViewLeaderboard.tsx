@@ -281,9 +281,12 @@ function InRaceLeaderboardGap(props:{raceState:RaceState, tmNow:number, leftGrou
     if(timeAtLeft.time !== null && timeAtRight.time !== null) {
       gapTime = Math.abs(timeAtRight.time - timeAtLeft.time);
     }
+
+    let splitChar = window.innerWidth > window.innerHeight ? '↔' : '↕';
+
     return <div className="InRaceLeaderboardGap__Container">
       <div><DistanceDisplay meters={gapDistance} /></div>
-      <div>↔</div>
+      <div>{splitChar}</div>
       {gapTime && gapTime !== 0 && <TimeDisplay ms={gapTime*1000} />}
     </div>
   }

@@ -9,17 +9,43 @@ import FinishGroupMember from '../AppImg/finishline.png';
 import './InRaceViewStatus.scss';
 import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
+import { useState } from "react";
 
 export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
 
+  let [tmOfLastNonzero, setTmOfLastNonzero] = useState<number>(0);
+  let [lastHandicap, setLastHandicap] = useState<number>(0);
+  let [tmStartDisplayHandicap, setTmStartDisplayHandicap] = useState<number>(0);
+  const tmNow = new Date().getTime();
+  const tmSinceLastNonZero = tmNow - tmOfLastNonzero;
+  
   const localUser = props.raceState.getLocalUser();
+
+
+
+
   let wattage;
   let draftWatts;
   let percentHill;
   let bpm;
+  let handicap;
 
   if(localUser) {
+    const currentHandicap = handicap = localUser.getHandicap();
+    if(currentHandicap.toFixed(0) !== lastHandicap.toFixed(0)) {
+      setLastHandicap(currentHandicap);
+      setTmStartDisplayHandicap(tmNow);
+      console.log("your handicap changed!");
+    }
     const power = localUser.getLastPower();
+    
+    if(props.playerContext.powerDevice) {
+      // ok, we appear to have a power device
+      if(power > 0 && tmSinceLastNonZero > 1000) {
+        setTmOfLastNonzero(new Date().getTime());
+      }
+    }
+
     wattage = `${power.toFixed(0)}⚡`;
 
     const savings = localUser.getLastWattsSaved();
@@ -45,10 +71,12 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
     return device;
   }
 
-  return <div className="InRaceViewStatus__Container">
-    <div className="InRaceViewStatus__Connect" onClick={() => onConnectPm()}>
-      🔌
-    </div>
+  let hasPower = tmSinceLastNonZero < 5000;
+  const connectClass = hasPower ? "Power" : "NoPower";
+
+  let handiDisplay:boolean = tmNow < tmStartDisplayHandicap + 10000;
+
+  return <><div className="InRaceViewStatus__Container">
     {wattage && <div className="InRaceViewStatus__InfoChunk">
       {wattage}
       {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts} draft)</span>}
@@ -59,5 +87,12 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
     {bpm && <div className="InRaceViewStatus__InfoChunk">
       {bpm}
     </div>}
+    <div className={`InRaceViewStatus__Connect ${connectClass}`} onClick={() => onConnectPm()}>
+      🔌
+    </div>
   </div>
+  <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
+    FTP: {handicap.toFixed(0)}⚡
+  </div>
+  </>
 }

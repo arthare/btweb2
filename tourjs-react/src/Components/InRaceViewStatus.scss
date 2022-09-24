@@ -1,11 +1,66 @@
+
+@keyframes PulseBlueRed {
+  0% {background-color: blue;}
+  50% {background-color: red;}
+  100% {background-color: blue;}
+}
+
+@keyframes PulseGreens {
+  0% {background-color: rgba(0,255,0,0.3);}
+  50% {background-color: rgba(0,255,0,0.6);}
+  100% {background-color: rgba(0,255,0,0.3);}
+}
+
 .InRaceViewStatus {
   &__Container {
     display: flex;
     flex-direction: row;
+    font-size: 2vh;
   }
   &__InfoChunk {
     color: white;
     flex: 1 1 0px;
     text-align: center;
+  }
+  &__Connect {
+    text-shadow: white 0px 0px 6px;
+
+    animation: none;
+    &.NoPower {
+      animation-name: PulseBlueRed;
+      animation-duration:0.5s;
+      animation-iteration-count: infinite;
+    }
+    
+    border-radius: 1.5vh;
+    text-align: center;
+    margin-right: 16px;
+  }
+  &__Handicap {
+    position: absolute;
+    overflow: hidden;
+    font-size: 2vh;
+    color: rgba(255,255,255,0.3);
+    padding: 0.4vh;
+    background-color: transparent;
+    display: inline-block;
+    border-bottom-right-radius: 0.4vh;
+    transition: color 0.5s, background-color 0.5s;
+    &.Shown {
+      color: white;
+      background-color: rgba(0,255,0,0.5);
+      animation-name: PulseGreens;
+      animation-duration:0.5s;
+      animation-iteration-count: infinite;
+    }
+  }
+}
+
+@media screen and (orientation:landscape) and (max-width: 900px) {
+  /* Landscape phone */
+  .InRaceViewStatus {
+    &__Container {
+      font-size: 6vh;
+    }
   }
 }
