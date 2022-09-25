@@ -8,6 +8,7 @@ import AppTestHacks from './AppTestHacks';
 import Helmet from 'react-helmet';
 import AppRace from "./AppRace";
 import ContextLoaders from './index-contextLoaders';
+import AppStaticResults from "./AppStaticResults";
 
 let origin = window.location.origin;
 if(!origin.includes('dev.')) {
@@ -26,6 +27,7 @@ ReactDOM.render(<>
               <Route path="/" element={<AppMenu />} />
               <Route path="/test-hacks" element={<AppTestHacks />} />
               <Route path="/race/:gameId" element={<AppRace />} />
+              <Route path="/results/:resultKey" element={<AppStaticResults />} />
             </Routes>
         </BrowserRouter>
       </Auth0Provider>

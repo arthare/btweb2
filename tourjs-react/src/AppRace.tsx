@@ -147,7 +147,7 @@ export default function AppRace(props:any) {
           <InRaceView raceState={connManager.getRaceState()}/>
         )}
         {connManager && connManager.postRace && connManager.raceResults && (
-          <PostRaceView raceResults={connManager.raceResults} raceState={connManager.getRaceState()}/>
+          <PostRaceView raceResults={connManager.raceResults}/>
         )}
       </>
     )}

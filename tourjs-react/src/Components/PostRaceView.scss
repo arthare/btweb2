@@ -6,3 +6,21 @@
     margin-right: auto;
   }
 }
+
+.RankingList {
+  &__Item {
+    &.Ai {
+      color: grey;
+      font-size: 12px;
+    }
+    &.Bot {
+      color: rgb(20,20,20);
+    }
+    &.Human {
+      font-weight: bolder;
+      color: green;
+    }
+    &.Local {
+    }
+  }
+}
