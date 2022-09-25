@@ -2,7 +2,7 @@ import { application } from 'express';
 
 import * as core from 'express-serve-static-core';
 import { postStartup, resWriteOut, setCorsHeaders } from './HttpUtils';
-import { dbCreateUserAccount, dbGetUserAccount, dbInsertAlias, dbUpdateAlias } from './index-db';
+import { dbCreateUserAccount, dbGetUserAccount, dbInsertAlias, dbUpdateAlias, dbUpdateHandicap } from './index-db';
 import {auth} from 'express-oauth2-jwt-bearer';
 import jwt from 'express-jwt';
 import jwks from 'jwks-rsa';
@@ -63,6 +63,8 @@ export function setupAuth0(app: core.Express) {
     if(alias.id >= 0) {
       // they're editing an existing alias
       result = await dbUpdateAlias(sub, alias);
+
+      // this is redun
     } else {
       result = await dbInsertAlias(sub, alias, user);
     }

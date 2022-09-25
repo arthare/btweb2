@@ -43,7 +43,9 @@ export class AppAuthContextType extends EventEmitter {
                 console.log("going to try for access token");
                 let at;
                 try {
+                  console.log("getting access token silently");
                   at = await auth0.getAccessTokenSilently();
+                  console.log("got access token silently");
                 } catch(e:any) {
                   console.log("access token silent failure: ", e);
                   at = await auth0.loginWithPopup();
@@ -56,7 +58,7 @@ export class AppAuthContextType extends EventEmitter {
                   auth0.loginWithRedirect();
                 }
                 
-              }, 5000);
+              }, 500);
 
             }
           }

@@ -7,7 +7,7 @@ import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
 import { RideMap, RideMapPartial } from './tourjs-shared/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './tourjs-shared/ServerConstants';
-import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from './tourjs-shared/ServerGame';
+import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser, StatsData } from './tourjs-shared/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
@@ -16,15 +16,45 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import { takeTrainingSnapshot } from './tourjs-shared/ServerAISnapshots';
 import { setupAuth0 } from './index-auth0';
-import { dbGetUserAccount } from './index-db';
+import { dbGetUserAccount, dbUpdateHandicap } from './index-db';
+import process from 'process';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
 
+let lastMem;
+function statsReport(reportPeriodMs:number) {
+  const seconds = reportPeriodMs / 1000;
+  console.log("STATS REPORTS -------" + new Date().toISOString());
+  const data = StatsData.counts;
+  StatsData.counts = {};
+
+  const keys = Object.keys(data);
+  keys.sort((a, b) => a < b ? -1 : 1);
+  for(var key of keys) {
+    console.log("--" + key + "\t" + ((data[key]) / seconds).toFixed(1) + "/sec");
+  }
+  const mem = process.memoryUsage();
+  for(var key in mem) {
+
+    const kb = (mem[key] / 1024).toLocaleString(undefined, {maximumFractionDigits:0, useGrouping:true}) + 'kb'
+
+    let rateSuffix = '';
+    if(lastMem) {
+      const lastVal = mem[key] - lastMem[key];
+      rateSuffix = ` (${(lastVal / (1024*seconds)).toFixed(0)} kb/sec)`;
+    }
+
+    console.log("Mem: " + key + ": " + kb + rateSuffix);
+  }
+  lastMem = mem;
+  console.log("STATS REPORT ENDS---------------------------------");
+}
 
 export function startGameServer() {
   
-
+  const period = 60000;
+  setInterval(() => statsReport(period), 1*period);
 
   // read ssl certificate
 
@@ -119,6 +149,8 @@ export function startGameServer() {
 
   const lastSentTo:Map<number,Rng> = new Map<number,Rng>();
   function buildClientPositionUpdate(tmNow:number, centralUser:UserInterface, userList:UserProvider, n:number):S2CPositionUpdate {
+    StatsData.note("buildClientPositionUpdate for" + centralUser.getName());
+
     const users = userList.getUsers(tmNow);
 
     if(!lastSentTo.has(centralUser.getId())) {
@@ -163,6 +195,7 @@ export function startGameServer() {
   }
 
   function sendUpdateToClient(game:ServerGame, user:ServerUser, tmNow:number, wsConnection:WebSocket) {  
+    StatsData.note("sendUpdateToClient for" + user.getName());
     // let's make a server to client message that tells them about some local dudes
 
     const raceState = game.getLastRaceState();
@@ -222,6 +255,7 @@ export function startGameServer() {
   }
 
   wss.on('connection', (wsConnection) => {
+    StatsData.note("New inbound websocket");
 
     let stillConnected = true;
     let thisConnectionGameId:string|null = null;
@@ -232,6 +266,7 @@ export function startGameServer() {
     }
 
     const sendUpdate = () => {
+      StatsData.note("sendUpdate");
       if(thisConnectionGameId !== null && thisConnectionUserId !== null) {
         const tmNow = new Date().getTime();
 
@@ -257,6 +292,7 @@ export function startGameServer() {
     }
 
     const broadcastMessage = (tmNow:number, fromUser:ServerUser, messageType:BasicMessageType, msg:any) => {
+      StatsData.note("broadcastMessage from " + fromUser.getName());
       if(thisConnectionGameId !== null && thisConnectionUserId !== null) {
 
         const game = races.get(thisConnectionGameId);
@@ -282,7 +318,7 @@ export function startGameServer() {
     }
 
     wsConnection.onmessage = (event:WebSocket.MessageEvent) => {
-
+      StatsData.note("Incoming websocket data");
       const tmNow = new Date().getTime();
 
       let bm:C2SBasicMessage;
@@ -294,7 +330,7 @@ export function startGameServer() {
       }
       
       try {
-        
+        StatsData.note("Incoming websocket data type " + bm.type);
         switch(bm.type) {
           case BasicMessageType.ClientConnectionRequest:
           {
@@ -367,7 +403,13 @@ export function startGameServer() {
             }
             const user = game.getUser(payload.userId);
             if(user) {
+              const handicapBefore = user.getHandicap();
               user.notifyPower(tmNow, payload.lastPower);
+              const handicapAfter = user.getHandicap();
+
+              if(handicapAfter !== handicapBefore) {
+                dbUpdateHandicap(user.getSub(), user.getName(), handicapAfter, `${user.getName()} got an in-race update to ${handicapAfter.toFixed(1)}`);
+              }
               if(payload.lastHrm) {
                 user.notifyHrm(tmNow, payload.lastHrm);
               }
@@ -419,6 +461,8 @@ export function startGameServer() {
 
   dbGetUserAccount('asdf').then((userAccount) => {
     console.log("startup: successfully got useraccount");
+
+    dbUpdateHandicap("asdf", "Art-50", 100, "Startup testing");
   }).catch((failure) => {
     console.error("Failure to get useraccount asdf ", failure);
   })

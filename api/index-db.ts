@@ -152,7 +152,36 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
   }
 }
 
+export async function dbUpdateHandicap(sub:string, name:string, handicap:number, why:string):Promise<void> {
+  console.log("DB: Updating handicap for " + name + " to " + handicap + " because " + why);
 
+  try {
+    let db;
+    const user = await dbGetUserAccount(sub);
+    if(user) {
+      const alias = user.aliases.find((alias) => alias.name === name);
+      if(alias) {
+        alias.handicap = handicap;
+        await dbUpdateAlias(sub, alias);
+
+        db = await getDb();
+        return new Promise<void>((resolve, reject) => {
+          db.query(`Insert into handicap_history (aliasid, handicap, unixtime, why) values (?,?,?,?)`, [alias.id, handicap, new Date().getTime()/1000, why], (err, results) => {
+            if(err) {
+              reject(new Error(`Error while updating handicap history ${JSON.stringify(err)}`))
+            } else {
+              resolve();
+            }
+          })
+        })
+      } else {
+        console.log("update handicap: could not find alias '" + name + "' on sub " + sub);
+      }
+    }
+  } catch(e) {
+    console.log("update handicap: Error while trying to update handicap for ", name, " to ", handicap);
+  }
+}
 export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJsAlias> {
   
   let db;
@@ -168,7 +197,7 @@ export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJ
   try {
     db = await getDb();
 
-    return new Promise<TourJsAlias>((resolve, reject) => {
+    const ret = await new Promise<TourJsAlias>((resolve, reject) => {
       db.query(`UPDATE aliases set name=?, handicap=?, image=? where id=?`, [alias.name, alias.handicap, alias.imageBase64, alias.id], (err, res:any) => {
         if(err) {
           reject(err);
@@ -179,6 +208,11 @@ export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJ
       })
     })
 
+    if(foundAlias?.handicap !== alias.handicap) {
+      await dbUpdateHandicap(user.sub, alias.name, alias.handicap, `User edited handicap on ${alias.name} to ${alias.handicap}`);
+    }
+
+    return ret;
   } catch(e) {
     throw e;
   } finally {

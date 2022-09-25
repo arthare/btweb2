@@ -1,6 +1,6 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
-import { ServerGame } from './tourjs-shared/ServerGame';
+import { ServerGame, StatsData } from './tourjs-shared/ServerGame';
 import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from './tourjs-shared/communication';
 import { RaceState } from './tourjs-shared/RaceState'
 import { ScheduleRacePostRequest } from './tourjs-shared/ServerHttpObjects';
@@ -17,6 +17,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
 
 
   app.get('/race-list', (req, res) => {
+    StatsData.note("HTTP GET /race-list");
     setCorsHeaders(req, res);
     const ret:ServerHttpGameList = {
       races: [],
@@ -66,6 +67,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   }
 
   app.get('/pacing-challenge-records', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP GET /pacing-challenge-records");
     setCorsHeaders(req, res);
     try {
 
@@ -119,6 +121,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   type UserResultDb = {[key:string]:RideNameResultDb};
 
   app.get('/user-ride-result', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP GET /user-ride-result");
     setCorsHeaders(req, res);
     res.setHeader('Cache-Control', 'no-store');
     if(req.query.imageMd5 && req.query.riderName && req.query.tmStart) {
@@ -144,6 +147,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.end();
   });
   app.get('/race-results', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP GET /race-results");
     setCorsHeaders(req, res);
     res.setHeader('Cache-Control', 'no-store');
     if(req.query.key) {
@@ -168,6 +172,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
 
   })
   app.get('/user-ride-results', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP GET /user-ride-results");
     setCorsHeaders(req, res);
     res.setHeader('Cache-Control', 'no-store');
     if(req.query.imageMd5) {
@@ -199,6 +204,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
     res.end();
   })
   app.post('/submit-ride-result', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP POST /submit-ride-result");
     return postStartup(req, res).then((postInput:RaceResultSubmission) => {
       setCorsHeaders(req, res);
 
@@ -239,6 +245,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   });
 
   app.post('/pacing-challenge-result', (req:core.Request, res:core.Response) => {
+    StatsData.note("HTTP POST /pacing-challenge-result");
     return postStartup(req, res).then((postInput:PacingChallengeResultSubmission) => {
       setCorsHeaders(req, res);
 
@@ -271,6 +278,7 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
   })
 
   app.post('/create-race', (req, res) => {
+    StatsData.note("HTTP POST /create-race");
     return postStartup(req, res).then((postInput:ScheduleRacePostRequest) => {
       setCorsHeaders(req, res);
 

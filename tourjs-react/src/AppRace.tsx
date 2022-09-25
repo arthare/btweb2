@@ -37,6 +37,9 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
   
+  if(raceState.isOldNews()) {
+    return;
+  }
   raceState.tick(tmThisFrame);
   fnOnFrame(tm, paintState.frameCount++);
 
