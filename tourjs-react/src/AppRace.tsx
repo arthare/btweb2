@@ -9,7 +9,7 @@ import PreRaceView from "./Components/PreRaceView";
 import UserProfilePicker from "./Components/UserProfilePicker";
 import { AppAuthContextType } from "./ContextAuth";
 import { AppPlayerContextType } from "./ContextPlayer";
-import ConnectionManager, { S2CPositionUpdateUser, ServerHttpGameListElement } from "./tourjs-shared/communication";
+import ConnectionManager, { S2CFinishUpdate, S2CPositionUpdateUser, ServerHttpGameListElement } from "./tourjs-shared/communication";
 import { DrawingInterface, PaintFrameState } from "./tourjs-client-shared/drawing-interface";
 import { DecorationState } from "./tourjs-client-shared/DecorationState";
 import { RaceState } from "./tourjs-shared/RaceState";
@@ -146,8 +146,8 @@ export default function AppRace(props:any) {
         {connManager && connManager.racing && (
           <InRaceView raceState={connManager.getRaceState()}/>
         )}
-        {connManager && connManager.postRace && (
-          <PostRaceView raceState={connManager.getRaceState()}/>
+        {connManager && connManager.postRace && connManager.raceResults && (
+          <PostRaceView raceResults={connManager.raceResults} raceState={connManager.getRaceState()}/>
         )}
       </>
     )}
