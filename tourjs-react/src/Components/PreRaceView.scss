@@ -66,4 +66,11 @@ $card-height: 160px;
   &__MapDetails {
     width: 100%;
   }
+  &__ButtonPile {
+    display: block;
+    & Button {
+      display: inline-block;
+      width: auto;
+    }
+  }
 }

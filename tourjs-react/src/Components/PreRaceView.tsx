@@ -8,6 +8,7 @@ import RobotFace from '../AppImg/robot.png'
 import HumanNoFace from '../AppImg/no-face.png';
 import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
+import ConnectionManager from "../tourjs-shared/communication";
 
 function PreRacePerson(props:{user:UserInterface}) {
 
@@ -98,10 +99,15 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
     return device;
 
   }
-  const onAddHrm = async () => {
-    const device = await getDeviceFactory().findHrm();
-    props.playerContext.setPowerDevice(device);
-    return device;
+  const onDisconnectPowermeter = async () => {
+    props.playerContext.disconnectPowerDevice();
+  }
+
+  const onStartNow = () => {
+    ConnectionManager._this.startRaceSoon(30*1000);
+  }
+  const onDelayStart = (seconds:number) => {
+    ConnectionManager._this.delayRaceStart(seconds*1000);
   }
 
   return <div>
@@ -119,6 +125,15 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
             <td className="PreRacePerson__Data-Container--Value"><TimeDisplay ms={props.tmStart - tmNow} /></td>
           </tr>
           <tr>
+            <td className="PreRacePerson__Data-Container--Key">Timing Change</td>
+            <td className="PreRacePerson__Data-Container--Value">
+              <div className="PreRaceView__ButtonPile">
+                <button onClick={() => onStartNow()}>Start Now</button>
+                <button onClick={() => onDelayStart(60)}>Delay Start By 60sec</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
             <td className="PreRacePerson__Data-Container--Key">Length:</td>
             <td className="PreRacePerson__Data-Container--Value">{map.getLength().toFixed(0)}m</td>
           </tr>
@@ -131,10 +146,6 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
       </table>
     </PreRaceSection>
     <PreRaceSection name="Devices">
-      <div className="PreRaceView__DeviceButtons">
-        <button onClick={() => onAddPowermeter()}>Add Powermeter</button>
-        <button onClick={() => onAddHrm()}>Add Heart Rate</button>
-      </div>
       <div className="PreRaceView__DeviceStatus">
         <h3>Current Device Status</h3>
         <table>
@@ -143,12 +154,16 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
               <td className="PreRacePerson__Data-Container--Key">Power</td>
               <td className="PreRacePerson__Data-Container--Value">{props.playerContext.localUser.getLastPower().toFixed(0)}W</td>
             </tr>
-            <tr>
-              <td className="PreRacePerson__Data-Container--Key">Heart Rate</td>
-              <td className="PreRacePerson__Data-Container--Value">{props.playerContext.localUser.getLastHrm(new Date().getTime()).toFixed(0)}bpm</td>
-            </tr>
           </tbody>
         </table>
+      </div>
+      <div className="PreRaceView__DeviceButtons">
+        {props.playerContext.powerDevice && (
+          <button onClick={() => onDisconnectPowermeter()}>Disconnect Powermeter</button>
+        )}
+        {!props.playerContext.powerDevice && (
+          <button onClick={() => onAddPowermeter()}>Add Powermeter</button>
+        )}
       </div>
       
     </PreRaceSection>
