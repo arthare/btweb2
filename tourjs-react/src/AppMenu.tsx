@@ -56,6 +56,11 @@ function App() {
     }
   }, [playerContext])
 
+  useEffect(() => {
+    if(window.location.host === 'www.tourjs.ca' || window.location.protocol !== 'https:') {
+      window.location.href = 'https://tourjs.ca';
+    }
+  }, []);
 
   return (
     <div className="AppMenu__Container">
