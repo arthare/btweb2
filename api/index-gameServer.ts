@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat, SERVER_UPDATE_RATE_HZ } from './tourjs-shared/communication';
+import { ClientToServerUpdate, S2CBasicMessage, BasicMessageType, ClientConnectionRequest, ServerMapDescription, ClientConnectionResponse, ServerError, S2CPositionUpdate, S2CNameUpdate, S2CFinishUpdate, CurrentRaceState, S2CRaceStateUpdate, C2SBasicMessage, S2CImageUpdate, PORTS, ClientToServerChat, SERVER_UPDATE_RATE_HZ, ClientToServerGameUpdatePayload } from './tourjs-shared/communication';
 import { assert2, testAssert } from './tourjs-shared/Utils';
 import { RaceState, UserProvider } from './tourjs-shared/RaceState';
 import { DEFAULT_HANDICAP_POWER, HandicapChangeReason, User, UserInterface, UserTypeFlags } from './tourjs-shared/User';
@@ -7,7 +7,7 @@ import { RideMapHandicap } from './tourjs-shared/RideMapHandicap';
 import { RideMap, RideMapPartial } from './tourjs-shared/RideMap';
 import { makeSimpleMap } from './ServerUtils';
 import { SERVER_PHYSICS_FRAME_RATE } from './tourjs-shared/ServerConstants';
-import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser, StatsData } from './tourjs-shared/ServerGame';
+import { AIBrain, AINNBrain, AIUltraBoringBrain, getBrainFolders, ServerGame, ServerUser } from './tourjs-shared/ServerGame';
 import { setUpServerHttp } from './HttpTourJs';
 import express from 'express';
 import * as core from "express-serve-static-core";
@@ -18,6 +18,7 @@ import { takeTrainingSnapshot } from './tourjs-shared/ServerAISnapshots';
 import { setupAuth0 } from './index-auth0';
 import { dbGetUserAccount, dbUpdateHandicap } from './index-db';
 import process from 'process';
+import { StatsData } from './tourjs-shared/StatsData';
 
 let app = <core.Express>express();
 let wss:WebSocket.Server;
@@ -332,6 +333,22 @@ export function startGameServer() {
       try {
         StatsData.note("Incoming websocket data type " + bm.type);
         switch(bm.type) {
+          case BasicMessageType.ClientToServerGameUpdate:
+          {
+            const payload:ClientToServerGameUpdatePayload = <ClientToServerGameUpdatePayload>bm.payload;
+            thisConnectionGameId = payload.gameId;
+            const game = races.get(payload.gameId);
+            if(!game) {
+              return sendError(tmNow, game, wsConnection, "Game ID " + payload.gameId +" not found");
+            }
+            // we've got the game they want to modify
+            if(payload.msStartShift) {
+              game.scheduleRaceStartTime(game.getRaceScheduledStartTime() + payload.msStartShift);
+            } else if(payload.tmStartSet) {
+              game.scheduleRaceStartTime(payload.tmStartSet);
+            }
+            break;
+          }
           case BasicMessageType.ClientConnectionRequest:
           {
             const payload:ClientConnectionRequest = <ClientConnectionRequest>bm.payload;

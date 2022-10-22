@@ -1,6 +1,6 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
-import { ServerGame, StatsData } from './tourjs-shared/ServerGame';
+import { ServerGame } from './tourjs-shared/ServerGame';
 import { ServerHttpGameList, ServerHttpGameListElement, CurrentRaceState, ServerMapDescription, SimpleElevationMap, PacingChallengeResultSubmission, RaceResultSubmission } from './tourjs-shared/communication';
 import { RaceState } from './tourjs-shared/RaceState'
 import { ScheduleRacePostRequest } from './tourjs-shared/ServerHttpObjects';
@@ -11,6 +11,7 @@ import { setCorsHeaders, postStartup, resWriteOut } from './HttpUtils';
 import fs from 'fs';
 import md5 from 'md5';
 import { v4 as uuidv4 } from 'uuid';
+import { StatsData } from './tourjs-shared/StatsData';
 
 
 export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame>) {
