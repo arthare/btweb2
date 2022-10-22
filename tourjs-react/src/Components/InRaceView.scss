@@ -7,13 +7,51 @@
   }
 }
 
+$col1: white;
+$col2: black;
+
+@keyframes PulseBlackWhiteBorderRight {
+  0% {border-right-color: $col1;}
+  50% {border-right-color: $col2;}
+  100% {border-right-color: $col1;}
+}
+
+@keyframes PulseBlackWhiteBorderLeft {
+  0% {border-left-color: $col1;}
+  50% {border-left-color: $col2;}
+  100% {border-left-color: $col1;}
+}
+@keyframes PulseBlackWhiteBothBorders {
+  0% {border-left-color: $col1; border-right-color: $col1}
+  50% {border-left-color: $col2; border-right-color: $col2}
+  100% {border-left-color: $col1; border-right-color: $col1}
+}
 .InRaceView {
   &__Container {
     position: relative;
-    height: 100vh;
-    width: 100vw;
+    height: 100%;
+    width: 100%;
     flex-direction:column;
     overflow: hidden;
+    border-left: 2px solid white;
+    border-right: 2px solid white;
+    box-sizing:border-box;
+    
+    &.Following {
+      animation-name: PulseBlackWhiteBorderRight;
+      animation-duration:0.25s;
+      animation-iteration-count: infinite;
+    }
+    &.BeingFollowed {
+      animation-name: PulseBlackWhiteBorderLeft;
+      animation-duration:0.25s;
+      animation-iteration-count: infinite;
+    }
+    &.Following.BeingFollowed {
+      animation-name: PulseBlackWhiteBothBorders;
+      animation: duration 0.25s;
+      animation-iteration-count: infinite;
+    }
   }
   &__Canvas {
     width: 100vw;
@@ -23,7 +61,7 @@
     position: absolute;
     bottom: 10vh;
     height: 58px;
-    background-color: rgba(0,0,0,0.35);
+    background-color: rgba(0,0,0,0.45);
     width: 100%;
   }
   &__Status-Container {
