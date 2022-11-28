@@ -87,6 +87,9 @@ $col2: black;
   }
 }
 
+$chunk-width: 10vw;
+$inter-width: 5vw;
+
 .InRaceLeaderboard {
   &__Container {
     display: block;
@@ -103,7 +106,7 @@ $col2: black;
     text-align: center;
     color: rgba(255,255,255,0.8);
     text-shadow: 1px 1px 1px black;
-    width: 90px;
+    width: $chunk-width;
     box-sizing:border-box;
 
     &.Local {
@@ -120,7 +123,7 @@ $col2: black;
   }
   &__Leader {
     display: block;
-    max-width:90px;
+    max-width:$chunk-width;
     height: 14px;
     overflow: hidden;
     transition: direction 0.5s;
@@ -149,8 +152,9 @@ $col2: black;
     font-size: 14px;
     line-height: 12px;
     padding-top: 6px;
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+    max-width: $inter-width;
   }
 }
 

@@ -9,6 +9,7 @@ import HumanNoFace from '../AppImg/no-face.png';
 import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
 import ConnectionManager from "../tourjs-shared/communication";
+import { useState } from "react";
 
 function PreRacePerson(props:{user:UserInterface}) {
 
@@ -92,6 +93,8 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
   const humans = allUsers.filter((user) => !(user.getUserType() & UserTypeFlags.Ai));
   const notHumans = allUsers.filter((user) => (user.getUserType() & UserTypeFlags.Ai));
   const map = props.raceState.getMap();
+  const [offsetting, setOffsetting] = useState<boolean>(false);
+  const [zeroOffsetResultCharacter, setZeroOffsetResultCharacter] = useState<string>('?');
 
   const onAddPowermeter = async () => {
     const device = await getDeviceFactory().findPowermeter();
@@ -108,6 +111,18 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
   }
   const onDelayStart = (seconds:number) => {
     ConnectionManager._this.delayRaceStart(seconds*1000);
+  }
+  const onZeroOffset = async () => {
+    setZeroOffsetResultCharacter('?');
+    setOffsetting(true);
+    try {
+      await props.playerContext.zeroOffset();
+      setZeroOffsetResultCharacter('✔️');
+    } catch(e) {
+      setZeroOffsetResultCharacter('❌');
+    } finally {
+      setOffsetting(false);
+    }
   }
 
   return <div>
@@ -158,9 +173,10 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
         </table>
       </div>
       <div className="PreRaceView__DeviceButtons">
-        {props.playerContext.powerDevice && (
+        {props.playerContext.powerDevice && (<>
           <button onClick={() => onDisconnectPowermeter()}>Disconnect Powermeter</button>
-        )}
+          <button disabled={offsetting} onClick={() => onZeroOffset()}>{zeroOffsetResultCharacter} Zero-Offset</button>
+        </>)}
         {!props.playerContext.powerDevice && (
           <button onClick={() => onAddPowermeter()}>Add Powermeter</button>
         )}
@@ -168,13 +184,13 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
       
     </PreRaceSection>
     <PreRaceSection name="Humans" >
-      {humans.map((user) => {
-        return <PreRacePerson user={user} />
+      {humans.map((user, index) => {
+        return <PreRacePerson key={index} user={user} />
       })}
     </PreRaceSection>
     <PreRaceSection name="AIs">
-      {notHumans.map((user) => {
-        return <PreRacePerson user={user} />
+      {notHumans.map((user, index) => {
+        return <PreRacePerson key={index} user={user} />
       })}
     </PreRaceSection>
   </div>

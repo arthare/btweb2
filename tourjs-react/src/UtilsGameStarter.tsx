@@ -14,8 +14,9 @@ export class FakeUserProvider implements UserProvider {
     this.users = [
       localUserOverride ? localUserOverride : new User("Local User", DEFAULT_RIDER_MASS, 100+ Math.random()*10, UserTypeFlags.Local),
       new User("Human Remote", DEFAULT_RIDER_MASS, 280, UserTypeFlags.Remote),
-      //new User("Slow Fella", DEFAULT_RIDER_MASS, 900, UserTypeFlags.Remote),
-      //new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
+      new User("Slow Fella", DEFAULT_RIDER_MASS, 900, UserTypeFlags.Remote),
+      new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
+      new User("Fast Fella 2   zzzzzzz", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
     ];
 
     for(var x = 0;x < 30; x++) {
@@ -26,7 +27,7 @@ export class FakeUserProvider implements UserProvider {
       user.setId(index);
       //user.setImage(testPatternDataUri, '');
       user.notifyPower(new Date().getTime(), Math.random() * user.getHandicap())
-      user.setDistance(index*2);
+      user.setDistance(5000 - index*100 - 100);
     });
   }
 
