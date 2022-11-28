@@ -54,8 +54,9 @@ function statsReport(reportPeriodMs:number) {
 
 export function startGameServer() {
   
-  const period = 60000;
-  setInterval(() => statsReport(period), 1*period);
+  console.log("Starting game server at ", new Date().toLocaleString());
+  const period = 10*60000;
+  setInterval(() => statsReport(period), period);
 
   // read ssl certificate
 

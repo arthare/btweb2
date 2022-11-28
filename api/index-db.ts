@@ -155,8 +155,8 @@ export async function dbGetUserAccount(sub:string):Promise<TourJsAccount> {
 export async function dbUpdateHandicap(sub:string, name:string, handicap:number, why:string):Promise<void> {
   console.log("DB: Updating handicap for " + name + " to " + handicap + " because " + why);
 
+  let db;
   try {
-    let db;
     const user = await dbGetUserAccount(sub);
     if(user) {
       const alias = user.aliases.find((alias) => alias.name === name);
@@ -180,6 +180,10 @@ export async function dbUpdateHandicap(sub:string, name:string, handicap:number,
     }
   } catch(e) {
     console.log("update handicap: Error while trying to update handicap for ", name, " to ", handicap);
+  } finally {
+    if(db) {
+      db.end();
+    }
   }
 }
 export async function dbUpdateAlias(sub:string, alias:TourJsAlias):Promise<TourJsAlias> {
