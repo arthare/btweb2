@@ -870,7 +870,10 @@ export class Drawer3D extends DrawingBase {
       if(localUser) {
         const s = tmNow / 1000;
 
-        const dist = localUser.getDistanceForUi(tmNow);
+        let dist = localUser.getDistanceForUi(tmNow);
+        if(localUser.isFinished()) {
+          dist = this.myRaceState.getMap().getLength();
+        }
         const elev = map.getElevationAtDistance(dist);
 
         // we want the shadow-casting light to change where the shadow gets cast depending on how far they are along in the race
