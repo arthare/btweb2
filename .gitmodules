@@ -10,6 +10,4 @@
 [submodule "tourjs-ember/app/tourjs-client-shared"]
 	path = tourjs-ember/app/tourjs-client-shared
 	url = https://github.com/arthare/tourjs-client-shared.git
-[submodule "tourjs-react/src/tourjs-client-shared"]
-	path = tourjs-react/src/tourjs-client-shared
-	url = https://github.com/arthare/tourjs-client-shared.git
+
