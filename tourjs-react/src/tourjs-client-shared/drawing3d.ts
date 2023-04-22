@@ -678,6 +678,37 @@ function buildRoad(raceState:RaceState):THREE.Mesh[] {
   return [roadMesh, farGrassMesh, skyMesh, nearGrassMesh, spaceMesh]
 }
 
+
+function buildFinishLine(map:RideMap):THREE.Mesh {
+  const stepSize = 20;
+  const finishLineLocation = map.getLength();
+  const height = 0.1;
+  const width = 2;
+
+  
+  const finishLineTexture = new THREE.TextureLoader().load( "/finishline.jpg" );
+  finishLineTexture.wrapS = THREE.RepeatWrapping;
+  finishLineTexture.wrapT = THREE.RepeatWrapping;
+
+
+  
+  const finishLineGeometry = new THREE.BoxGeometry(width, height, (Planes.RoadNear - Planes.RoadFar));
+  const finishLineMaterial = new THREE.MeshStandardMaterial( { map: finishLineTexture  } );
+
+  const finishLineMesh = new THREE.Mesh( finishLineGeometry, finishLineMaterial );
+
+
+  finishLineMesh.position.x = finishLineLocation + width;
+  finishLineMesh.position.y = VIS_ELEV_SCALE * map.getElevationAtDistance(finishLineLocation) + height/2;
+  finishLineMesh.position.z = 0;
+
+  const slopeAt = map.getSlopeAtDistance(finishLineLocation)*VIS_ELEV_SCALE;
+  finishLineMesh.rotation.z = slopeAt;
+
+
+  return finishLineMesh
+}
+
 const texHash:{[key:string]:THREE.Texture} = {};
 
 function makeTexturedSceneryCube(dist:number, scenery:ConfiggedDecoration, map:RideMap):THREE.Mesh {
@@ -817,6 +848,10 @@ export class Drawer3D extends DrawingBase {
       // let's build the road
       const road = buildRoad(raceState);
       this.scene.add(...road);
+      
+      //let's build finishline
+      const finishline = buildFinishLine(map);
+      this.scene.add(finishline);
 
       // let's build scenery
       const themeConfig = defaultThemeConfig;
