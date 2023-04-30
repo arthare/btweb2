@@ -678,6 +678,38 @@ function buildRoad(raceState:RaceState):THREE.Mesh[] {
   return [roadMesh, farGrassMesh, skyMesh, nearGrassMesh, spaceMesh]
 }
 
+
+function buildFinishLine(map:RideMap):THREE.Mesh {
+  const finishLineLocation = map.getLength();
+  const length = 5;
+  const height = 0.01;
+  const width = Planes.RoadNear - Planes.RoadFar
+
+  
+  const finishLineTexture = new THREE.TextureLoader().load( "/finishline.jpg" );
+  finishLineTexture.wrapS = THREE.RepeatWrapping;
+  finishLineTexture.wrapT = THREE.RepeatWrapping;
+  finishLineTexture.repeat.set(0.45,3);         // These values get aspect ratio of checkerboard right (trial and error)
+
+
+  
+  const finishLineGeometry = new THREE.BoxGeometry(length, height, width);
+  const finishLineMaterial = new THREE.MeshStandardMaterial( { map: finishLineTexture  } );
+
+  const finishLineMesh = new THREE.Mesh( finishLineGeometry, finishLineMaterial );
+
+
+  finishLineMesh.position.x = finishLineLocation + length;
+  finishLineMesh.position.y = VIS_ELEV_SCALE * (map.getElevationAtDistance(finishLineLocation) + height/2);
+  finishLineMesh.position.z = 0;
+
+  const slopeAt = -map.getSlopeAtDistance(finishLineLocation);
+  finishLineMesh.rotation.z = slopeAt;
+
+
+  return finishLineMesh
+}
+
 const texHash:{[key:string]:THREE.Texture} = {};
 
 function makeTexturedSceneryCube(dist:number, scenery:ConfiggedDecoration, map:RideMap):THREE.Mesh {
@@ -817,6 +849,10 @@ export class Drawer3D extends DrawingBase {
       // let's build the road
       const road = buildRoad(raceState);
       this.scene.add(...road);
+      
+      //let's build finishline
+      const finishline = buildFinishLine(map);
+      this.scene.add(finishline);
 
       // let's build scenery
       const themeConfig = defaultThemeConfig;
