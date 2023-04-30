@@ -680,29 +680,30 @@ function buildRoad(raceState:RaceState):THREE.Mesh[] {
 
 
 function buildFinishLine(map:RideMap):THREE.Mesh {
-  const stepSize = 20;
   const finishLineLocation = map.getLength();
-  const height = 0.1;
-  const width = 2;
+  const length = 5;
+  const height = 0.01;
+  const width = Planes.RoadNear - Planes.RoadFar
 
   
   const finishLineTexture = new THREE.TextureLoader().load( "/finishline.jpg" );
   finishLineTexture.wrapS = THREE.RepeatWrapping;
   finishLineTexture.wrapT = THREE.RepeatWrapping;
+  finishLineTexture.repeat.set(0.45,3);         // These values get aspect ratio of checkerboard right (trial and error)
 
 
   
-  const finishLineGeometry = new THREE.BoxGeometry(width, height, (Planes.RoadNear - Planes.RoadFar));
+  const finishLineGeometry = new THREE.BoxGeometry(length, height, width);
   const finishLineMaterial = new THREE.MeshStandardMaterial( { map: finishLineTexture  } );
 
   const finishLineMesh = new THREE.Mesh( finishLineGeometry, finishLineMaterial );
 
 
-  finishLineMesh.position.x = finishLineLocation + width;
-  finishLineMesh.position.y = VIS_ELEV_SCALE * map.getElevationAtDistance(finishLineLocation) + height/2;
+  finishLineMesh.position.x = finishLineLocation + length;
+  finishLineMesh.position.y = VIS_ELEV_SCALE * (map.getElevationAtDistance(finishLineLocation) + height/2);
   finishLineMesh.position.z = 0;
 
-  const slopeAt = map.getSlopeAtDistance(finishLineLocation)*VIS_ELEV_SCALE;
+  const slopeAt = -map.getSlopeAtDistance(finishLineLocation);
   finishLineMesh.rotation.z = slopeAt;
 
 
