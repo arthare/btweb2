@@ -27,7 +27,7 @@ export class FakeUserProvider implements UserProvider {
       user.setId(index);
       //user.setImage(testPatternDataUri, '');
       user.notifyPower(new Date().getTime(), Math.random() * user.getHandicap())
-      user.setDistance(5000 - index*100 - 100);
+      user.setDistance(2500);
     });
   }
 

@@ -31,10 +31,19 @@
       animation-duration:0.5s;
       animation-iteration-count: infinite;
     }
+    &.SmallButton {
+      display: inline-block;
+      max-width: 3vw;
+      padding: 2px;
+    }
     
     border-radius: 1.5vh;
     text-align: center;
     margin-right: 16px;
+  }
+  &__Progress {
+    width: 6vh;
+    height: 6vh;
   }
   &__Handicap {
     position: absolute;

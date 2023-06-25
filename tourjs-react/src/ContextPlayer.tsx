@@ -45,7 +45,7 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
   hrmDevice:ConnectedDeviceInterface = null;
   _localUser:UserInterface|null = null;
   _hasSavedPwxForRide:Map<string,boolean> = new Map();
-
+  doublePower:boolean = false;
   
 
   constructor() {
@@ -104,7 +104,9 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
       }
     }
   }
-
+  set2XMode(enable:boolean) {
+    this.doublePower = enable;
+  }
   setPowerDevice(dev:ConnectedDeviceInterface) {
     
     console.log("setting power device");
@@ -112,6 +114,9 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
     this.powerDevice = dev;
     dev.setPowerRecipient((tmNow, watts) => {
       
+      if(this.doublePower) {
+        watts*=2;
+      }
       const activeRaceState = RaceState.getActiveRaceState();
       if(activeRaceState) {
         const gameId = activeRaceState.getGameId();
