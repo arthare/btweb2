@@ -29,12 +29,10 @@ $col2: black;
 .InRaceView {
   &__Container {
     position: relative;
-    height: 100%;
-    width: 100%;
+    height: 100vh;
+    width: 100vw;
     flex-direction:column;
     overflow: hidden;
-    border-left: 2px solid white;
-    border-right: 2px solid white;
     box-sizing:border-box;
     
     &.Following {
@@ -54,8 +52,8 @@ $col2: black;
     }
   }
   &__Canvas {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
   }
   &__Leaderboard-Container {
     position: absolute;
@@ -66,14 +64,17 @@ $col2: black;
   }
   &__Status-Container {
     position: absolute;
-    top: 0px;
-    width: 100%;
-    background-color: rgba(0,0,0,0.35);
+    bottom: 0px;
+    left: 0px;
+    width: 20%;
+    height: 10vh;
+    background-color: rgba(0,0,0,1);
   }
   &__Minimap-Container {
     position: absolute;
+    right: 0px;
     bottom: 0px;
-    width: 100vw;
+    width: 80%;
     height: 10vh;
   }
 }

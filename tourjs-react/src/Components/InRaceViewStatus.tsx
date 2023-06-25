@@ -157,9 +157,10 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
     <div className={`InRaceViewStatus__Connect ${connectClass} SmallButton`} onClick={() => onConnectPm()}>
       🔌
     </div>
-  </div>
-  <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
+    <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
     FTP: {handicap.toFixed(0)}⚡
+    </div>
   </div>
+  
   </>
 }

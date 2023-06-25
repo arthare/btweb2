@@ -14,13 +14,15 @@
 .InRaceViewStatus {
   &__Container {
     display: flex;
-    flex-direction: row;
-    font-size: 2vh;
+    flex-direction: column;
+    //font-size: 100%;
   }
   &__InfoChunk {
     color: white;
     flex: 1 1 0px;
-    text-align: center;
+    font-size: 2.5vh;
+    text-align: left;
+    padding-left: 10%
   }
   &__Connect {
     text-shadow: white 0px 0px 6px;
@@ -37,9 +39,14 @@
       padding: 2px;
     }
     
-    border-radius: 1.5vh;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 3.5vh;
+    height: 3.5vh;
+    border-radius: 50%;
+    font-size: 2.5vh;
     text-align: center;
-    margin-right: 16px;
   }
   &__Progress {
     width: 6vh;
@@ -47,13 +54,14 @@
   }
   &__Handicap {
     position: absolute;
+    right: 5px;
+    bottom: 5px;
     overflow: hidden;
-    font-size: 2vh;
+    font-size: 1.2vw;
     color: rgba(255,255,255,0.3);
-    padding: 0.4vh;
-    background-color: transparent;
     display: inline-block;
-    border-bottom-right-radius: 0.4vh;
+    border-radius: 0.4vh;
+    padding: 2px;
     transition: color 0.5s, background-color 0.5s;
     &.Shown {
       color: white;
