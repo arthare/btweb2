@@ -28,20 +28,16 @@ function ProgressCanvass(props:{pct:number, className:string}) {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
 
-        const circleWidth = Math.min(canvas.width, canvas.height) - 10;
+        const circleWidth = Math.min(canvas.width, canvas.height)*0.8;
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = circleWidth/3;
-        ctx.beginPath();
-        ctx.arc(canvas.width/2,canvas.height/2,circleWidth/2,0, 2*Math.PI);
-        ctx.stroke();
-
+        ctx.lineWidth = circleWidth/10;
+        ctx.fillStyle =  'rgba(255,255,255,0.3)';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
         //ctx.fillStyle = 'red';
         //ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.strokeStyle = 'rgba(255,255,255,1)';
-        ctx.lineWidth = circleWidth/3;
-        ctx.beginPath();
-        ctx.arc(canvas.width/2,canvas.height/2,circleWidth/2,0, 2*props.pct*Math.PI);
-        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,1)';
+        ctx.fillRect(0,0,props.pct*canvas.width,canvas.height);
+        
         animReq = requestAnimationFrame(paintFrame);
       }
 
@@ -137,28 +133,34 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
 
   let handiDisplay:boolean = tmNow < tmStartDisplayHandicap + 10000;
 
-  return <><div className="InRaceViewStatus__Container">
-    {wattage && <div className="InRaceViewStatus__InfoChunk">
-      {wattage}
-      {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts} draft)</span>}
-    </div>}
-    {percentHill && <div className="InRaceViewStatus__InfoChunk">
-      {percentHill}
-      {pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}
-    </div>}
-    {bpm && <div className="InRaceViewStatus__InfoChunk">
-      {bpm}
-    </div>}
-    {localUser && localUser.getDistance() <= 1000 && (
-      <div className={`InRaceViewStatus__Connect SmallButton`} onClick={() => on2XPower()}>
-        {isDoublingPower && ("2x") || ("1/2")}
-      </div>
-    )}
-    <div className={`InRaceViewStatus__Connect ${connectClass} SmallButton`} onClick={() => onConnectPm()}>
-      🔌
+  return <><div className="InRaceViewStatus__Outer-Container">
+    <div className="InRaceViewStatus__LeftSide InRaceViewStatus__Container">
+      {wattage && <div className="InRaceViewStatus__InfoChunk">
+        {wattage}
+        {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts})</span>}
+      </div>}
+      {percentHill && <div className="InRaceViewStatus__InfoChunk Flex">
+        {percentHill}
+        <span className="InRaceViewStatus__InfoChunk FlexGrow">{pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}</span>
+      </div>}
+      {false && bpm && <div className="InRaceViewStatus__InfoChunk">
+        {bpm}
+      </div>}
     </div>
-    <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
-    FTP: {handicap.toFixed(0)}⚡
+    <div className="InRaceViewStatus__RightSide InRaceViewStatus__Container">
+      {localUser && localUser.getDistance() <= 1000 && (
+        <div className={`InRaceViewStatus__Connect SmallButton`} onClick={() => on2XPower()}>
+          {isDoublingPower && ("2x") || ("1/2")}
+        </div>
+      )}
+      <div className="InRaceViewStatus__TextAlignRight">
+        <div className={`InRaceViewStatus__Connect ${connectClass} SmallButton`} onClick={() => onConnectPm()}>
+          🔌
+        </div>
+      </div>
+      <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
+      FTP: {handicap.toFixed(0)}⚡
+      </div>
     </div>
   </div>
   

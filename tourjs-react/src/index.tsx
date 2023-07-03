@@ -9,6 +9,7 @@ import Helmet from 'react-helmet';
 import AppRace from "./AppRace";
 import ContextLoaders from './index-contextLoaders';
 import AppStaticResults from "./AppStaticResults";
+import AppLobbyHacks from "./AppTestRaceLobby";
 
 let origin = window.location.origin;
 if(!origin.includes('dev.')) {
@@ -26,6 +27,7 @@ ReactDOM.render(<>
               <Route path="/login" element={<AppLogin />} />
               <Route path="/" element={<AppMenu />} />
               <Route path="/test-hacks" element={<AppTestHacks />} />
+              <Route path="/racelobby-hacks" element={<AppLobbyHacks />} />
               <Route path="/race/:gameId" element={<AppRace />} />
               <Route path="/results/:resultKey" element={<AppStaticResults />} />
             </Routes>
