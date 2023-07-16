@@ -55,6 +55,72 @@ function ProgressCanvass(props:{pct:number, className:string}) {
 
 export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
 
+  const localUser = props.raceState.getLocalUser();
+
+  let wattage;
+  let draftWatts;
+  let percentHill;
+  let bpm;
+  let pctUp;
+
+
+  if(localUser) {
+    
+    const power = localUser.getLastPower();
+    
+
+    wattage = `${power.toFixed(0)}⚡`;
+
+    const savings = localUser.getLastWattsSaved();
+    if(savings && savings.watts > 0) {
+      draftWatts = `+${savings.watts.toFixed(0)}`;
+    }
+
+    const slope = localUser.getLastSlopeInWholePercent();
+    percentHill = slope.toFixed(1) + '%';
+
+    const hillStats = props.raceState.getMap().getHillStatsAtDistance(localUser.getDistance());
+    console.log("Hillstats = ", hillStats);
+    if(hillStats && hillStats.endElev > hillStats.startElev) {
+      pctUp = (localUser.getLastElevation() - hillStats.startElev) / (hillStats.endElev - hillStats.startElev);
+    }
+
+    const hrm = localUser.getLastHrm(props.tmNow);
+    if(hrm) {
+      bpm = `${hrm.toFixed(0)}❤`
+    } else {
+      bpm = `--❤`;
+    }
+  }
+
+
+
+  return <><div className="InRaceViewStatus__Outer-Container">
+    
+      {wattage && <div className="InRaceViewStatus__Wattage">
+        {wattage}
+        {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts})</span>}
+      </div>}
+      {percentHill && <div className="InRaceViewStatus__Hill Flex">
+        {percentHill}
+        <span className="InRaceViewStatus__Hill FlexGrow">{pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}</span>
+      </div>}
+      {false && bpm && <div className="InRaceViewStatus__Bpm">
+        {bpm}
+      </div>}
+
+  </div>
+  
+  </>
+}
+
+
+
+
+
+//This function is used to display the PM connect button and FTP in the top right ciorner of the screen
+export function InRaceViewStatusExtra(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
+
   let [tmOfLastNonzero, setTmOfLastNonzero] = useState<number>(0);
   let [lastHandicap, setLastHandicap] = useState<number>(0);
   let [tmStartDisplayHandicap, setTmStartDisplayHandicap] = useState<number>(0);
@@ -64,15 +130,8 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
   
   const localUser = props.raceState.getLocalUser();
 
-
-
-
-  let wattage;
-  let draftWatts;
-  let percentHill;
-  let bpm;
   let handicap;
-  let pctUp;
+
 
   useEffect(() => {
     setIsDoublingPower(props.playerContext.doublePower);
@@ -93,29 +152,6 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
         setTmOfLastNonzero(new Date().getTime());
       }
     }
-
-    wattage = `${power.toFixed(0)}⚡`;
-
-    const savings = localUser.getLastWattsSaved();
-    if(savings && savings.watts > 0) {
-      draftWatts = `+${savings.watts.toFixed(0)}⚡`;
-    }
-
-    const slope = localUser.getLastSlopeInWholePercent();
-    percentHill = slope.toFixed(1) + '%';
-
-    const hillStats = props.raceState.getMap().getHillStatsAtDistance(localUser.getDistance());
-    console.log("Hillstats = ", hillStats);
-    if(hillStats && hillStats.endElev > hillStats.startElev) {
-      pctUp = (localUser.getLastElevation() - hillStats.startElev) / (hillStats.endElev - hillStats.startElev);
-    }
-
-    const hrm = localUser.getLastHrm(props.tmNow);
-    if(hrm) {
-      bpm = `${hrm.toFixed(0)}❤`
-    } else {
-      bpm = `--❤`;
-    }
   }
 
   const onConnectPm = async () => {
@@ -134,33 +170,16 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
   let handiDisplay:boolean = tmNow < tmStartDisplayHandicap + 10000;
 
   return <><div className="InRaceViewStatus__Outer-Container">
-    <div className="InRaceViewStatus__LeftSide InRaceViewStatus__Container">
-      {wattage && <div className="InRaceViewStatus__InfoChunk">
-        {wattage}
-        {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts})</span>}
-      </div>}
-      {percentHill && <div className="InRaceViewStatus__InfoChunk Flex">
-        {percentHill}
-        <span className="InRaceViewStatus__InfoChunk FlexGrow">{pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}</span>
-      </div>}
-      {false && bpm && <div className="InRaceViewStatus__InfoChunk">
-        {bpm}
-      </div>}
+    {localUser && localUser.getDistance() <= 1000 && (
+      <div className={`InRaceViewStatus__Connect SmallButton`} onClick={() => on2XPower()}>
+        {isDoublingPower && ("2x") || ("1/2")}
+      </div>
+    )}
+    <div className={`InRaceViewStatus__Connect ${connectClass} SmallButton`} onClick={() => onConnectPm()}>
+      🔌
     </div>
-    <div className="InRaceViewStatus__RightSide InRaceViewStatus__Container">
-      {localUser && localUser.getDistance() <= 1000 && (
-        <div className={`InRaceViewStatus__Connect SmallButton`} onClick={() => on2XPower()}>
-          {isDoublingPower && ("2x") || ("1/2")}
-        </div>
-      )}
-      <div className="InRaceViewStatus__TextAlignRight">
-        <div className={`InRaceViewStatus__Connect ${connectClass} SmallButton`} onClick={() => onConnectPm()}>
-          🔌
-        </div>
-      </div>
-      <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
-      FTP: {handicap.toFixed(0)}⚡
-      </div>
+    <div className={`InRaceViewStatus__Handicap ${handicap && handiDisplay && 'Shown'}`}>
+    FTP: {handicap.toFixed(0)}⚡
     </div>
   </div>
   

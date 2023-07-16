@@ -72,6 +72,14 @@ $minimapRowHeight: 12vh;
     height: $minimapRowHeight;
     background-color: rgba(0,0,0,1);
   }
+  &__StatusExtra-Container {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 7vw;
+    height: 7vh;
+    background-color: rgba(0,0,0,0.45);
+  }
   &__Minimap-Container {
     position: absolute;
     right: 0px;
