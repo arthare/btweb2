@@ -53,6 +53,11 @@ function ProgressCanvass(props:{pct:number, className:string}) {
   return <canvas id={myId} className={`ProgressCanvas__Canvas ${props.className}`}></canvas>
 }
 
+
+
+//Bottom Left Status:
+//Wattage
+//Hillslope
 export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
 
   const localUser = props.raceState.getLocalUser();
@@ -118,7 +123,9 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
 
 
 
-//This function is used to display the PM connect button and FTP in the top right ciorner of the screen
+//Top right Status:
+//PM Connect
+//FTP
 export function InRaceViewStatusExtra(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
 
   let [tmOfLastNonzero, setTmOfLastNonzero] = useState<number>(0);
