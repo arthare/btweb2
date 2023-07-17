@@ -16,7 +16,7 @@ import { updateIf } from "typescript";
 import { DistanceDisplay, TimeDisplay } from "./PreRaceView";
 import { assert2 } from "../tourjs-shared/Utils";
 import { InRaceLeaderboard } from "./InRaceViewLeaderboard";
-import { InRaceViewStatus } from "./InRaceViewStatus";
+import { InRaceViewStatus, InRaceViewStatusExtra } from "./InRaceViewStatus";
 import { AppPlayerContextType } from "../ContextPlayer";
 import { AppPlayerContextInstance } from "../index-contextLoaders";
 import { RaceMapLive } from "./RaceMapLive";
@@ -91,14 +91,17 @@ export default function InRaceView(props:{raceState:RaceState}) {
 
   return <div className={`InRaceView__Container ${following && 'Following'} ${beingFollowed && 'BeingFollowed'}`}>
       <canvas ref={canvasRef}  className="InRaceView__Canvas"/>
-      <div className="InRaceView__Status-Container">
-        {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
-      </div>
-      <div className="InRaceView__Minimap-Container">
-        {props.raceState && <RaceMapLive className="" raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
-      </div>
-      <div className="InRaceView__Leaderboard-Container">
-        {props.raceState && <InRaceLeaderboard frames={frames} raceState={props.raceState} tmNow={tm} />}
+        <div className="InRaceView__Status-Container">
+          {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+        </div>
+        <div className="InRaceView__StatusExtra-Container">
+          {props.raceState && <InRaceViewStatusExtra raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+        </div>
+        <div className="InRaceView__Minimap-Container">
+          {props.raceState && <RaceMapLive className="" raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+        </div>
+        <div className="InRaceView__Leaderboard-Container">
+          {props.raceState && <InRaceLeaderboard frames={frames} raceState={props.raceState} tmNow={tm} />}
       </div>
     </div>
 }
