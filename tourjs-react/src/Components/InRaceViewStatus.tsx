@@ -85,7 +85,6 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
     percentHill = slope.toFixed(1) + '%';
 
     const hillStats = props.raceState.getMap().getHillStatsAtDistance(localUser.getDistance());
-    console.log("Hillstats = ", hillStats);
     if(hillStats && hillStats.endElev > hillStats.startElev) {
       pctUp = (localUser.getLastElevation() - hillStats.startElev) / (hillStats.endElev - hillStats.startElev);
     }

@@ -13,14 +13,6 @@
             "<node_internals>/**"
         ],
         "program": "${workspaceFolder}/api/index.ts",
-        "preLaunchTask":{
-            "type": "typescript",
-            "tsconfig": "api/tsconfig.json",
-            "problemMatcher": [
-                "$tsc"
-            ],
-            "group": "build",
-        },
         "outFiles": ["${workspaceFolder}/api/dist/**/*.js"]
     },
     {

@@ -146,7 +146,6 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
         }
 
         if(user) {
-          console.log("power received!");
           if(dev === this.powerDevice) {
             dev.setCadenceRecipient(user);
             // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying

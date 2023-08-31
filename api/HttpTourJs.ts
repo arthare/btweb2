@@ -74,39 +74,9 @@ export function setUpServerHttp(app:core.Express, gameMap:Map<string, ServerGame
 
       const map = req.query.map || 'hills1';
       const currentDb:PacingChallengeDb = JSON.parse(fs.readFileSync(`../pacing-challenge-records-v2.json`, 'utf8'));
-      const currentRecords:PacingChallengeMapRecords = currentDb[map] || new PacingChallengeMapRecords();
-      
-
-      for(var key in currentRecords) {
-        const currentVal = currentRecords[key];
-        if(Array.isArray(currentVal)) {
-          // we good
-        } else {
-          currentRecords[key] = [currentVal];
-        }
-      }
-      
-      // let's sort and truncate shit!
-      for(var key in currentRecords) {
-        let rg = currentRecords[key];
-        rg.sort((a, b) => {
-          return (a.time < b.time) ? -1 : 1;
-        })
-
-        rg = rg.filter((element, index) => {
-
-          const theirName = req.query && req.query.name;
-          element.rank = index+1;
-          if(index < 10 || element.name === theirName) {
-            return true;
-          }
-          return false;
-        });
-        currentRecords[key] = rg;
-      }
 
       res.writeHead(200, 'ok');
-      res.write(JSON.stringify(currentRecords));
+      res.write(JSON.stringify(currentDb));
       res.end();
     } catch(e) {
       res.writeHead(404, 'ok');

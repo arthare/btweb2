@@ -1,0 +1,62 @@
+@import './Components/CommonStyle.scss';
+
+.PacingChallengeMapButton {
+  &__Outer-Container {
+    @include Card();
+  }
+  &__Container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+  }
+  &__Left {
+    flex: 3 3 0px;
+  }
+  &__Right {
+    flex: 1 1 0px;
+    display: flex;
+    flex-direction: column;
+    &--Button {
+      width: 100%;
+      flex: 1 1 0px;
+      height: 12px;
+      padding: 0px;
+      min-height: 18px;
+    }
+  }
+}
+
+.PacingChallenge {
+  &__Container {
+    @include Card();
+  }
+  &__Map {
+    &--Display {
+      width: 100%;
+      display: block;
+      height: 128px;
+    }
+  }
+  &__RecordTable {
+    width: 100%;
+  }
+  &__RecordRow {
+    display: flex;
+    flex-direction:row;
+    border: 1px solid lightgrey;
+    border-bottom: 1px solid lightgrey;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  &__RecordCell {
+    flex: 1 1 0px;
+    overflow-x:hidden;
+  }
+  &__Record {
+    display:block;
+    white-space:nowrap;
+    font-size: 9px;
+    padding:0px;
+    overflow-x:hidden;
+  }
+}

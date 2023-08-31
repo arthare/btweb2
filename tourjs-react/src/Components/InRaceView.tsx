@@ -22,7 +22,7 @@ import { AppPlayerContextInstance } from "../index-contextLoaders";
 import { RaceMapLive } from "./RaceMapLive";
 
 
-export default function InRaceView(props:{raceState:RaceState}) {
+export default function InRaceView(props:{raceState:RaceState, children?:any}) {
   const canvasRef = useRef<HTMLCanvasElement>();
   const playerContext = useContext<AppPlayerContextType>(AppPlayerContextInstance);
   
@@ -91,17 +91,22 @@ export default function InRaceView(props:{raceState:RaceState}) {
 
   return <div className={`InRaceView__Container ${following && 'Following'} ${beingFollowed && 'BeingFollowed'}`}>
       <canvas ref={canvasRef}  className="InRaceView__Canvas"/>
-        <div className="InRaceView__Status-Container">
-          {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
-        </div>
-        <div className="InRaceView__StatusExtra-Container">
-          {props.raceState && <InRaceViewStatusExtra raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
-        </div>
-        <div className="InRaceView__Minimap-Container">
-          {props.raceState && <RaceMapLive className="" raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
-        </div>
-        <div className="InRaceView__Leaderboard-Container">
-          {props.raceState && <InRaceLeaderboard frames={frames} raceState={props.raceState} tmNow={tm} />}
+      <div className="InRaceView__Status-Container">
+        {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
       </div>
+      <div className="InRaceView__StatusExtra-Container">
+        {props.raceState && <InRaceViewStatusExtra raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+      </div>
+      <div className="InRaceView__Minimap-Container">
+        {props.raceState && <RaceMapLive className="" raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
+      </div>
+      <div className="InRaceView__Leaderboard-Container">
+        {props.raceState && <InRaceLeaderboard frames={frames} raceState={props.raceState} tmNow={tm} />}
+      </div>
+      {props.children && (
+        <div className="InRaceView__Children">
+          {props.children}
+        </div>
+      )}
     </div>
 }

@@ -15,6 +15,7 @@ import { AppPlayerContextType } from './ContextPlayer';
 import PowerDevicePicker from './Components/PowerDevicePicker';
 import { RaceScheduler } from './Components/RaceScheduler';
 import NoBleHelper from './Components/NoBleHelper';
+import PacingChallengeSetup from './PacingChallengeSetup';
 
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
         <PowerDevicePicker playerContext={playerContext} authContext={authContext} />
         <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)} allowSelection={!!playerContext.powerDevice} raceListRefresher={raceListVersion} />
         <RaceScheduler authState={authState} fnOnCreation={()=>onNewRaceCreated()} />
+        <PacingChallengeSetup authContext={authContext} playerContext={playerContext} />
         
       </>)}
     </div>

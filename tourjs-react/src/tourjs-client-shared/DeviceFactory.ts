@@ -129,6 +129,12 @@ class TestDeviceFactory implements DeviceFactory {
     async findPowermeter(byPlugin?:boolean):Promise<ConnectedDeviceInterface>{
 
       this._checkAvailable();
+
+      if(window.location.search.includes('fake') || window.location.hostname === 'dev.tourjs.ca') {
+        if(window.confirm("Want a fake PM?")) {
+          return new TestPowermeter();
+        }
+      }
         
       const filters = {
         filters: [
