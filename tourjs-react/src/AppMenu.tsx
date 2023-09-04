@@ -72,7 +72,7 @@ function App() {
         <PowerDevicePicker playerContext={playerContext} authContext={authContext} />
         <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)} allowSelection={!!playerContext.powerDevice} raceListRefresher={raceListVersion} />
         <RaceScheduler authState={authState} fnOnCreation={()=>onNewRaceCreated()} />
-        <PacingChallengeSetup authContext={authContext} playerContext={playerContext} />
+        <PacingChallengeSetup authContext={authContext} playerContext={playerContext} allowSelection={!!playerContext.powerDevice} />
         
       </>)}
     </div>

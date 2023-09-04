@@ -59,7 +59,7 @@ function normalizeMapName(name:string) {
   return name;
 }
 
-function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerContext:AppPlayerContextType}) {
+function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerContext:AppPlayerContextType, allowSelection:boolean}) {
   const navigate = useNavigate();
 
   let [pacingChallengeRecords, setPacingChallengeRecords] = useState<null|PacingChallengeDb>(null);
@@ -109,7 +109,7 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
     <div className="PacingChallenge__Container">
       <h2>Pacing Challenge</h2>
 
-      {countdownTick && (<div className="PacingChallenge__Countdown">{countdownTick}</div>)}
+      {countdownTick > 0 && (<div className="PacingChallenge__Countdown">{countdownTick}</div>)}
       {!countdownTick && (<>
         {pacingChallengeRecords && (
           <table className="PacingChallenge__RecordTable">
@@ -135,12 +135,18 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
           </table>
 
         )}
-        <div className="PacingChallenge__Maps">
-          <PacingChallengeMapButton strengths={strengths} map={maps['hills1']} name="Hilly 1" onSelect={(name, strength) => onSelectMap(name, strength)} />
-          <PacingChallengeMapButton strengths={strengths} map={maps['hills2']} name="Hilly 2" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-          <PacingChallengeMapButton strengths={strengths} map={maps['flat']} name="Flat" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-          <PacingChallengeMapButton strengths={strengths} map={maps['long']} name="Long" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-        </div>
+
+        {props.allowSelection && (
+          <div className="PacingChallenge__Maps">
+            <PacingChallengeMapButton strengths={strengths} map={maps['hills1']} name="Hilly 1" onSelect={(name, strength) => onSelectMap(name, strength)} />
+            <PacingChallengeMapButton strengths={strengths} map={maps['hills2']} name="Hilly 2" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+            <PacingChallengeMapButton strengths={strengths} map={maps['flat']} name="Flat" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+            <PacingChallengeMapButton strengths={strengths} map={maps['long']} name="Long" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+          </div>
+        )}
+        {!props.allowSelection && (
+          <div>You have to select a rider and powermeter first</div>
+        )}
       </>)}
     </div>)
 }
