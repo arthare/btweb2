@@ -64,6 +64,7 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
 
   let [pacingChallengeRecords, setPacingChallengeRecords] = useState<null|PacingChallengeDb>(null);
   let [mapNameList, setMapNameList] = useState<string[]>([]);
+  let [countdownTick, setCountdownTick] = useState<number>(0);
 
   const strengths = [0.5,0.8,0.9,1.0,1.25];
 
@@ -85,7 +86,21 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
 
 
   const onSelectMap = (name:string, strength:number) => {
-    navigate(`/pacing/${name}/${strength}`);
+    const countdownLength = 10;
+    const oneSecondMs = 1000;
+
+    function handleCountdownTick(newTickCount:number) {
+      console.log("new tick count is ", newTickCount);
+      if(newTickCount <= 0) {
+        navigate(`/pacing/${name}/${strength}`);
+      } else {
+        setCountdownTick(newTickCount);
+        setTimeout(() => handleCountdownTick(newTickCount - 1), oneSecondMs);
+      }
+    }
+
+    setCountdownTick(countdownLength);
+    setTimeout(() => handleCountdownTick(countdownLength), oneSecondMs);
   }
 
 
@@ -94,37 +109,39 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
     <div className="PacingChallenge__Container">
       <h2>Pacing Challenge</h2>
 
-      {pacingChallengeRecords && (
-        <table className="PacingChallenge__RecordTable">
-          <div className="PacingChallenge__RecordRow">
-            <div className="PacingChallenge__RecordCell">Records</div>
-            {strengths.map((s) => {
-              return <div className="PacingChallenge__RecordCell">{(s*100).toFixed(0)}%</div>
-            })}
-          </div>
-          {Object.keys(pacingChallengeRecords).map((mapName) => {
-            return (<div className="PacingChallenge__RecordRow">
-              <div className="PacingChallenge__RecordCell">{mapName}</div>
+      {countdownTick && (<div className="PacingChallenge__Countdown">{countdownTick}</div>)}
+      {!countdownTick && (<>
+        {pacingChallengeRecords && (
+          <table className="PacingChallenge__RecordTable">
+            <div className="PacingChallenge__RecordRow">
+              <div className="PacingChallenge__RecordCell">Records</div>
               {strengths.map((s) => {
-                const data = getRecordsForMap(pacingChallengeRecords, mapName, s);
-                return <div className="PacingChallenge__RecordCell">
-                  {data.slice(0,3).map((record) => {
-                    return <div className="PacingChallenge__Record">{formatSecondsHms(record.time)} - {record.name}</div>
-                  })}
-                </div>
+                return <div className="PacingChallenge__RecordCell">{(s*100).toFixed(0)}%</div>
               })}
-            </div>)
-          })}
-        </table>
+            </div>
+            {Object.keys(pacingChallengeRecords).map((mapName) => {
+              return (<div className="PacingChallenge__RecordRow">
+                <div className="PacingChallenge__RecordCell">{mapName}</div>
+                {strengths.map((s) => {
+                  const data = getRecordsForMap(pacingChallengeRecords, mapName, s);
+                  return <div className="PacingChallenge__RecordCell">
+                    {data.slice(0,3).map((record) => {
+                      return <div className="PacingChallenge__Record">{formatSecondsHms(record.time)} - {record.name}</div>
+                    })}
+                  </div>
+                })}
+              </div>)
+            })}
+          </table>
 
-      )}
-
-      <div className="PacingChallenge__Maps">
-        <PacingChallengeMapButton strengths={strengths} map={maps['hills1']} name="Hilly 1" onSelect={(name, strength) => onSelectMap(name, strength)} />
-        <PacingChallengeMapButton strengths={strengths} map={maps['hills2']} name="Hilly 2" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-        <PacingChallengeMapButton strengths={strengths} map={maps['flat']} name="Flat" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-        <PacingChallengeMapButton strengths={strengths} map={maps['long']} name="Long" onSelect={(name, strength) => onSelectMap(name, strength)}  />
-      </div>
+        )}
+        <div className="PacingChallenge__Maps">
+          <PacingChallengeMapButton strengths={strengths} map={maps['hills1']} name="Hilly 1" onSelect={(name, strength) => onSelectMap(name, strength)} />
+          <PacingChallengeMapButton strengths={strengths} map={maps['hills2']} name="Hilly 2" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+          <PacingChallengeMapButton strengths={strengths} map={maps['flat']} name="Flat" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+          <PacingChallengeMapButton strengths={strengths} map={maps['long']} name="Long" onSelect={(name, strength) => onSelectMap(name, strength)}  />
+        </div>
+      </>)}
     </div>)
 }
 

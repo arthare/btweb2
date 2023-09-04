@@ -22,7 +22,7 @@ import { AppPlayerContextInstance } from "../index-contextLoaders";
 import { RaceMapLive } from "./RaceMapLive";
 
 
-export default function InRaceView(props:{raceState:RaceState, children?:any}) {
+export default function InRaceView(props:{raceState:RaceState, children?:any, fnStillOnRacePage:()=>boolean}) {
   const canvasRef = useRef<HTMLCanvasElement>();
   const playerContext = useContext<AppPlayerContextType>(AppPlayerContextInstance);
   
@@ -65,7 +65,7 @@ export default function InRaceView(props:{raceState:RaceState, children?:any}) {
             setFrames(tenthFrames)
             lastFrames = tenthFrames;
           }
-        })
+        }, props.fnStillOnRacePage);
       });
     }
   }, [canvasRef]);

@@ -26,9 +26,25 @@
   }
 }
 
+@keyframes pulse-countdown {
+  0% {color: blue;}
+  50% {color: yellow;}
+  100% {color: black;}
+}
+
+
 .PacingChallenge {
   &__Container {
     @include Card();
+  }
+  &__Countdown {
+    font-size: 10vh;
+    text-align: center;
+
+    animation-name: pulse-countdown;
+    animation-duration: 0.25s;
+    animation-iteration-count: infinite;
+
   }
   &__Map {
     &--Display {

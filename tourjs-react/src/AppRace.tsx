@@ -32,11 +32,14 @@ function getGameServerHost() {
   }
 }
 
-export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void, fnOnFrame:(tmFrame, frame:number)=>void) {
+export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void, fnOnFrame:(tmFrame, frame:number)=>void, fnStillOnRacePage:()=>boolean) {
 
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
-  
+
+  if(!fnStillOnRacePage()) {
+    return;
+  }
   if(raceState.isOldNews()) {
     return;
   }
@@ -51,7 +54,7 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
     // we're done.  no need for further action
     fnOnRaceDone();
   } else {
-    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone, fnOnFrame));
+    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone, fnOnFrame, fnStillOnRacePage));
   }
 }
 
@@ -95,6 +98,9 @@ export default function AppRace(props:any) {
     playerContext.addRemoteUser(client, image);
   }
 
+  const isStillOnThisPage = () => {
+    return window.location.pathname.includes('/race/');
+  }
 
   useEffect(() => {
     // the existence of this appears to force rerenders?
@@ -144,7 +150,7 @@ export default function AppRace(props:any) {
           <PreRaceView raceState={connManager.getRaceState()} tmStart={connManager.msOfStart} playerContext={playerContext}></PreRaceView>
         )}
         {connManager && connManager.racing && (
-          <InRaceView raceState={connManager.getRaceState()}/>
+          <InRaceView raceState={connManager.getRaceState()} fnStillOnRacePage={isStillOnThisPage}/>
         )}
         {connManager && connManager.postRace && connManager.raceResults && (
           <PostRaceView raceResults={connManager.raceResults}/>

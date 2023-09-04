@@ -3,3 +3,23 @@
     color:white;
   }
 }
+.PacingChallengeInRaceStats {
+  &__Container {
+    color:lightgrey;
+    background-color: rgba(0,0,0,0.3);
+    border-bottom-right-radius: 10px;
+  }
+  &__Header {
+    color: lightgrey;
+    text-shadow: 3px 0px 3px black;
+  }
+  &__Data {
+    color: lightgrey;
+    font-weight:bolder;
+    text-shadow: 3px 0px 3px black;
+  }
+  &__DataLabel {
+    color: lightgrey;
+    text-shadow: 3px 0px 3px black;
+  }
+}

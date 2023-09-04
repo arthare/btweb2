@@ -78,10 +78,16 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
   }
 
   useEffect(() => {
-    if(props.authState && props.authContext && props.authState.aliases.length > 0) {
+    if(props.authState && props.authContext && props.authState?.aliases.length > 0) {
       // ok, we've got aliases.
+      if(selectedAliasId < 0 && props.authContext.getSelectedAlias()) {
+        console.log('useEffect: user profile picker has ', props.authState.aliases, ' to look at in state', UserProfileState[state]);
+        const pickedAlias = props.authState.aliases.find((al) => al.id === props.authContext.getSelectedAlias().id);
+        console.log("picked alias = ", pickedAlias);
+        onSelectAlias(pickedAlias, -1);
+      }
     }
-  }, [props.authState, props.authContext])
+  }, [props.authState, props.authContext, selectedAliasId])
 
 
   let state:UserProfileState = UserProfileState.NoAliases;
@@ -95,7 +101,6 @@ export default function UserProfilePicker(props:{authState:TourJsAccount, auth0:
     }
   }
   
-
   return (<div className="UserProfilePicker__Container">
     <h2>User Setup</h2>
     {state === UserProfileState.LoggingIn && (

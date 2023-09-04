@@ -56,10 +56,14 @@ function App() {
     })
   }, []);
 
+  const isStillOnThisPage = () => {
+    return window.location.pathname.includes('/test-hacks');
+  }
+
   return (
     <div className="AppTestHacks__Container">
       <div className="AppTestHacks__GameContainer">
-        {raceState && <InRaceView raceState={raceState}/>}
+        {raceState && <InRaceView raceState={raceState} fnStillOnRacePage={isStillOnThisPage}/>}
         {!raceState && <div>Setting up race state</div>}
       </div>
     </div>

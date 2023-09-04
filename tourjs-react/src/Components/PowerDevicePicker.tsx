@@ -17,7 +17,7 @@ enum BluetoothDevicePickerState {
   Working,
   Connected,
 }
-function BluetoothDevicePicker(props:{playerContext:AppPlayerContextType, icon:any, deviceName:string, fnOnAttemptConnect:()=>Promise<ConnectedDeviceInterface>, fnGetLastData:()=>string, fnDisconnect:()=>void}) {
+function BluetoothDevicePicker(props:{playerContext:AppPlayerContextType, myDevice:ConnectedDeviceInterface, icon:any, deviceName:string, fnOnAttemptConnect:()=>Promise<ConnectedDeviceInterface>, fnGetLastData:()=>string, fnDisconnect:()=>void}) {
 
   let [state, setState] = useState<BluetoothDevicePickerState>(BluetoothDevicePickerState.Unset);
   let [lastData, setLastData] = useState<string>('');
@@ -48,6 +48,12 @@ function BluetoothDevicePicker(props:{playerContext:AppPlayerContextType, icon:a
 
   useEffect(() => {
     if(props.playerContext) {
+      if(props.myDevice && props.myDevice.userWantsToKeep() && state === BluetoothDevicePickerState.Unset) {
+        // this fella already has a device
+        setState(BluetoothDevicePickerState.Connected);
+      } else {
+      }
+      
       props.playerContext.on('deviceDataChange', () => {
         setLastData(props.fnGetLastData());
       })
@@ -121,6 +127,7 @@ export default function PowerDevicePicker(props:{authContext:AppAuthContextType,
       <h2>Device Setup</h2>
       {state === PowerDevicePickerState.Ready && (<>
         <BluetoothDevicePicker playerContext={props.playerContext} 
+                              myDevice={props.playerContext.powerDevice}
                               icon={faBolt} 
                               deviceName="Power Meter" 
                               fnOnAttemptConnect={onConnectPm} 
@@ -128,6 +135,7 @@ export default function PowerDevicePicker(props:{authContext:AppAuthContextType,
                               fnDisconnect={()=>props.playerContext.disconnectPowerDevice()} 
                               />
         <BluetoothDevicePicker playerContext={props.playerContext} 
+                              myDevice={props.playerContext.hrmDevice}
                               icon={faHeart} 
                               deviceName="Heart Rate Monitor" 
                               fnOnAttemptConnect={onConnectHrm} 

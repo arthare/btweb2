@@ -51,23 +51,23 @@ function PacingChallengeInRaceStats(props:{hsUsed:number,hsAllowed:number, map:R
     <div className="PacingChallengeInRaceStats__Container">
       <table>
         <tr>
-          <th colSpan={2}>Pacing Challenge Data</th>
+          <th className="PacingChallengeInRaceStats__Header" colSpan={2}>Pacing Challenge Data</th>
         </tr>
         <tr>
-          <td>⛽ Used</td>
-          <td>{props.hsUsed.toFixed(1)}</td>
+          <td className="PacingChallengeInRaceStats__DataLabel">⛽ Used</td>
+          <td className="PacingChallengeInRaceStats__Data">{props.hsUsed.toFixed(1)}</td>
         </tr>
         <tr>
-          <td>⛽ Left</td>
-          <td>{hsLeft.toFixed(1)}</td>
+          <td className="PacingChallengeInRaceStats__DataLabel">⛽ Left</td>
+          <td className="PacingChallengeInRaceStats__Data">{hsLeft.toFixed(1)}</td>
         </tr>
         <tr>
-          <td>⛽ Used/km</td>
-          <td>{hsUsedPerKm.toFixed(2)}/km</td>
+          <td className="PacingChallengeInRaceStats__DataLabel">⛽ Used/km</td>
+          <td className="PacingChallengeInRaceStats__Data">{hsUsedPerKm.toFixed(2)}/km</td>
         </tr>
         <tr>
-          <td>⛽ Left/km</td>
-          <td>{hsPerKmLeft.toFixed(2)}/km</td>
+          <td className="PacingChallengeInRaceStats__DataLabel">⛽ Left/km</td>
+          <td className="PacingChallengeInRaceStats__Data">{hsPerKmLeft.toFixed(2)}/km</td>
         </tr>
       </table>
     </div>
@@ -96,7 +96,17 @@ function PacingChallengeRace(props:any) {
     navigate('/');
   }
 
+  const isStillOnThisPage = () => {
+    return window.location.pathname.includes('/pacing/');
+  }
+
   const tickPacingChallenge = (map:PacingChallengeShortMap, userProvider:UserProvider, raceState:RaceState, handisecsAllowed:number, ticks:number, powerTimer:PowerTimer) => {
+    console.log("ticking pacing challenge");
+    if(!isStillOnThisPage()) {
+      // oops we've moved away
+      raceState.stop();
+      return;
+    }
     const tmNow = new Date().getTime();
     setTicks(ticks);
     const localUser = raceState.getLocalUser();
@@ -131,7 +141,6 @@ function PacingChallengeRace(props:any) {
         "time": avg.totalTimeSeconds + 5*penaltyEnergy,
         "hsLeft": hsLeft,
         "pct": (strengthZeroToOne*100),
-        tmWhen: new Date().getTime(),
       }
 
       return apiPost('pacing-challenge-result', submission).finally(() => {
@@ -176,7 +185,7 @@ function PacingChallengeRace(props:any) {
           <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={()=>authContext.refreshAliases(auth0, setAuthState)} />
         )}
         {playerContext && playerContext.localUser && raceState && (<>
-          <InRaceView raceState={raceState}>
+          <InRaceView raceState={raceState} fnStillOnRacePage={isStillOnThisPage}>
             <PacingChallengeInRaceStats hsUsed={hsUsed} hsAllowed={hsAllowed} map={raceState.getMap()} localUser={raceState.getLocalUser()}/>
           </InRaceView>
         </>)}
