@@ -202,5 +202,5 @@ export abstract class DrawingBase implements DrawingInterface {
       ctx.stroke();
     }
   }
-  abstract paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void;
+  abstract paintCanvasFrame(canvas:HTMLCanvasElement, canvasOverlay:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void;
 }

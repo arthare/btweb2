@@ -105,11 +105,25 @@ function buildImageFromName(name:string) {
   ctx.fillText(initials, canvas.width*0.125, sizeNeeded.y);
   
   const dataUrl = canvas.toDataURL();
-  console.log("made name for ", name, initials, dataUrl);
   return dataUrl
 }
 
 getFirstLettersOfName(`"Dilan Tuf-Overes"`);
+
+function vector3ToScreenSpace(vector, camera, renderer) {
+  // Clone the vector to avoid modifying the original
+  const clonedVector = vector.clone();
+
+  // Project the 3D vector into screen space
+  clonedVector.project(camera);
+
+  // Convert the normalized screen space coordinates to actual screen coordinates
+  const x = (clonedVector.x + 1) * 0.5 * renderer.domElement.clientWidth;
+  const y = (-clonedVector.y + 1) * 0.5 * renderer.domElement.clientHeight;
+  const z = clonedVector.z;
+
+  return { x, y, z };
+}
 
 class DisplayUser3D extends DisplayUser {
   geometry:THREE.BoxGeometry;
@@ -118,10 +132,8 @@ class DisplayUser3D extends DisplayUser {
   myUser:UserInterface;
   myScene:THREE.Scene;
   obj:THREE.Object3D;
-  name:THREE.Object3D;
-  nameCube:THREE.Mesh;
-  nameWidth:number;
   camera:THREE.PerspectiveCamera;
+  screenCoords:Vector3|null = null;
 
   regularMaterial:THREE.MeshStandardMaterial;
   lazyMaterial:THREE.MeshStandardMaterial;
@@ -215,16 +227,8 @@ class DisplayUser3D extends DisplayUser {
         this.lazyMaterial = makeMaterial(this.myUser.getUserType(), new THREE.Color(LAZY_R, LAZY_G, LAZY_B).getHex());
         this.regularMaterial = makeMaterial(this.myUser.getUserType(), new THREE.Color(REGULAR_R, REGULAR_G, REGULAR_B).getHex());
 
-        const sizeOfGeo = fontSize / 46;
         const ar = canvas.width / canvas.height;
         this.ar = ar;
-        const nameGeo = new THREE.PlaneBufferGeometry(ar*sizeOfGeo, sizeOfGeo);
-        this.nameCube = new THREE.Mesh(nameGeo, this.fastMaterial);
-        
-        this.name = new THREE.Object3D();
-        this.name.position.set(0,1,Planes.RoadNear + this.ar/2);
-        this.name.add(this.nameCube);
-        scene.add(this.name);
       }
     }
     { // drafting indicator// create the particle variables
@@ -315,12 +319,11 @@ class DisplayUser3D extends DisplayUser {
     this.obj.add(this.cube);
     this.obj.add(this.draftingCube);
     scene.add(this.obj);
-
     
   }
 
   tmLastUpdate:number = 0;
-  update(tmNow:number) {
+  update(tmNow:number, renderer:any) {
 
     let dist = this.myUser.getDistanceForUi(tmNow);
     let elev = this.myUser.getLastElevation();
@@ -418,16 +421,7 @@ class DisplayUser3D extends DisplayUser {
       this.draftingCube.visible = false;
     }
 
-    this.name.lookAt(this.camera.position);
-    
     const handicapRatio = this.myUser.getLastPower() / this.myUser.getHandicap();
-    if(handicapRatio > 1.3) {
-      this.nameCube.material = this.fastMaterial;
-    } else if(handicapRatio < 0.5) {
-      this.nameCube.material = this.lazyMaterial;
-    } else {
-      this.nameCube.material = this.regularMaterial;
-    }
 
     let xShift = 0;
     let yShift = 0;
@@ -440,9 +434,11 @@ class DisplayUser3D extends DisplayUser {
     if(this.myUser.getUserType() & (UserTypeFlags.Ai | UserTypeFlags.Bot)) {
       minusAmount = 1;
     }
-    this.name.position.set(this.obj.position.x + xShift, this.obj.position.y - minusAmount, Planes.RoadNear + this.ar + yShift + minusAmount);
+    //this.name.position.set(this.obj.position.x + xShift, this.obj.position.y - minusAmount, Planes.RoadNear + this.ar + yShift + minusAmount);
     
 
+    const canvasSpaceCoords = vector3ToScreenSpace(this.obj.position, this.camera, renderer)
+    this.screenCoords = canvasSpaceCoords;
   }
 }
 
@@ -990,7 +986,91 @@ export class Drawer3D extends DrawingBase {
     }
     
   }
-  paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void {
+  private _paintOverlay(tmNow:number, canvasOverlay:HTMLCanvasElement, raceState:RaceState, paintState:PaintFrameState) {
+    
+    const users = raceState.getUserProvider().getUsers(tmNow);
+    const ctx = canvasOverlay.getContext('2d');
+    if(ctx) {
+      ctx.fillStyle = 'transparent';
+      ctx.clearRect(0,0,canvasOverlay.width, canvasOverlay.height);
+      //ctx.fillRect(0,0,canvasOverlay.width,canvasOverlay.height);
+
+      let sortedUsers = users.slice();
+
+      const userPoints = (user:UserInterface):number => {
+        let isLocal = user.getUserType() & UserTypeFlags.Local;
+        let isHuman = !(user.getUserType() & UserTypeFlags.Ai);
+        let points = 1;
+        if(isLocal) {
+          points+=4;
+        }
+        if(isHuman) {
+          points+=2;
+        }
+        return points;
+      }
+
+      // sort things in order of importance so that humans and local users paint last (and thus on top)
+      sortedUsers.sort((us1, us2) => {
+        return userPoints(us1) > userPoints(us2) ? 1 : -1;
+      });
+
+      for(var user of sortedUsers) {
+        const ps:DisplayUser3D = (paintState.userPaint.get(user.getId()) as DisplayUser3D) || new DisplayUser3D(user, this.scene, this.camera, raceState.getMap());
+        if(ps.screenCoords) {
+
+          let isLocal = user.getUserType() & UserTypeFlags.Local;
+          let isHuman = !(user.getUserType() & UserTypeFlags.Ai);
+
+          let fontSize = 10;
+          let color = 'white';
+          let shadowColor = 'black';
+          let jiggleX = 0;
+          let jiggleY = 0;
+
+                
+          const handicapRatio = user.getLastPower() / user.getHandicap();
+          if(handicapRatio > 1.6) {
+            jiggleX = Math.random() * 10 - 5;
+            jiggleY = Math.random() * 10 - 5;
+          } else if(handicapRatio > 1.3) {
+            color = 'red';
+          } else if(handicapRatio < 0.5) {
+            color = 'green';
+          } else {
+            color = isHuman ? 'white' : 'lightgrey';
+          }
+          
+          if(isLocal) {
+            fontSize *= 1.44;
+            shadowColor = 'pink';
+          } else if(isHuman) {
+            fontSize *= 1.2;
+            shadowColor = 'blue';
+          }
+
+          ctx.font = `${fontSize.toFixed(0)}vh Arial`;
+          ctx.shadowColor = shadowColor;
+          ctx.shadowBlur = 6;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.fillStyle=color;
+
+          let textX = ps.screenCoords.x*window.devicePixelRatio + jiggleX;
+          let textY = ps.screenCoords.y*window.devicePixelRatio + jiggleY + 50;
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(Math.PI/8);
+          ctx.textAlign = "left";
+          for(var x = 0; x < userPoints(user); x++) {
+            ctx.fillText(user.getName(), 0, 0);
+          }
+          ctx.restore();
+        }
+      }
+    }
+  }
+  paintCanvasFrame(canvas:HTMLCanvasElement, canvasOverlay:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void {
 
     let cpr = window.devicePixelRatio || 1.0;
 
@@ -1011,6 +1091,9 @@ export class Drawer3D extends DrawingBase {
 
     if(this.camera && this.renderer && this.scene) {
       this.renderer.render( this.scene, this.camera );
+
+      // let's slap names onto the canvas
+      this._paintOverlay(tmNow, canvasOverlay, raceState, paintState);
     }
   }
   doPaintFrameStateUpdates(rootResourceUrl:string, tmNow:number, dtSeconds:number, raceState:RaceState, paintState:PaintFrameState) {
@@ -1018,7 +1101,7 @@ export class Drawer3D extends DrawingBase {
       const users = raceState.getUserProvider().getUsers(tmNow)
       for(var user of users) {
         const ps:DisplayUser3D = (paintState.userPaint.get(user.getId()) as DisplayUser3D) || new DisplayUser3D(user, this.scene, this.camera, raceState.getMap());
-        ps.update(tmNow)
+        ps.update(tmNow, this.renderer)
 
         paintState.userPaint.set(user.getId(), ps);
       }

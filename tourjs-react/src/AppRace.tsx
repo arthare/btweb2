@@ -32,7 +32,7 @@ function getGameServerHost() {
   }
 }
 
-export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void, fnOnFrame:(tmFrame, frame:number)=>void, fnStillOnRacePage:()=>boolean) {
+export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, drawer:DrawingInterface, decorationState:DecorationState, paintState:PaintFrameState, ref:RefObject<HTMLCanvasElement>, refOverlay:RefObject<HTMLCanvasElement>, raceState:RaceState, fnOnRaceDone:()=>void, fnOnFrame:(tmFrame, frame:number)=>void, fnStillOnRacePage:()=>boolean) {
 
   const tm = tmThisFrame;
   const dt = (tmThisFrame - tmLastFrame) / 1000;
@@ -47,14 +47,14 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
   fnOnFrame(tm, paintState.frameCount++);
 
   if(ref.current) {
-    drawer.paintCanvasFrame(ref.current, raceState, tm, decorationState, dt, paintState)
+    drawer.paintCanvasFrame(ref.current, refOverlay.current, raceState, tm, decorationState, dt, paintState)
   }
 
   if(raceState.isAllRacersFinished(tm)) {
     // we're done.  no need for further action
     fnOnRaceDone();
   } else {
-    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, raceState, fnOnRaceDone, fnOnFrame, fnStillOnRacePage));
+    requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, refOverlay, raceState, fnOnRaceDone, fnOnFrame, fnStillOnRacePage));
   }
 }
 

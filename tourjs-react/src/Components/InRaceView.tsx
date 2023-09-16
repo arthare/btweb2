@@ -24,6 +24,7 @@ import { RaceMapLive } from "./RaceMapLive";
 
 export default function InRaceView(props:{raceState:RaceState, children?:any, fnStillOnRacePage:()=>boolean}) {
   const canvasRef = useRef<HTMLCanvasElement>();
+  const canvasOverlayRef = useRef<HTMLCanvasElement>();
   const playerContext = useContext<AppPlayerContextType>(AppPlayerContextInstance);
   
   let [frames, setFrames] = useState<number>(0);
@@ -40,6 +41,8 @@ export default function InRaceView(props:{raceState:RaceState, children?:any, fn
     if(canvasRef?.current) {
       canvasRef.current.width = canvasRef?.current?.clientWidth * window.devicePixelRatio;
       canvasRef.current.height = canvasRef?.current?.clientHeight * window.devicePixelRatio;
+      canvasOverlayRef.current.width = canvasOverlayRef?.current?.clientWidth * window.devicePixelRatio;
+      canvasOverlayRef.current.height = canvasOverlayRef?.current?.clientHeight * window.devicePixelRatio;
       const drawer = createDrawer("3d");
 
       const decFactory = new DecorationFactory(defaultThemeConfig);
@@ -49,7 +52,7 @@ export default function InRaceView(props:{raceState:RaceState, children?:any, fn
       let lastFrames = 0;
       requestAnimationFrame((tm) => {
 
-        tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, props.raceState, ()=>{}, (tmFrame, frame)=>{
+        tickGameAnimationFrame(tm, tm, drawer, decState, paintState, canvasRef, canvasOverlayRef, props.raceState, ()=>{}, (tmFrame, frame)=>{
 
           const localUser = props.raceState.getLocalUser();
           setBeingFollowed(localUser?.hasDraftersThisCycle(tmFrame));
@@ -91,6 +94,7 @@ export default function InRaceView(props:{raceState:RaceState, children?:any, fn
 
   return <div className={`InRaceView__Container ${following && 'Following'} ${beingFollowed && 'BeingFollowed'}`}>
       <canvas ref={canvasRef}  className="InRaceView__Canvas"/>
+      <canvas ref={canvasOverlayRef}  className="InRaceView__OverlayCanvas"/>
       <div className="InRaceView__Status-Container">
         {props.raceState && <InRaceViewStatus raceState={props.raceState} tmNow={tm} playerContext={playerContext} />}
       </div>

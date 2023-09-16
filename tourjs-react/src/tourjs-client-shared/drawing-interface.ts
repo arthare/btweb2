@@ -54,6 +54,6 @@ export interface RGB {
 export interface DrawingInterface {
     
   drawMinimap(params:DrawMinimapParameters):void;
-  paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void;
+  paintCanvasFrame(canvas:HTMLCanvasElement, canvasOverlay:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState):void;
 
 }

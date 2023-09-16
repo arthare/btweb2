@@ -11,7 +11,7 @@ import { assert2 } from "../tourjs-shared/Utils";
 export class DrawingOnCanvas extends DrawingBase {
     
 
-  paintCanvasFrame(canvas:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
+  paintCanvasFrame(canvas:HTMLCanvasElement, canvasOverlay:HTMLCanvasElement, raceState:RaceState, timeMs:number, decorationState:DecorationState, dt:number, paintState:PaintFrameState) {
     // ok, all we have to do is paint the map!  How hard can it be
     const tmNow = new Date().getTime();
     const ctx = canvas.getContext('2d');
