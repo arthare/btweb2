@@ -61,7 +61,25 @@ function AppLobbyHacks() {
       playerContext.setLocalUser(newRaceState.getLocalUser());
       setRaceState(newRaceState);
     })
+
   }, []);
+
+  useEffect(()  => {
+    if(raceState) {
+      
+      let int  = setInterval(() => {
+        let tmNow = new Date().getTime();
+        const users = raceState.getUserProvider().getUsers(tmNow);
+        for(var user of users) {
+          user.notifyPower(tmNow, Math.random() * 250);
+        }
+      }, 250);
+
+      return function cleanup() {
+        clearInterval(int);
+      }
+    }
+  }, [raceState]);
 
   return (
     <div className="AppTestHacks__Container">

@@ -229,7 +229,7 @@ export class DrawingOnCanvas extends DrawingBase {
           let yShift = 0;
           
           let outlineColor = 'black';
-          const handicapRatio = user.getLastPower() / user.getHandicap();
+          const handicapRatio = user.getLastPower().power / user.getHandicap();
           if(handicapRatio > 1.3) {
             outlineColor = 'red';
           } else if(handicapRatio < 0.5) {

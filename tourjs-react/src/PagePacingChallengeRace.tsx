@@ -115,7 +115,7 @@ function PacingChallengeRace(props:any) {
       debugger;
       return;
     }
-    powerTimer.notifyPower(tmNow, localUser.getLastPower());
+    powerTimer.notifyPower(tmNow, localUser.getLastPower().power);
     const avg = powerTimer.getAverage(tmNow);
 
     const hsUsed = avg.joules / localUser.getHandicap();

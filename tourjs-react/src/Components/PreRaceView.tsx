@@ -9,7 +9,9 @@ import HumanNoFace from '../AppImg/no-face.png';
 import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
 import ConnectionManager from "../tourjs-shared/communication";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { scoreUserInterestingNess } from "./InRaceViewLeaderboard";
+import { msPromise } from "../tourjs-client-shared/DeviceUtils";
 
 function PreRacePerson(props:{user:UserInterface}) {
 
@@ -41,7 +43,7 @@ function PreRacePerson(props:{user:UserInterface}) {
           </tr>
           <tr>
             <td className="PreRacePerson__Data-Container--Key">Power</td>
-            <td className="PreRacePerson__Data-Container--Value">{props.user.getLastPower().toFixed(0)}W</td>
+            <td className="PreRacePerson__Data-Container--Value">{props.user.getLastPower().power.toFixed(0)}W</td>
           </tr>
         </tbody>
       </table>
@@ -85,6 +87,35 @@ export function TimeDisplay(props:{ms:number}) {
   return <>{str}</>
 }
 
+function UserSummary(props:{user:UserInterface, counter:number}) {
+
+  let [suffix, setSuffix] = useState<string>('');
+  let [suffixClass, setSuffixClass] = useState<string>('');
+
+  let extraClass = '';
+  if(props.user.getUserType() & UserTypeFlags.Local) {
+    extraClass = 'Local';
+  } else if(!(props.user.getUserType() & UserTypeFlags.Ai)) {
+    extraClass = 'Human'
+  }
+
+  useEffect(() => {
+    if(extraClass) {
+      const data = props.user.getLastPower();
+      setSuffixClass(data.power > 0 ? 'Nonzero' : '');
+
+      setSuffix(`- ${props.user.getLastPower().power.toFixed(0)}W`);
+    } else {
+      setSuffix('');
+    }
+  }, [props.counter]);
+
+
+  return <div className={`UserSummary__Container ${extraClass}`}>
+    {props.user.getName()} <span className={`UserSummary__Watts ${suffixClass}`}>{suffix}</span>
+  </div>
+}
+
 export default function PreRaceView(props:{raceState:RaceState, tmStart:number, playerContext:AppPlayerContextType}) {
 
   const tmNow = new Date().getTime();
@@ -95,14 +126,30 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
   const map = props.raceState.getMap();
   const [offsetting, setOffsetting] = useState<boolean>(false);
   const [zeroOffsetResultCharacter, setZeroOffsetResultCharacter] = useState<string>('?');
+  const [pmStatus, setPmStatus] = useState<string>('');
+
+
+  const [counter, setCounter] = useState<number>(0);
+  const [counterInterval, setCounterInterval] = useState<any>(null);
+
 
   const onAddPowermeter = async () => {
-    const device = await getDeviceFactory().findPowermeter();
-    props.playerContext.setPowerDevice(device);
-    return device;
+    setZeroOffsetResultCharacter('');
+    if(props.playerContext.powerDevice !== null) {
+      props.playerContext.disconnectPowerDevice();
+      await msPromise(1000);
+    }
+    try {
+      const device = await getDeviceFactory().findPowermeter(setPmStatus);
+      props.playerContext.setPowerDevice(device);
+      return device;
+    } catch(e) {
+      setPmStatus("Error while connecting powermeter");
+    }
 
   }
   const onDisconnectPowermeter = async () => {
+    setZeroOffsetResultCharacter('');
     props.playerContext.disconnectPowerDevice();
   }
 
@@ -125,73 +172,74 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
     }
   }
 
-  return <div>
-    <h1>Pre-Race Lobby</h1>
+  useEffect(() => {
+    if(props.playerContext.powerDevice) {
+      setPmStatus(`You are connected to ${props.playerContext.powerDevice.name()}`);
+    }
+  }, [props.playerContext.powerDevice])
 
-    <PreRaceSection name="Map">
-      <table className="PreRaceView__MapDetails">
-        <tbody>
-          <tr>
-            <td className="PreRacePerson__Data-Container--Key">Race Name:</td>
-            <td className="PreRacePerson__Data-Container--Value">{props.raceState.getGameId()}</td>
-          </tr>
-          <tr>
-            <td className="PreRacePerson__Data-Container--Key">Starts in:</td>
-            <td className="PreRacePerson__Data-Container--Value"><TimeDisplay ms={props.tmStart - tmNow} /></td>
-          </tr>
-          <tr>
-            <td className="PreRacePerson__Data-Container--Key">Timing Change</td>
-            <td className="PreRacePerson__Data-Container--Value">
-              <div className="PreRaceView__ButtonPile">
-                <button onClick={() => onStartNow()}>Start Now</button>
-                <button onClick={() => onDelayStart(60)}>Delay Start By 60sec</button>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td className="PreRacePerson__Data-Container--Key">Length:</td>
-            <td className="PreRacePerson__Data-Container--Value">{map.getLength().toFixed(0)}m</td>
-          </tr>
-          <tr>
-            <td colSpan={2}>
-              <RaceMapStatic map={map} className={"PreRaceView__Map"} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </PreRaceSection>
-    <PreRaceSection name="Devices">
-      <div className="PreRaceView__DeviceStatus">
-        <h3>Current Device Status</h3>
-        <table>
-          <tbody>
-            <tr>
-              <td className="PreRacePerson__Data-Container--Key">Power</td>
-              <td className="PreRacePerson__Data-Container--Value">{props.playerContext.localUser.getLastPower().toFixed(0)}W</td>
-            </tr>
-          </tbody>
-        </table>
+  useEffect(() => {
+    // on startup, start a 1hz timer
+    let counterVal = 0;
+    let timeout = setInterval(() => {
+      counterVal++;
+      console.log("counter = ", counterVal);
+      setCounter(counterVal);
+    }, 1000);
+    setCounterInterval(timeout);
+    return function cleanup() {
+      clearInterval(counterInterval);
+    }
+  }, []);
+
+
+  const sortedPlayers = allUsers.slice();
+  sortedPlayers.sort((a,b) => {
+    let pointsLeft = scoreUserInterestingNess(a);
+    let pointsRight = scoreUserInterestingNess(b);
+    if(pointsLeft !== pointsRight) {
+      return pointsLeft > pointsRight ? -1 : 1;
+    } else {
+      return a.getName() < b.getName() ? -1 : 1;
+    }
+  })
+
+  return <div className="PreRaceView__Container">
+    <div className="PreRaceView__Statuses--Container">
+      <button onClick={() => onAddPowermeter()} >
+        Reconnect PM<br />
+        <span className="PreRaceView__YouAreConnected">{pmStatus}</span>
+      </button>
+      <button disabled={offsetting} onClick={() => onZeroOffset()} >
+        Zero PM<br />
+        <span className="PreRaceView__YouAreConnected">{zeroOffsetResultCharacter}</span>
+      </button>
+      <button onClick={() => onDelayStart(60)} >
+        Delay Start
+      </button>
+      <button onClick={() => onStartNow() }>
+        Start Now
+      </button>
+    </div>
+    <div className="PreRaceView__PlayersAndMap--Container">
+      <div className="PreRaceView__Players--Container">
+        {sortedPlayers.map((u) => <UserSummary user={u} counter={counter} />)}
       </div>
-      <div className="PreRaceView__DeviceButtons">
-        {props.playerContext.powerDevice && (<>
-          <button onClick={() => onDisconnectPowermeter()}>Disconnect Powermeter</button>
-          <button disabled={offsetting} onClick={() => onZeroOffset()}>{zeroOffsetResultCharacter} Zero-Offset</button>
-        </>)}
-        {!props.playerContext.powerDevice && (
-          <button onClick={() => onAddPowermeter()}>Add Powermeter</button>
-        )}
+      <div className="PreRaceView__Map--Container">
+        <div className="PreRaceView__Map--MapData">
+          Race Name: {props.raceState.getGameId()}
+        </div>
+        <div className="PreRaceView__Map--MapData">
+          Starts in: <TimeDisplay ms={props.tmStart - tmNow} />
+        </div>
+        <div className="PreRaceView__Map--MapData">
+          Length: {map.getLength().toFixed(1)}m
+        </div>
+        <RaceMapStatic map={map} className={"PreRaceView__Map--Static"} />
+        <div className="PreRaceView__Map--Image">
+        </div>
+        
       </div>
-      
-    </PreRaceSection>
-    <PreRaceSection name="Humans" >
-      {humans.map((user, index) => {
-        return <PreRacePerson key={index} user={user} />
-      })}
-    </PreRaceSection>
-    <PreRaceSection name="AIs">
-      {notHumans.map((user, index) => {
-        return <PreRacePerson key={index} user={user} />
-      })}
-    </PreRaceSection>
+    </div>
   </div>
 }

@@ -1,5 +1,5 @@
 import { RaceState } from "../tourjs-shared/RaceState";
-import { RideMapElevationOnly } from "../tourjs-shared/RideMap";
+import { HillStats, RideMapElevationOnly } from "../tourjs-shared/RideMap";
 import { UserInterface, UserTypeFlags } from "../tourjs-shared/User";
 import { assert2 } from "../tourjs-shared/Utils";
 import { DistanceDisplay, TimeDisplay } from "./PreRaceView";
@@ -10,6 +10,7 @@ import './InRaceViewStatus.scss';
 import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
 import { useEffect, useState } from "react";
+import { msPromise } from "../tourjs-client-shared/DeviceUtils";
 
 function ProgressCanvass(props:{pct:number, className:string}) {
 
@@ -58,7 +59,27 @@ function ProgressCanvass(props:{pct:number, className:string}) {
 //Bottom Left Status:
 //Wattage
 //Hillslope
+interface HillStatsExtended extends HillStats {
+  tmStarted:number;
+}
+interface HillStatsCompleted extends HillStatsExtended {
+  tmEnded:number;
+  tmDisplayUntil:number;
+}
+
+let lastHillStats:HillStatsExtended|null = null;
+
+function getParRating(stats:HillStatsCompleted) {
+  let time = (stats.tmEnded - stats.tmStarted) / 1000;
+  let delta = (time - stats.expectedSeconds);
+  let prefix = delta > 0 ? '+' : '';
+  let suffix = delta > 0 ? 'worse' : 'better'
+  return `${Math.abs(delta).toFixed(1)} ${suffix} than par`;
+}
+
 export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
+
+  let [showHillStats, setShowHillStats] = useState<HillStatsCompleted|null>(null);
 
   const localUser = props.raceState.getLocalUser();
 
@@ -71,7 +92,7 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
 
   if(localUser) {
     
-    const power = localUser.getLastPower();
+    const power = localUser.getLastPower().power;
     
 
     wattage = `${power.toFixed(0)}⚡`;
@@ -87,6 +108,29 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
     const hillStats = props.raceState.getMap().getHillStatsAtDistance(localUser.getDistance());
     if(hillStats && hillStats.endElev > hillStats.startElev) {
       pctUp = (localUser.getLastElevation() - hillStats.startElev) / (hillStats.endElev - hillStats.startElev);
+    }
+
+    let tmNow = new Date().getTime();
+    if(hillStats?.id !== lastHillStats?.id && lastHillStats?.endElev > lastHillStats?.startElev) {
+      // oh, we just finished a hill
+      console.log("just fininshed a hill. took ", (new Date().getTime() - lastHillStats.tmStarted) / 1000, " was expected ", lastHillStats.expectedSeconds);
+      setShowHillStats({
+        ...lastHillStats,
+        tmEnded: tmNow,
+        tmDisplayUntil: tmNow + 5000,
+      });
+    }
+
+    if(tmNow >= showHillStats?.tmDisplayUntil) {
+      setShowHillStats(null);
+    }
+
+    if(hillStats?.id !== lastHillStats?.id) {
+      lastHillStats = {
+        ...hillStats,
+        tmStarted:new Date().getTime(),
+      }
+
     }
 
     const hrm = localUser.getLastHrm(props.tmNow);
@@ -105,12 +149,12 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
         {wattage}
         {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts})</span>}
       </div>}
+      {showHillStats && (
+        <span className="InRaceViewStatus__Hill FlexGrow">You were {getParRating(showHillStats)}</span>
+      )}
       {percentHill && <div className="InRaceViewStatus__Hill Flex">
         {percentHill}
         <span className="InRaceViewStatus__Hill FlexGrow">{pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}</span>
-      </div>}
-      {false && bpm && <div className="InRaceViewStatus__Bpm">
-        {bpm}
       </div>}
 
   </div>
@@ -150,7 +194,7 @@ export function InRaceViewStatusExtra(props:{raceState:RaceState, tmNow:number, 
       setTmStartDisplayHandicap(tmNow);
       console.log("your handicap changed!");
     }
-    const power = localUser.getLastPower();
+    const power = localUser.getLastPower().power;
     
     if(props.playerContext.powerDevice) {
       // ok, we appear to have a power device
@@ -160,8 +204,16 @@ export function InRaceViewStatusExtra(props:{raceState:RaceState, tmNow:number, 
     }
   }
 
+  const onPmStatusArrived = (str:string) => {
+
+  }
+
   const onConnectPm = async () => {
-    const device = await getDeviceFactory().findPowermeter();
+    if(props.playerContext.powerDevice !== null) {
+      props.playerContext.disconnectPowerDevice();
+      await msPromise(1000);
+    }
+    const device = await getDeviceFactory().findPowermeter(onPmStatusArrived);
     console.log("set power device to ", device);
     props.playerContext.setPowerDevice(device);
     return device;

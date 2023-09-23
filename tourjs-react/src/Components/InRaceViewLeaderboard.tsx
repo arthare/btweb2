@@ -50,22 +50,22 @@ function sortUsersByLeadership(map:RideMapElevationOnly, users:UserInterface[]) 
   });
   return sorted;
 }
+export function scoreUserInterestingNess(user:UserInterface) {
+  let score = 0;
+  const isAi = user.getUserType() & UserTypeFlags.Ai;
+  const isLocal = user.getUserType() & UserTypeFlags.Local;
+  if(isAi) {
+    return 1;
+  } else {
+    return isLocal ? 4 : 2;
+  }
+}
 function sortUsersByInterestingness(users:UserInterface[]) {
 
-  function scoreUser(user:UserInterface) {
-    let score = 0;
-    const isAi = user.getUserType() & UserTypeFlags.Ai;
-    const isLocal = user.getUserType() & UserTypeFlags.Local;
-    if(isAi) {
-      return 1;
-    } else {
-      return isLocal ? 4 : 2;
-    }
-  }
 
   return [...users].sort((a, b) => {
-    const scoreA = scoreUser(a);
-    const scoreB = scoreUser(b);
+    const scoreA = scoreUserInterestingNess(a);
+    const scoreB = scoreUserInterestingNess(b);
     if(scoreA === scoreB) {
       return a.getDistance() > b.getDistance() ? -1 : 1;
     }

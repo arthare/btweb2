@@ -13,7 +13,7 @@ export class HeartRateEngine {
 
     if(user) {
       const lastBpm = user.getLastHrm(tmNow);
-      const lastWatts = user.getLastPower();
+      const lastWatts = user.getLastPower().power;
       this.lastBpm = lastBpm;
 
       const gainFactor = gainFactorZeroToOne;

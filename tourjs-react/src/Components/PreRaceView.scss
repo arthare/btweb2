@@ -58,19 +58,86 @@ $card-height: 160px;
   }
 }
 
-.PreRaceView {
-  &__Map {
-    width: 100%;
-    max-height: 80px;
-  }
-  &__MapDetails {
-    width: 100%;
-  }
-  &__ButtonPile {
-    display: block;
-    & Button {
-      display: inline-block;
-      width: auto;
+.UserSummary {
+  &__Container {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    color: grey;
+    &.Local {
+      color: pink !important;
     }
+    &.Human {
+      color: white;
+    }
+  }
+
+  &__Watts {
+    color: grey;
+
+    &.Nonzero {
+      color: white;
+    }
+  }
+}
+
+.PreRaceView {
+  &__Container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: black;
+    overflow: hidden;
+  }
+  &__Statuses {
+    &--Container {
+      flex: 0 0 10vh;
+      width: 100%;
+
+      display: flex;
+      flex-direction: row;
+    }
+  }
+  &__PlayersAndMap {
+    &--Container {
+      flex: 1 1 0px;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      max-height: 90vh;
+    }
+  }
+  &__Players {
+    &--Container {
+      flex: 1 1 0px;
+      background-color: black;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding: 4px;
+    }
+  }
+  &__Map {
+    &--Container {
+      flex: 2 2 0px;
+      font-size: 24px;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    &--MapData {
+      flex: 0 0 auto;
+      padding: 8px;
+      color: white;
+    }
+
+    &--Static {
+      flex: 1 1 0px;
+      padding-bottom: 8px;
+      max-height: 640px;
+    }
+
+  }
+  &__YouAreConnected {
+    font-size: 16px;
   }
 }

@@ -45,7 +45,7 @@ export function monitorCharacteristic(
   })
 }
 
-function msPromise(ms:number):Promise<any> {
+export function msPromise(ms:number):Promise<any> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   })

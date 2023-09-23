@@ -381,7 +381,7 @@ class DisplayUser3D extends DisplayUser {
       const rgDraftEffort:any = this.draftingGeo.attributes.draftEffort.array;
       const userSpeed = this.myUser.getSpeed();
       const draftLength = this.myUser.getLastDraftLength();
-      const draftEffort = (this.myUser.getLastPower() / this.myUser.getHandicap());
+      const draftEffort = (this.myUser.getLastPower().power / this.myUser.getHandicap());
       if(draftLength > 0) {
         for(var index = 0; index < rgDraftCycle.length; index++) {
           let val = rgDraftCycle[index];
@@ -421,7 +421,7 @@ class DisplayUser3D extends DisplayUser {
       this.draftingCube.visible = false;
     }
 
-    const handicapRatio = this.myUser.getLastPower() / this.myUser.getHandicap();
+    const handicapRatio = this.myUser.getLastPower().power / this.myUser.getHandicap();
 
     let xShift = 0;
     let yShift = 0;
@@ -1029,7 +1029,7 @@ export class Drawer3D extends DrawingBase {
           let jiggleY = 0;
 
                 
-          const handicapRatio = user.getLastPower() / user.getHandicap();
+          const handicapRatio = user.getLastPower().power / user.getHandicap();
           if(handicapRatio > 1.6) {
             jiggleX = Math.random() * 10 - 5;
             jiggleY = Math.random() * 10 - 5;

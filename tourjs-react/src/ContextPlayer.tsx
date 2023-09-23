@@ -109,11 +109,15 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
   }
   setPowerDevice(dev:ConnectedDeviceInterface) {
     
-    console.log("setting power device");
-    this.disconnectPowerDevice(); // disconnect the old one
+    console.log("setting power device.  New device is ", dev.getDeviceId(), " new one is ", this.powerDevice?.getDeviceId());
+    if(this.powerDevice?.getDeviceId() !== dev.getDeviceId()) {
+      this.disconnectPowerDevice(); // disconnect the old one
+    } else {
+      // erm, whatevs
+    }
     this.powerDevice = dev;
     dev.setPowerRecipient((tmNow, watts) => {
-      
+      console.log("setpowerrecip", tmNow, watts, " from dev ", dev);
       if(this.doublePower) {
         watts*=2;
       }
@@ -145,15 +149,15 @@ export class AppPlayerContextType extends EventEmitter implements UserProvider {
           
         }
 
-        if(user) {
-          if(dev === this.powerDevice) {
-            dev.setCadenceRecipient(user);
-            // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying
-            this.emit('deviceDataChange');
-            user.notifyPower(tmNow, watts);
-          } else {
-            dev.disconnect();
-          }
+      }
+      if(this.localUser) {
+        if(dev === this.powerDevice) {
+          dev.setCadenceRecipient(this.localUser);
+          // ok, we're sure this event is for the power device we're actively trying to use.  this.powerDevice could conceivably change and a poorly-behaved notifier could keep notifying
+          this.emit('deviceDataChange');
+          this.localUser.notifyPower(tmNow, watts);
+        } else {
+          dev.disconnect();
         }
       }
     });

@@ -5,7 +5,7 @@ type BluetoothRemoteGATTCharacteristic = any;
 type BluetoothRemoteGATTServer = any;
 
 export interface DeviceFactory {
-    findPowermeter():Promise<ConnectedDeviceInterface>;
+    findPowermeter(fnStatus:(str:string)=>void):Promise<ConnectedDeviceInterface>;
     findHrm():Promise<ConnectedDeviceInterface>;
     findDisplay():Promise<BluetoothRemoteGATTCharacteristic>;
 }
@@ -126,8 +126,8 @@ class TestDeviceFactory implements DeviceFactory {
         throw new Error("No device gatt?");
       }
     }
-    async findPowermeter(byPlugin?:boolean):Promise<ConnectedDeviceInterface>{
-
+    async findPowermeter(fnStatus:(str:string)=>void):Promise<ConnectedDeviceInterface>{
+      console.log("findPowermeter called ", new Error().stack)
       this._checkAvailable();
 
       if(window.location.search.includes('fake') || window.location.hostname === 'dev.tourjs.ca') {
@@ -143,30 +143,46 @@ class TestDeviceFactory implements DeviceFactory {
           {services: [serviceUuids.kickrService, 'cycling_power']},
         ]
       }
+
+      let leftoverDevice:BluetoothDevice|null = null;
       return navigator.bluetooth.requestDevice(filters).then((device) => {
+        leftoverDevice = device;
+        fnStatus(`${device.name} selected... connecting`);
         if(device.gatt) {
           return device.gatt.connect();
         } else {
           throw new Error("No device gatt?");
         }
       }).then((gattServer) => {
+        fnStatus(`Connected to ${gattServer.device.name}... enumerating service`);
         deviceUtilsNotifyConnect();
         return gattServer.getPrimaryServices().then((services) => {
+          fnStatus(`Found ${services.length} services... finding power`);
           const ftms = getFtms(services);
           const cps = getCps(services);
           const kickr = getKickrService(services);
 
           if(ftms) {
+            fnStatus(`Is FTMS device.  Connected.`);
             return new BluetoothFtmsDevice(gattServer);
           } else if(kickr) {
+            fnStatus(`Is kickr device.  Connected.`);
             return new BluetoothKickrDevice(gattServer);
           } else if(cps) {
+            fnStatus(`Is cycling power device.  Connected.`);
             return new BluetoothCpsDevice(gattServer);
           } else {
             throw new Error("We don't recognize what kind of device this is");
           }
         })
-      });
+      }).catch((failure) => {
+        console.warn("During findPowermeter, got error ", failure);
+        if(leftoverDevice) {
+          console.warn("Disconnecting leftoverdevice");
+          leftoverDevice.gatt.disconnect();
+        }
+        throw failure;
+      })
     }
     async findHrm(): Promise<ConnectedDeviceInterface> {
       this._checkAvailable();
