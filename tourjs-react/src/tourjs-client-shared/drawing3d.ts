@@ -609,6 +609,7 @@ function buildRoad(raceState:RaceState):THREE.Mesh[] {
             b:0.6
           }
   }
+  
   const backGrassMaterial = new THREE.MeshPhongMaterial({vertexColors:true});
   backGrassMaterial.map = backGrassTexture;
   const farGrassMesh = buildSquareMesh(map, Planes.RoadFar, Planes.Background, stepSize, backGrassMaterial, fnGrassColor);

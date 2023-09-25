@@ -181,6 +181,9 @@ export default function PreRaceView(props:{raceState:RaceState, tmStart:number, 
   useEffect(() => {
     // on startup, start a 1hz timer
     let counterVal = 0;
+    if(counterInterval) {
+      clearInterval(counterInterval);
+    }
     let timeout = setInterval(() => {
       counterVal++;
       console.log("counter = ", counterVal);

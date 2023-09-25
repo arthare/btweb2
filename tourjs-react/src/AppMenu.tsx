@@ -70,9 +70,9 @@ function App() {
         <NoBleHelper />
         <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={() => onRefreshUser()}/>
         <PowerDevicePicker playerContext={playerContext} authContext={authContext} />
-        <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)} allowSelection={!!playerContext.powerDevice} raceListRefresher={raceListVersion} />
+        <RacePicker fnOnPickRace={(race:ServerHttpGameListElement) => onPickRace(race)} allowSelection={!!playerContext.localUser} raceListRefresher={raceListVersion} playerContext={playerContext}/>
         <RaceScheduler authState={authState} fnOnCreation={()=>onNewRaceCreated()} />
-        <PacingChallengeSetup authContext={authContext} playerContext={playerContext} allowSelection={!!playerContext.powerDevice} />
+        <PacingChallengeSetup authContext={authContext} playerContext={playerContext} allowSelection={!!playerContext.localUser} />
         
       </>)}
     </div>

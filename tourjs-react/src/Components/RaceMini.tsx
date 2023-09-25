@@ -31,10 +31,6 @@ export default function RaceMini(props:{race:ServerHttpGameListElement, fnOnPick
                     }
                   })()}</td>
                 </tr>
-                <tr>
-                  <td>Link</td>
-                  <td><Link to={`/race/${props.race.gameId}`}>Link</Link></td>
-                </tr>
               </tbody>
             </table>
           </div>

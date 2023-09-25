@@ -4,8 +4,9 @@ import { ServerHttpGameList, ServerHttpGameListElement } from "../tourjs-shared/
 import RaceMini from "./RaceMini";
 
 import './RacePicker.scss';
+import { AppPlayerContextType } from "../ContextPlayer";
 
-export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListElement)=>void, allowSelection:boolean, raceListRefresher:number}) {
+export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListElement)=>void, allowSelection:boolean, raceListRefresher:number, playerContext:AppPlayerContextType}) {
 
   let [races, setRaces] = useState<ServerHttpGameList|null>(null);
   let [error, setError] = useState<string>('');
@@ -34,8 +35,14 @@ export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListE
 
   const onPickRace = (race:ServerHttpGameListElement) => {
     if(!props.allowSelection) {
-      alert("You need to set up your powermeter first");
+      alert("You need to set up your rider first");
       return;
+    }
+    if(!props.playerContext.powerDevice) {
+      const yn = window.confirm("Are you sure you want to pick this race without setting up your powermeter first?");
+      if(!yn) {
+        return false;
+      }
     }
     console.log("they want to do this race ", race);
     props.fnOnPickRace(race);

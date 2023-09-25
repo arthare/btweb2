@@ -86,6 +86,12 @@ function PacingChallengeSetup(props:{authContext:AppAuthContextType, playerConte
 
 
   const onSelectMap = (name:string, strength:number) => {
+
+    if(!props.playerContext.powerDevice) {
+      const yn = window.confirm("Are you sure you want to start pacing without a power device?");
+      if(!yn) return;
+    }
+
     const countdownLength = 10;
     const oneSecondMs = 1000;
 
