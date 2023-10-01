@@ -131,7 +131,7 @@ export function startGameServer() {
 
   const races:Map<string, ServerGame> = new Map<string, ServerGame>();
   const map = makeSimpleMap(10000);
-  const sg = new ServerGame(map, 'Starting_Soon', 'Will Start On Join', 10);
+  const sg = new ServerGame(map, 'Starting_Soon', 'Will Start On Join', 17);
   races.set(sg.getGameId(), sg);
 
   function hasRaceAtTime(tmWhen) {
