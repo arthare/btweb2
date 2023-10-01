@@ -1,0 +1,13 @@
+.VerticalAlign {
+  &__Container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  &__Gap {
+    flex: 1 1 0px;
+  }
+  &__Content {
+    flex: 1 1 auto;
+  }
+}

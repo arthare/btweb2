@@ -223,3 +223,23 @@ $inter-width: 5vw;
     }
   }
 }
+.InRacePreRace {
+  &__Container {
+    position: absolute;
+    top:0px;
+    left:0px;
+    width: 100vw;
+    height: 100vh;
+    color:white;
+    text-shadow: 0vh 0vh 3vh black;
+    background-color: rgba(0,0,0,0.3);
+  }
+  &__Words {
+    font-size: 6.25vh;
+    text-align: center;
+  }
+  &__Time {
+    font-size: 25vh;
+    text-align: center;
+  }
+}

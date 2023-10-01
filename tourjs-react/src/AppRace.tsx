@@ -13,6 +13,7 @@ import ConnectionManager, { S2CFinishUpdate, S2CPositionUpdateUser, ServerHttpGa
 import { DrawingInterface, PaintFrameState } from "./tourjs-client-shared/drawing-interface";
 import { DecorationState } from "./tourjs-client-shared/DecorationState";
 import { RaceState } from "./tourjs-shared/RaceState";
+import VerticalAlign from "./Components/VerticalAlign";
 
 function isProduction() {
   console.log("hostname = ", window.location.hostname);
@@ -57,6 +58,7 @@ export function tickGameAnimationFrame(tmThisFrame:number, tmLastFrame:number, d
     requestAnimationFrame((tm) => tickGameAnimationFrame(tm, tmThisFrame, drawer, decorationState, paintState, ref, refOverlay, raceState, fnOnRaceDone, fnOnFrame, fnStillOnRacePage));
   }
 }
+
 
 export default function AppRace(props:any) {
 
@@ -137,6 +139,22 @@ export default function AppRace(props:any) {
     }
   }, [userAccount, authContext, playerContext, playerContext?.localUser, forceRefreshVersion, connManager]);
   
+  const tmNow = new Date().getTime();
+  const msUntilStart = (connManager?.msOfStart || tmNow + 1000000) - tmNow;
+  console.log("ms until start ", msUntilStart);
+  let showRaceViewEarly = msUntilStart >= 0 && msUntilStart <= 10000 && !connManager.racing;
+  let preRaceCountdown;
+  if(showRaceViewEarly) {
+    preRaceCountdown = (
+      <div className="InRacePreRace__Container">
+        <VerticalAlign className="InRacePreRace__Vert">
+          <div className="InRacePreRace__Words">Starting in...</div>
+          <div className="InRacePreRace__Time">{(Math.max(0,msUntilStart)/1000).toFixed(1)}</div>
+        </VerticalAlign>
+      </div>
+    )
+  }
+
   return <div className={`AppRace__Container ${forceRefreshVersion}`}>
     {!playerContext || !authContext && (
       <div>Loading...</div>
@@ -146,11 +164,13 @@ export default function AppRace(props:any) {
         {playerContext && !playerContext.localUser && (
           <UserProfilePicker playerContext={playerContext} authContext={authContext} auth0={auth0} authState={authState} fnOnChangeUser={()=>authContext.refreshAliases(auth0, setAuthState)} />
         )}
-        {connManager && connManager.preRace && (
+        {connManager && connManager.preRace && !showRaceViewEarly && (
           <PreRaceView raceState={connManager.getRaceState()} tmStart={connManager.msOfStart} playerContext={playerContext}></PreRaceView>
         )}
-        {connManager && connManager.racing && (
-          <InRaceView raceState={connManager.getRaceState()} fnStillOnRacePage={isStillOnThisPage}/>
+        {connManager && (connManager.racing || showRaceViewEarly) && (
+          <InRaceView raceState={connManager.getRaceState()} fnStillOnRacePage={isStillOnThisPage} >
+            {preRaceCountdown}
+          </InRaceView>
         )}
         {connManager && connManager.postRace && connManager.raceResults && (
           <PostRaceView raceResults={connManager.raceResults}/>
