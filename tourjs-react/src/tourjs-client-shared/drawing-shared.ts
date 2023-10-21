@@ -92,7 +92,6 @@ export abstract class DrawingBase implements DrawingInterface {
           const img = document.createElement('img');
           img.onload = () => {
             paintUser.loadingImage = false;
-            paintUser.image = [img];
           }
           img.src = imageBase64;
         }

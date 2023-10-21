@@ -142,7 +142,7 @@ export default function AppRace(props:any) {
   const tmNow = new Date().getTime();
   const msUntilStart = (connManager?.msOfStart || tmNow + 1000000) - tmNow;
   console.log("ms until start ", msUntilStart);
-  let showRaceViewEarly = msUntilStart >= 0 && msUntilStart <= 10000 && !connManager.racing;
+  let showRaceViewEarly = msUntilStart >= -20000 && msUntilStart <= 10000 && !connManager.racing;
   let preRaceCountdown;
   if(showRaceViewEarly) {
     preRaceCountdown = (

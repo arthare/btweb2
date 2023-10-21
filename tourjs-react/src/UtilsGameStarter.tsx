@@ -18,6 +18,7 @@ export class FakeUserProvider implements UserProvider {
       new User("Fast Fella", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
       new User("Fast Fella 2   zzzzzzz", DEFAULT_RIDER_MASS, 30, UserTypeFlags.Remote),
     ];
+    this.users[0].setImage(testPatternDataUri, '');
 
     for(var x = 0;x < 30; x++) {
       const aiUser = new User(`AI Remote ${x}`, DEFAULT_RIDER_MASS, 75 + Math.random()*10, UserTypeFlags.Ai | UserTypeFlags.Remote);

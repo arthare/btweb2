@@ -4,4 +4,8 @@
   &__Container {
     @include Card();
   }
+  &__Refresh {
+    display: inline-block;
+    width: auto;
+  }
 }

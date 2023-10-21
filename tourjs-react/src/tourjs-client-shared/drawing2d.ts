@@ -178,7 +178,7 @@ export class DrawingOnCanvas extends DrawingBase {
         deltaX = -0.25;
         fillColor = ai_color;
         borderColor = 'transparent';
-        userImage = paintState.defaultAiImage;
+        //userImage = paintState.defaultAiImage;
 
         if(cHumans === 1) {
           // if there's nobody around, then let's draw this AIs name
@@ -202,13 +202,6 @@ export class DrawingOnCanvas extends DrawingBase {
 
         if(displayUser && userImage) {
 
-          if(userImage.length === 1) {
-            ctx.drawImage(userImage[0], -sz / 2, -sz / 2, sz,sz);
-          } else {
-            assert2(displayUser.crankPosition >= 0 && displayUser.crankPosition < 1);
-            const ix = Math.floor(displayUser.crankPosition * userImage.length);
-            ctx.drawImage(userImage[ix], -sz / 2, -sz / 2, sz,sz);
-          }
           
         } else {
           // no image yet - let's draw a filler

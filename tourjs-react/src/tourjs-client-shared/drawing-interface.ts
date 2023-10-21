@@ -27,7 +27,7 @@ export class DisplayUser {
     this.loadingImage = false;
   }
   public distance:number = 0;
-  public image:HTMLImageElement[]|null = null;
+  public image:HTMLImageElement|null = null;
   public loadingImage:boolean = false;
   public crankPosition:number = 0;
   public heartPosition:number = 0;

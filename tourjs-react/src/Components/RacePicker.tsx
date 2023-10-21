@@ -13,20 +13,26 @@ export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListE
   
 
 
-  useEffect(() => {
+  const onRefreshRaceList = async () => {
     let attemptCount = 0;
-    async function doIt() {
-      attemptCount++;
-      try {
-        const raceList:ServerHttpGameList = await apiGet('race-list');
-        console.log("got the race list?", raceList);
-        setRaces(raceList);
-      } catch(e) {
-        setError(`Failed to retrieve race list.  Trying again (retry #${attemptCount})`);
+    attemptCount++;
+    setRaces(null);
+    try {
+      const raceList:ServerHttpGameList = await apiGet('race-list');
+      console.log("got the race list?", raceList);
+      setRaces(raceList);
+    } catch(e) {
+      setError(`Failed to retrieve race list.  Trying again (retry #${attemptCount})`);
+      if(attemptCount < 5) {
         setTimeout(() => {
-          doIt();
+          onRefreshRaceList();
         }, 1000);
       }
+    }
+  }
+  useEffect(() => {
+    async function doIt() {
+      onRefreshRaceList();
     }
     doIt();
     
@@ -49,7 +55,7 @@ export default function RacePicker(props:{fnOnPickRace:(race:ServerHttpGameListE
   }
 
   return (<div className="RacePicker__Container">
-    <h2>Upcoming Races</h2>
+    <h2>Upcoming Races <button className="RacePicker__Refresh" onClick={()=>onRefreshRaceList()}>🔄</button></h2>
     {props.allowSelection && (<>
       {races && races.races.map((race, index) => {
           return <RaceMini key={index} race={race} fnOnPickRace={() => onPickRace(race)} />

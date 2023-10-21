@@ -1044,10 +1044,10 @@ export class Drawer3D extends DrawingBase {
           
           if(isLocal) {
             fontSize *= 1.44;
-            shadowColor = 'pink';
+            shadowColor = 'black';
           } else if(isHuman) {
             fontSize *= 1.2;
-            shadowColor = 'blue';
+            shadowColor = 'black';
           }
 
           ctx.font = `${fontSize.toFixed(0)}vh Arial`;
@@ -1067,6 +1067,50 @@ export class Drawer3D extends DrawingBase {
             ctx.fillText(user.getName(), 0, 0);
           }
           ctx.restore();
+
+          if(user.getImage()) {
+            const uX = ps.screenCoords.x*window.devicePixelRatio;
+            const uY = ps.screenCoords.y*window.devicePixelRatio;
+            const DP = window.devicePixelRatio;
+
+            const w = 32*DP;
+            const h = 32*DP;
+            const elevationAboveUser = 75*DP;
+
+            const img = user.getImage();
+            ctx.strokeStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(uX, uY);
+            ctx.lineTo(uX, uY - elevationAboveUser);
+            ctx.stroke();
+
+            if(!ps.image) {
+              ps.image = document.createElement('img');
+              ps.image.width = 256;
+              ps.image.height = 256;
+              ps.image.src = user.getImage();
+            }
+            
+            const centreX = uX;
+            const centreY = uY - elevationAboveUser;
+
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = 'black';
+            ctx.fillStyle = 'black';
+            //for(var x = 0;x < userPoints(user); x++) {
+              ctx.beginPath();
+              ctx.arc(centreX, centreY, w/2 + window.devicePixelRatio, 0, 360, false);
+              ctx.fill();
+            //}
+            
+
+            ctx.beginPath();
+            ctx.arc(centreX, centreY, w/2, 0, 360, false);
+            ctx.save();
+            ctx.clip();
+            ctx.drawImage(ps.image, centreX - w/2, centreY - w/2, 32*DP, w);
+            ctx.restore();
+          }
         }
       }
     }
