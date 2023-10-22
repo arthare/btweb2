@@ -83,12 +83,12 @@ function buildImageFromName(name:string) {
 
   
   const font = 'Arial';
-  const fontSize = 92;
+  const fontSize = 120;
   const sizeNeeded = measureText(initials, fontSize, font);
   
   const canvas = document.createElement('canvas');
-  canvas.width = sizeNeeded.x*1.25;
-  canvas.height = sizeNeeded.y*1.55;
+  canvas.width = sizeNeeded.x*1.35;
+  canvas.height = sizeNeeded.y*1.35;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = 'white';
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -96,13 +96,9 @@ function buildImageFromName(name:string) {
   ctx.font = `${fontSize}px ${font}`;
 
   ctx.lineWidth = 5;
-  ctx.strokeStyle = 'white';
-  ctx.fillStyle = 'white';
-  ctx.strokeText(initials, 0, sizeNeeded.y);
-
   ctx.strokeStyle = 'black';
   ctx.fillStyle = 'black';
-  ctx.fillText(initials, canvas.width*0.125, sizeNeeded.y);
+  ctx.fillText(initials, canvas.width*0.125, sizeNeeded.y + canvas.height*0.125);
   
   const dataUrl = canvas.toDataURL();
   return dataUrl
@@ -136,6 +132,7 @@ class DisplayUser3D extends DisplayUser {
   screenCoords:Vector3|null = null;
 
   regularMaterial:THREE.MeshStandardMaterial;
+  nameMaterialDataUri:string;
   lazyMaterial:THREE.MeshStandardMaterial;
   fastMaterial:THREE.MeshStandardMaterial;
   ar:number;
@@ -172,6 +169,7 @@ class DisplayUser3D extends DisplayUser {
       opacity: 1,
     } );
     const img = user.getImage() || buildImageFromName(user.getName());
+    this.nameMaterialDataUri = img;
     if(img) {
       const tex = new THREE.TextureLoader().load(img);
       tex.rotation = -Math.PI/2;
@@ -769,6 +767,7 @@ export class Drawer3D extends DrawingBase {
     
   scene:THREE.Scene|null = null
   camera:THREE.OrthographicCamera|THREE.PerspectiveCamera|null = null;
+  cameraSetToValidLocation:boolean = false;
   renderer:THREE.WebGLRenderer|null = null;
 
   lastCameraLookShift:THREE.Vector3 = new THREE.Vector3(0,0,0);
@@ -960,7 +959,12 @@ export class Drawer3D extends DrawingBase {
           
         }
 
-        const mixLevel = 0.98;
+        let mixLevel = 0.98;
+        const distFromPlayer = Math.abs(this.camera.position.x - lookAtShift.x);
+        if(!this.cameraSetToValidLocation || distFromPlayer >= 25) {
+          mixLevel = 0;
+        }
+        this.cameraSetToValidLocation = true;
         this.lastCameraLookShift = new Vector3(
           this.lastCameraLookShift.x * mixLevel + (1-mixLevel)*lookAtShift.x,
           this.lastCameraLookShift.y * mixLevel + (1-mixLevel)*lookAtShift.y,
@@ -1028,6 +1032,7 @@ export class Drawer3D extends DrawingBase {
           let shadowColor = 'black';
           let jiggleX = 0;
           let jiggleY = 0;
+          let sizeMultiplier = 1;
 
                 
           const handicapRatio = user.getLastPower().power / user.getHandicap();
@@ -1043,10 +1048,10 @@ export class Drawer3D extends DrawingBase {
           }
           
           if(isLocal) {
-            fontSize *= 1.44;
+            sizeMultiplier = 1.44;
             shadowColor = 'black';
           } else if(isHuman) {
-            fontSize *= 1.2;
+            sizeMultiplier = 1.2;
             shadowColor = 'black';
           }
 
@@ -1068,13 +1073,15 @@ export class Drawer3D extends DrawingBase {
           }
           ctx.restore();
 
-          if(user.getImage()) {
+          const imgForBubble = user.getImage() || ps.nameMaterialDataUri;
+          if(imgForBubble) {
             const uX = ps.screenCoords.x*window.devicePixelRatio;
             const uY = ps.screenCoords.y*window.devicePixelRatio;
             const DP = window.devicePixelRatio;
 
-            const w = 32*DP;
-            const h = 32*DP;
+            let w = 28*DP*sizeMultiplier;
+            
+
             const elevationAboveUser = 75*DP;
 
             const img = user.getImage();
@@ -1088,7 +1095,7 @@ export class Drawer3D extends DrawingBase {
               ps.image = document.createElement('img');
               ps.image.width = 256;
               ps.image.height = 256;
-              ps.image.src = user.getImage();
+              ps.image.src = imgForBubble;
             }
             
             const centreX = uX;
