@@ -69,17 +69,8 @@ interface HillStatsCompleted extends HillStatsExtended {
 
 let lastHillStats:HillStatsExtended|null = null;
 
-function getParRating(stats:HillStatsCompleted) {
-  let time = (stats.tmEnded - stats.tmStarted) / 1000;
-  let delta = (time - stats.expectedSeconds);
-  let prefix = delta > 0 ? '+' : '';
-  let suffix = delta > 0 ? 'worse' : 'better'
-  return `${Math.abs(delta).toFixed(1)} ${suffix} than par`;
-}
 
 export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType}) {
-
-  let [showHillStats, setShowHillStats] = useState<HillStatsCompleted|null>(null);
 
   const localUser = props.raceState.getLocalUser();
 
@@ -110,21 +101,6 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
       pctUp = (localUser.getLastElevation() - hillStats.startElev) / (hillStats.endElev - hillStats.startElev);
     }
 
-    let tmNow = new Date().getTime();
-    if(hillStats?.id !== lastHillStats?.id && lastHillStats?.endElev > lastHillStats?.startElev) {
-      // oh, we just finished a hill
-      console.log("just fininshed a hill. took ", (new Date().getTime() - lastHillStats.tmStarted) / 1000, " was expected ", lastHillStats.expectedSeconds);
-      setShowHillStats({
-        ...lastHillStats,
-        tmEnded: tmNow,
-        tmDisplayUntil: tmNow + 5000,
-      });
-    }
-
-    if(tmNow >= showHillStats?.tmDisplayUntil) {
-      setShowHillStats(null);
-    }
-
     if(hillStats?.id !== lastHillStats?.id) {
       lastHillStats = {
         ...hillStats,
@@ -149,9 +125,6 @@ export function InRaceViewStatus(props:{raceState:RaceState, tmNow:number, playe
         {wattage}
         {draftWatts && <span className="InRaceViewStatus__Draft">({draftWatts})</span>}
       </div>}
-      {showHillStats && (
-        <span className="InRaceViewStatus__Hill FlexGrow">You were {getParRating(showHillStats)}</span>
-      )}
       {percentHill && <div className="InRaceViewStatus__Hill Flex">
         {percentHill}
         <span className="InRaceViewStatus__Hill FlexGrow">{pctUp && <ProgressCanvass pct={pctUp} className="InRaceViewStatus__Progress"/>}</span>
