@@ -1,13 +1,7 @@
 import { Auth0ContextInterface, User as Auth0User } from "@auth0/auth0-react";
 
 function getApiRoot() {
-  switch(window.location.hostname) {
-    case 'localhost':
-    case 'dev.tourjs.ca':
-      return 'http://localhost:8081/';
-    default:
-      return 'https://tourjs.ca/tourjs-api/'
-  }
+  return 'https://tourjs.ca/tourjs-api/'
 }
 
 export function apiPost(endPoint:string, data?:any):Promise<any> {

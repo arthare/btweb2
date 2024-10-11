@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { apiGet } from "../tourjs-client-shared/api-get";
-import { ServerHttpGameList, ServerHttpGameListElement } from "../tourjs-shared/communication";
+import { apiGet } from "../tourjs-client-lib/api-get";
+import { ServerHttpGameList, ServerHttpGameListElement } from "../tourjs-api-lib/communication";
 import RaceMini from "./RaceMini";
 
 import './RacePicker.scss';

@@ -5,14 +5,14 @@ import { AppAuthContextType } from './ContextAuth';
 import { AppPlayerContextType } from './ContextPlayer';
 import { AppAuthContextInstance, AppPlayerContextInstance } from './index-contextLoaders';
 import { useAuth0 } from '@auth0/auth0-react';
-import { RaceState, UserProvider } from './tourjs-shared/RaceState';
+import { RaceState, UserProvider } from './tourjs-api-lib/RaceState';
 import { PacingChallengeMapName, PacingChallengeShortMap, PacingChallengeUserProvider, PowerTimer, PowerTimerAverage, getPacingChallengeMap } from './PacingChallengeShared';
-import { DEFAULT_CDA, DEFAULT_CRR, DEFAULT_GRAVITY, DEFAULT_HANDICAP_POWER, DEFAULT_RHO, DEFAULT_RIDER_MASS, HandicapChangeReason, User, UserInterface } from './tourjs-shared/User';
-import { RideMap } from './tourjs-shared/RideMap';
+import { DEFAULT_CDA, DEFAULT_CRR, DEFAULT_GRAVITY, DEFAULT_HANDICAP_POWER, DEFAULT_RHO, DEFAULT_RIDER_MASS, HandicapChangeReason, User, UserInterface } from './tourjs-api-lib/User';
+import { RideMap } from './tourjs-api-lib/RideMap';
 import InRaceView from './Components/InRaceView';
-import { formatSecondsHms } from './tourjs-shared/Utils';
-import { PacingChallengeResultSubmission } from './tourjs-shared/communication';
-import { apiPost } from './tourjs-client-shared/api-get';
+import { formatSecondsHms } from './tourjs-api-lib/Utils';
+import { PacingChallengeResultSubmission } from './tourjs-api-lib/communication';
+import { apiPost } from './tourjs-client-lib/api-get';
 import './PagePacingChallengeRace.scss';
 
 function _getHandicapSecondsAllowed(localUser:UserInterface, pctZeroToOne:number, map:RideMap) {

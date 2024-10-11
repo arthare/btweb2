@@ -1,5 +1,5 @@
 import { DecorationPosition, Decoration, DecorationBase, MovingDecoration } from "./DecorationItems";
-import { RideMapElevationOnly, RideMap } from "../tourjs-shared/RideMap";
+import { RideMapElevationOnly, RideMap } from "../tourjs-api-lib/RideMap";
 
 export enum Layer {
   FarScenery = "FarScenery", // mountains, distant forests

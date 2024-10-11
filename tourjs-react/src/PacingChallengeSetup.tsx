@@ -4,18 +4,18 @@ import PowerDevicePicker from './Components/PowerDevicePicker';
 import RacePicker from './Components/RacePicker';
 import { RaceScheduler } from './Components/RaceScheduler';
 import UserProfilePicker from './Components/UserProfilePicker';
-import { PacingChallengeResultSubmission, ServerHttpGameListElement } from './tourjs-shared/communication';
+import { PacingChallengeResultSubmission, ServerHttpGameListElement } from './tourjs-api-lib/communication';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 import { AppAuthContextType } from './ContextAuth';
 import { AppPlayerContextType } from './ContextPlayer';
 import { AppAuthContextInstance, AppPlayerContextInstance } from './index-contextLoaders';
-import { RideMap } from './tourjs-shared/RideMap';
+import { RideMap } from './tourjs-api-lib/RideMap';
 import { RaceMapStatic } from './Components/RaceMapStatic';
 import { PacingChallengeDb, PacingChallengeMapName, PacingChallengeMapRecords, getPacingChallengeMap } from './PacingChallengeShared';
 import './PacingChallengeSetup.scss';
-import { apiGet } from './tourjs-client-shared/api-get';
-import { formatSecondsHms } from './tourjs-shared/Utils';
+import { apiGet } from './tourjs-client-lib/api-get';
+import { formatSecondsHms } from './tourjs-api-lib/Utils';
 import { normalize } from 'path';
 
 function PacingChallengeMapButton(props:{map:RideMap, strengths:number[], name:string, onSelect:(name:string, strength:number)=>void}) {

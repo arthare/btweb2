@@ -1,4 +1,4 @@
-import { User, UserInterface } from "../tourjs-shared/User";
+import { User, UserInterface } from "../tourjs-api-lib/User";
 
 export class HeartRateEngine {
 

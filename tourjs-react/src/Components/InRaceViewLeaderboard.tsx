@@ -1,7 +1,7 @@
-import { RaceState } from "../tourjs-shared/RaceState";
-import { RideMapElevationOnly } from "../tourjs-shared/RideMap";
-import { UserInterface, UserTypeFlags } from "../tourjs-shared/User";
-import { assert2 } from "../tourjs-shared/Utils";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { RideMapElevationOnly } from "../tourjs-api-lib/RideMap";
+import { UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
+import { assert2 } from "../tourjs-api-lib/Utils";
 import { DistanceDisplay, TimeDisplay } from "./PreRaceView";
 import HumanGroupMember from '../AppImg/no-face.png';
 import RobotGroupMember from '../AppImg/robot.png';

@@ -2,11 +2,11 @@ import { Layer } from "./DecorationFactory";
 import { DecorationState } from "./DecorationState";
 import { ai_color, DisplayUser, DrawMinimapParameters, human_color, local_color, PaintFrameState } from "./drawing-interface";
 import { DrawingBase } from "./drawing-shared";
-import { RaceState } from "../tourjs-shared/RaceState";
-import { RideMap } from "../tourjs-shared/RideMap";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { RideMap } from "../tourjs-api-lib/RideMap";
 import setupContextWithTheseCoords from "./setupContextWithTheseCoords";
-import { DEFAULT_HANDICAP_POWER, UserInterface, UserTypeFlags } from "../tourjs-shared/User";
-import { assert2 } from "../tourjs-shared/Utils";
+import { DEFAULT_HANDICAP_POWER, UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
+import { assert2 } from "../tourjs-api-lib/Utils";
 
 export class DrawingOnCanvas extends DrawingBase {
     

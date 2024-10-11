@@ -3,13 +3,13 @@ import { Auth0Client } from "@auth0/auth0-spa-js";
 import { ifft } from "@tensorflow/tfjs-node";
 import EventEmitter from "events";
 import { NavigateFunction } from "react-router-dom";
-import { apiGet, apiPost, secureApiGet } from "./tourjs-client-shared/api-get";
-import { ConnectedDeviceInterface } from "./tourjs-client-shared/WebBluetoothDevice";
-import { RaceResultSubmission, S2CPositionUpdateUser } from "./tourjs-shared/communication";
-import { samplesToPWX, WorkoutFileSaver } from "./tourjs-shared/FileSaving";
-import { RaceState, UserProvider } from "./tourjs-shared/RaceState";
-import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
-import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-shared/User";
+import { apiGet, apiPost, secureApiGet } from "./tourjs-client-lib/api-get";
+import { ConnectedDeviceInterface } from "./tourjs-client-lib/WebBluetoothDevice";
+import { RaceResultSubmission, S2CPositionUpdateUser } from "./tourjs-api-lib/communication";
+import { samplesToPWX, WorkoutFileSaver } from "./tourjs-api-lib/FileSaving";
+import { RaceState, UserProvider } from "./tourjs-api-lib/RaceState";
+import { TourJsAccount, TourJsAlias } from "./tourjs-api-lib/signin-types";
+import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-api-lib/User";
 
 
 export interface UserSetupParameters {

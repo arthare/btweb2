@@ -1,5 +1,5 @@
-import { UserTypeFlags } from "../tourjs-shared/User";
-import { assert2, formatSecondsHms } from "../tourjs-shared/Utils";
+import { UserTypeFlags } from "../tourjs-api-lib/User";
+import { assert2, formatSecondsHms } from "../tourjs-api-lib/Utils";
 import './PostRaceView.scss';
 
 interface RaceResults {

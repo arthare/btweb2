@@ -1,8 +1,8 @@
-import { UserProvider } from "./tourjs-shared/RaceState";
-import { MapBounds, RideMap, RideMapPartial } from "./tourjs-shared/RideMap";
-import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-shared/User";
-import { assert2 } from "./tourjs-shared/Utils";
-import { PacingChallengeResultSubmission } from "./tourjs-shared/communication";
+import { UserProvider } from "./tourjs-api-lib/RaceState";
+import { MapBounds, RideMap, RideMapPartial } from "./tourjs-api-lib/RideMap";
+import { DEFAULT_HANDICAP_POWER, DEFAULT_RIDER_MASS, User, UserInterface, UserTypeFlags } from "./tourjs-api-lib/User";
+import { assert2 } from "./tourjs-api-lib/Utils";
+import { PacingChallengeResultSubmission } from "./tourjs-api-lib/communication";
 
 export enum PacingChallengeMapName {
   Hills1 = "hills1",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TourJsAlias } from "../tourjs-shared/signin-types";
+import { TourJsAlias } from "../tourjs-api-lib/signin-types";
 import InlineEdit from "./InlineEdit";
 import './UserProfileMini.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

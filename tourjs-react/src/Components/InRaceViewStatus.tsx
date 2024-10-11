@@ -1,16 +1,16 @@
-import { RaceState } from "../tourjs-shared/RaceState";
-import { HillStats, RideMapElevationOnly } from "../tourjs-shared/RideMap";
-import { UserInterface, UserTypeFlags } from "../tourjs-shared/User";
-import { assert2 } from "../tourjs-shared/Utils";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { HillStats, RideMapElevationOnly } from "../tourjs-api-lib/RideMap";
+import { UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
+import { assert2 } from "../tourjs-api-lib/Utils";
 import { DistanceDisplay, TimeDisplay } from "./PreRaceView";
 import HumanGroupMember from '../AppImg/no-face.png';
 import RobotGroupMember from '../AppImg/robot.png';
 import FinishGroupMember from '../AppImg/finishline.png';
 import './InRaceViewStatus.scss';
-import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
+import { getDeviceFactory } from "../tourjs-client-lib/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
 import { useEffect, useState } from "react";
-import { msPromise } from "../tourjs-client-shared/DeviceUtils";
+import { msPromise } from "../tourjs-client-lib/DeviceUtils";
 
 function ProgressCanvass(props:{pct:number, className:string}) {
 

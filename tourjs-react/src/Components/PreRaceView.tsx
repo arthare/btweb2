@@ -1,17 +1,17 @@
 import { prependOnceListener } from "process";
-import { RaceState } from "../tourjs-shared/RaceState";
-import { UserInterface, UserTypeFlags } from "../tourjs-shared/User";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
 import { RaceMapStatic } from "./RaceMapStatic";
 import RaceMini from "./RaceMini";
 import './PreRaceView.scss'
 import RobotFace from '../AppImg/robot.png'
 import HumanNoFace from '../AppImg/no-face.png';
-import { getDeviceFactory } from "../tourjs-client-shared/DeviceFactory";
+import { getDeviceFactory } from "../tourjs-client-lib/DeviceFactory";
 import { AppPlayerContextType } from "../ContextPlayer";
-import ConnectionManager from "../tourjs-shared/communication";
+import ConnectionManager from "../tourjs-api-lib/communication";
 import { useEffect, useState } from "react";
 import { scoreUserInterestingNess } from "./InRaceViewLeaderboard";
-import { msPromise } from "../tourjs-client-shared/DeviceUtils";
+import { msPromise } from "../tourjs-client-lib/DeviceUtils";
 
 function PreRacePerson(props:{user:UserInterface}) {
 

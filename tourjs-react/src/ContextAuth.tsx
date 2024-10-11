@@ -2,8 +2,8 @@ import { Auth0ContextInterface, useAuth0, User as Auth0User } from "@auth0/auth0
 import { Auth0Client } from "@auth0/auth0-spa-js";
 import EventEmitter from "events";
 import { NavigateFunction } from "react-router-dom";
-import { apiGet, secureApiGet } from "./tourjs-client-shared/api-get";
-import { TourJsAccount, TourJsAlias } from "./tourjs-shared/signin-types";
+import { apiGet, secureApiGet } from "./tourjs-client-lib/api-get";
+import { TourJsAccount, TourJsAlias } from "./tourjs-api-lib/signin-types";
 
 
 

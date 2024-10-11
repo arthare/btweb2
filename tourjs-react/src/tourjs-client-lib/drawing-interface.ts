@@ -1,10 +1,10 @@
 import { Layer, randRange } from "./DecorationFactory";
 import { DecorationState } from "./DecorationState";
-import { RaceState } from "../tourjs-shared/RaceState";
-import { RideMap } from "../tourjs-shared/RideMap";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { RideMap } from "../tourjs-api-lib/RideMap";
 import setupContextWithTheseCoords from "./setupContextWithTheseCoords";
-import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from "../tourjs-shared/User";
-import { assert2 } from "../tourjs-shared/Utils";
+import { DEFAULT_HANDICAP_POWER, User, UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
+import { assert2 } from "../tourjs-api-lib/Utils";
 
 export const local_color = 'white';
 export const human_color = 'lightpink';

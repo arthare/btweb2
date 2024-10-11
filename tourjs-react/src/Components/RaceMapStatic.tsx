@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { createDrawer } from "../tourjs-client-shared/drawing-factory";
-import { ServerHttpGameListElement, SimpleElevationMap } from "../tourjs-shared/communication";
-import { RideMapElevationOnly } from "../tourjs-shared/RideMap";
+import { createDrawer } from "../tourjs-client-lib/drawing-factory";
+import { ServerHttpGameListElement, SimpleElevationMap } from "../tourjs-api-lib/communication";
+import { RideMapElevationOnly } from "../tourjs-api-lib/RideMap";
 
 import './RaceMini.scss';
 

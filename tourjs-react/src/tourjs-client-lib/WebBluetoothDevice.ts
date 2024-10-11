@@ -1,6 +1,6 @@
 import { writeToCharacteristic, monitorCharacteristic, serviceUuids, FnCancel } from "./DeviceUtils";
-import { CadenceRecipient, HrmRecipient, SlopeSource } from "../tourjs-shared/User";
-import { assert2 } from "../tourjs-shared/Utils";
+import { CadenceRecipient, HrmRecipient, SlopeSource } from "../tourjs-api-lib/User";
+import { assert2 } from "../tourjs-api-lib/Utils";
 import { request } from "http";
 
 export enum BTDeviceState {

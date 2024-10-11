@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AppPlayerContextType } from "../ContextPlayer";
-import { createDrawer } from "../tourjs-client-shared/drawing-factory";
-import { RaceState } from "../tourjs-shared/RaceState";
-import { UserTypeFlags } from "../tourjs-shared/User";
+import { createDrawer } from "../tourjs-client-lib/drawing-factory";
+import { RaceState } from "../tourjs-api-lib/RaceState";
+import { UserTypeFlags } from "../tourjs-api-lib/User";
 import './RaceMapLive.scss';
 
 export function RaceMapLive(props:{raceState:RaceState, tmNow:number, playerContext:AppPlayerContextType, className:string}) {

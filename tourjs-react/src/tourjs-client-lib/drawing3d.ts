@@ -1,10 +1,10 @@
 import { DecorationState } from "./DecorationState";
 import { DisplayUser, PaintFrameState, RGB } from "./drawing-interface";
 import { DrawingBase } from "./drawing-shared";
-import { RaceState } from "../tourjs-shared/RaceState";
+import { RaceState } from "../tourjs-api-lib/RaceState";
 import { CanvasTexture, DoubleSide, Matrix4, PerspectiveCamera, Plane, Vector2, Vector3 } from 'three';
-import { User, UserInterface, UserTypeFlags } from "../tourjs-shared/User";
-import { RideMap, RideMapElevationOnly } from "../tourjs-shared/RideMap";
+import { User, UserInterface, UserTypeFlags } from "../tourjs-api-lib/User";
+import { RideMap, RideMapElevationOnly } from "../tourjs-api-lib/RideMap";
 import { defaultThemeConfig } from "./drawing-constants";
 import { ThemeConfig, ConfiggedDecoration, randRange, Layer} from './DecorationFactory';
 import * as THREE from 'three';

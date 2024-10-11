@@ -3,8 +3,8 @@ import { useContext, useEffect, useState } from "react";
 import { AppAuthContextInstance, AppPlayerContextInstance } from "../index-contextLoaders";
 import { AppAuthContextType } from "../ContextAuth";
 import { AppPlayerContextType, UserSetupParameters } from "../ContextPlayer";
-import { secureApiPost } from "../tourjs-client-shared/api-get";
-import { TourJsAccount, TourJsAlias } from "../tourjs-shared/signin-types";
+import { secureApiPost } from "../tourjs-client-lib/api-get";
+import { TourJsAccount, TourJsAlias } from "../tourjs-api-lib/signin-types";
 import UserProfileMini from "./UserProfileMini";
 import './UserProfilePicker.scss';
 

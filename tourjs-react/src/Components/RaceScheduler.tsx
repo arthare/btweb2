@@ -1,19 +1,19 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { randRange } from "../tourjs-client-shared/DecorationFactory";
-import { createDrawer } from "../tourjs-client-shared/drawing-factory";
-import { ServerHttpGameListElement, SimpleElevationMap } from "../tourjs-shared/communication";
-import { RideMapElevationOnly } from "../tourjs-shared/RideMap";
+import { randRange } from "../tourjs-client-lib/DecorationFactory";
+import { createDrawer } from "../tourjs-client-lib/drawing-factory";
+import { ServerHttpGameListElement, SimpleElevationMap } from "../tourjs-api-lib/communication";
+import { RideMapElevationOnly } from "../tourjs-api-lib/RideMap";
 import { RaceMapStatic } from "./RaceMapStatic";
 import seedrandom from "seedrandom";
 
 import './RaceScheduler.scss';
-import { ScheduleRacePostRequest } from "../tourjs-shared/ServerHttpObjects";
+import { ScheduleRacePostRequest } from "../tourjs-api-lib/ServerHttpObjects";
 import { AppPlayerContextType } from "../ContextPlayer";
 import { AppAuthContextInstance, AppPlayerContextInstance } from "../index-contextLoaders";
 import { AppAuthContextType } from "../ContextAuth";
-import { TourJsAccount } from "../tourjs-shared/signin-types";
-import { apiPost } from "../tourjs-client-shared/api-get";
+import { TourJsAccount } from "../tourjs-api-lib/signin-types";
+import { apiPost } from "../tourjs-client-lib/api-get";
 import { DataStorage } from "@tensorflow/tfjs-node";
 
 export function randRangeSeeded(rng:seedrandom.prng, min:number, max:number) {

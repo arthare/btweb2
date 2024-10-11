@@ -4,13 +4,13 @@ import {  faBolt, faHeart } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useState } from 'react';
 import { AppPlayerContextType } from '../ContextPlayer';
 import { AppPlayerContextInstance } from '../index-contextLoaders';
-import { getDeviceFactory } from '../tourjs-client-shared/DeviceFactory';
-import { ConnectedDeviceInterface } from '../tourjs-client-shared/WebBluetoothDevice';
+import { getDeviceFactory } from '../tourjs-client-lib/DeviceFactory';
+import { ConnectedDeviceInterface } from '../tourjs-client-lib/WebBluetoothDevice';
 
 import './PowerDevicePicker.scss';
 import { AppAuthContextType } from '../ContextAuth';
 import NoBleHelper from './NoBleHelper';
-import { msPromise } from '../tourjs-client-shared/DeviceUtils';
+import { msPromise } from '../tourjs-client-lib/DeviceUtils';
 
 
 enum BluetoothDevicePickerState {

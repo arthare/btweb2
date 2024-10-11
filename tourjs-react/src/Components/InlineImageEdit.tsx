@@ -1,4 +1,4 @@
-import { TourJsAlias } from "../tourjs-shared/signin-types";
+import { TourJsAlias } from "../tourjs-api-lib/signin-types";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {  faCircleCheck, faCircle,  } from '@fortawesome/free-regular-svg-icons'
 import {  faPenToSquare, faCamera } from '@fortawesome/free-solid-svg-icons'
