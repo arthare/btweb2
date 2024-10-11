@@ -6,9 +6,7 @@ import { assert2 } from "./Utils";
 import { SERVER_PHYSICS_FRAME_RATE } from "./ServerConstants";
 import fs from 'fs';
 import { SpanAverage } from "./SpanAverage";
-import { BrainLocation, brainPath, makeTensor, normalizeData, NormData, predictFromRawTrainingData, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshotV2, trainingSnapshotToAIInput, unnormalizeData } from "./ServerAISnapshots";
-import * as tf from '@tensorflow/tfjs-node';
-import { LayersModel, Sequential, Tensor, Tensor2D } from '@tensorflow/tfjs-node';
+import { BrainLocation, brainPath, takeTrainingSnapshot, TrainingDataPrepped, TrainingSnapshotV2, trainingSnapshotToAIInput } from "./ServerAISnapshots";
 import {v4 as uuidv4} from 'uuid';
 import { StatsData } from "./StatsData";
 
@@ -248,68 +246,6 @@ export interface AIBrain {
 }
 
 
-export class AINNBrain implements AIBrain {
-  _model:LayersModel|null = null;
-  _name:string;
-  _strength:number;
-  _norms:any;
-  _finishLoad:Promise<any>;
-  constructor(strength:number, brain:string) {
-
-    assert2(strength >= 0.75 && strength <= 1.05);
-    strength *= 1.05;
-
-    const totalPath = brainPath(brain, BrainLocation.Deployed);
-    this._finishLoad = new Promise<void>((resolve, reject) => {
-      try {
-        tf.loadLayersModel(`file://${totalPath}/model.json`).then((model:LayersModel) => {
-          const rawNorms = JSON.parse(fs.readFileSync(totalPath  + '/norm.json', 'utf8'));
-          this._norms = {};
-          for(var key in rawNorms) {
-            rawNorms[key] = Object.values(rawNorms[key]);
-          }
-          const inputMinMax = makeTensor(tf, [rawNorms.inputMax, rawNorms.inputMin]);
-          const labelMinMax = makeTensor(tf, [rawNorms.labelMax, rawNorms.labelMin]);
-          this._norms = new NormData(inputMinMax, labelMinMax, rawNorms.killCols);
-          this._model = model;
-          resolve();
-        })
-
-      } catch(e) {
-        reject(e);
-      }
-    })
-    this._strength = strength;
-
-    this._name = brain.split('-')[0];
-  }
-  finishLoadPromise() {
-    return this._finishLoad;
-  }
-  getPower(timeSeconds: number, handicap: number, dist: number, mapLength: number, slopeWholePercent: number): number {
-
-    return this._strength * handicap;
-  }
-  isNN() {return !!this._model;}
-  getPowerNN(handicap:number, data:TrainingSnapshotV2|null):number {
-    if(!data) {
-      // just default to something basic if we don't have our data yet
-      return handicap * 1.0;
-    }
-    if(this._model && data.distanceToFinish > 0) {
-
-      StatsData.note("AI predictFromRaw");
-      const ret = handicap * this._strength * predictFromRawTrainingData(tf, this._model, this._norms, data);
-      return ret;
-    }
-    StatsData.note("AI getPower");
-    return this.getPower(0, handicap, data.distanceInRace, data.distanceInRace + data.distanceToFinish, data.avgSlopeCurrentUphill);
-  }
-  getName(handicap: number): string {
-    return `${this._name}Bot ${(this._strength*100).toFixed(0)}%`;
-  }
-  
-}
 export class AIUltraBoringBrain implements AIBrain {
   _nextChange = 0;
   _currentOutput = 0;
@@ -453,17 +389,7 @@ function getNextAIBrain(strength:number, brains:string[]):AIBrain {
     case 3:
       return new DumbSavey(strength);
     case 4:
-      try {
-        if(brains.length > 0) {
-          const ixBrain = Math.floor(Math.random() * brains.length);
-          return new AINNBrain(strength, brains[ixBrain]);
-        } else {
-          return new DumbSavey(strength);
-        }
-      } catch(e) {
-        return new DumbSavey(strength);
-      }
-      
+      return new DumbSavey(strength);
   }
 }
 
