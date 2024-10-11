@@ -40,8 +40,8 @@ export interface ConnectedDeviceInterface {
 }
 
 export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
-  private _powerOutput:FnPowerReceipient[] = [];
-  private _cadenceOutput:CadenceRecipient[] = [];
+  private _powerOutput:Set<FnPowerReceipient> = new Set();
+  private _cadenceOutput:Set<CadenceRecipient> = new Set();
   private _hrmOutput:HrmRecipient[] = [];
   protected _slopeSource:SlopeSource|null = null;
   private _userWantsToKeep:boolean = true;
@@ -72,10 +72,10 @@ export abstract class PowerDataDistributor implements ConnectedDeviceInterface {
   abstract updateResistance(tmNow:number, pct:number):Promise<boolean>;
 
   public setPowerRecipient(who: FnPowerReceipient): void {
-    this._powerOutput.push(who);
+    this._powerOutput.add(who);
   }
   public setCadenceRecipient(who: CadenceRecipient): void {
-    this._cadenceOutput.push(who);
+    this._cadenceOutput.add(who);
   }
   public setHrmRecipient(who: HrmRecipient): void {
     this._hrmOutput.push(who);
@@ -375,7 +375,8 @@ export class BluetoothCpsDevice extends BluetoothDeviceShared {
               const responseOpCode = buf.getUint8(0);
               const requestOpCode = buf.getUint8(1);
               const responseValue = buf.getUint8(2);
-              const residualNm = buf.getUint16(3, true);
+
+              const residualNm = buf.byteLength >= 5 ? buf.getUint16(3, true) : 0;
               if(requestOpCode === 0x0c) {
                 if(responseValue === 0x04) {
                   reject(new Error("Zero offset failed.  Crank calibration response code: " + responseValue.toString(16)));
