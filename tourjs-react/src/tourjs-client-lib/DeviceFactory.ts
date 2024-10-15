@@ -51,7 +51,7 @@ export class TestPowermeter extends PowerDataDistributor {
       return Promise.resolve(false);
     }
     getDeviceId(): string {
-      throw new Error("Method not implemented.");
+      return "Faaaake";
     }
     updateResistance(tmNow: number, pct: number): Promise<boolean> {
       throw new Error("Method not implemented.");

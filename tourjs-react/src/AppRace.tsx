@@ -14,13 +14,25 @@ import { DrawingInterface, PaintFrameState } from "./tourjs-client-lib/drawing-i
 import { DecorationState } from "./tourjs-client-lib/DecorationState";
 import { RaceState } from "./tourjs-api-lib/RaceState";
 import VerticalAlign from "./Components/VerticalAlign";
+import {PORTS} from './tourjs-api-lib/communication';
 
+enum DevServerState {
+  Unknown,
+  ForcedToProd,
+  ToLocalhost,
+};
+let eServerState:DevServerState = DevServerState.Unknown;
 function isProduction() {
   console.log("hostname = ", window.location.hostname);
+
   switch(window.location.hostname) {
     case 'localhost':
     case 'dev.tourjs.ca':
-      return false;
+      if(eServerState === DevServerState.Unknown) {
+        const ynProd = window.confirm("You appear to be developing.  Would you like to connect to the main servers at tourjs.ca?\n\nOK: Yes\nCancel: No");
+        eServerState = ynProd ? DevServerState.ForcedToProd : DevServerState.ToLocalhost;
+      }
+      return eServerState === DevServerState.ForcedToProd;
     default:
       return true;
   }
@@ -121,7 +133,7 @@ export default function AppRace(props:any) {
 
         const targetHost = getGameServerHost();
         
-        let wsUrl = isProduction() ? `wss://${targetHost}:8080` : `ws://${targetHost}:8080`;
+        let wsUrl = isProduction() ? `wss://${targetHost}:${PORTS.TOURJS_WEBSOCKET_PORT}` : `ws://${targetHost}:${PORTS.TOURJS_WEBSOCKET_PORT}`;
   
         console.log("building connection manager ", wsUrl, " connecting with ", playerContext.localUser);
         const newConnManager = new ConnectionManager((handicap:number) => onLocalHandicapChange(handicap), () => onLastServerRaceStateChange(), (fromWho:ConnectionManager, count:number) => onNetworkUpdateComplete(fromWho, count), (client:S2CPositionUpdateUser, image:string|null) => onNotifyNewClient(client, image));
